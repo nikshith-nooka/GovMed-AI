@@ -95,32 +95,32 @@ This repository encapsulates the complete engineering and research artifacts for
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Clinician as Clinician / User
-    participant API as FastAPI Orchestrator
-    participant Specialist as Lead Diagnosis Specialist
-    participant Researcher as Literature Researcher
-    participant Verifier as Fact-Checking Verifier
-    participant Safety as Safety Validator (Guardrails)
-    participant HITL as Attending HITL Gatekeeper
-    participant DB as SQLite Telemetry Database
+    actor Clinician as Clinician
+    participant API as FastAPI Server
+    participant Specialist as Diagnosis Specialist
+    participant Researcher as Literature Agent
+    participant Verifier as Fact-Check Verifier
+    participant Safety as Safety Guardrail
+    participant HITL as Attending HITL Gate
+    participant DB as SQLite Database
 
-    Clinician->>API: POST /api/run-custom-case (Vignette, Governance Level)
+    Clinician->>API: POST /api/run-custom-case (Vignette, G4)
     API->>Specialist: Analyze symptoms, labs, vitals
     Specialist-->>API: Differential Diagnosis + Initial Plan
-    API->>Researcher: Query Guidelines (AAO-HNS, ACR, AHA, KDIGO)
-    Researcher-->>API: Pertinent Positives/Negatives + Evidence Grade
-    API->>Verifier: Cross-check Specialist claims vs. Evidence
-    Verifier-->>API: Unsupported Claim Flags + Grounding Score
-    API->>Safety: Evaluate Deterministic Drug-Disease Rules
-    alt Contraindication Detected (e.g. NSAID in CKD 3b)
-        Safety-->>API: INTERCEPTED (Block Indomethacin, Recommend Corticosteroids)
+    API->>Researcher: Retrieve Guidelines (AAO-HNS, ACR, AHA)
+    Researcher-->>API: Evidence Citations & Pertinent Findings
+    API->>Verifier: Audit claims against retrieved literature
+    Verifier-->>API: Claim Verification Flags & Grounding Score
+    API->>Safety: Check Deterministic Safety Rules
+    alt Contraindication Detected (e.g., NSAID in CKD 3b)
+        Safety-->>API: INTERCEPTED (Block Regimen, Adjust Regimen)
     else Clear
-        Safety-->>API: PASSED (No Contraindications)
+        Safety-->>API: PASSED (Safe Protocol)
     end
-    API->>HITL: High-Acuity Case Review & Attending Sign-Off
-    HITL-->>API: APPROVED_WITH_MODIFICATION + Attending Notes
-    API->>DB: Log tokens, latency, cost, and telemetry
-    API-->>Clinician: Return Governed Clinical Plan with Evidence Drawer
+    API->>HITL: Attending Oversight & Clinical Sign-Off
+    HITL-->>API: APPROVED + Attending Clinical Notes
+    API->>DB: Log tokens, latency, cost & telemetry (751 runs)
+    API-->>Clinician: Governed Plan with Evidence Drawer & Audit Trail
 ```
 
 ---
@@ -128,16 +128,34 @@ sequenceDiagram
 ### Mathematical Metric Formulations
 
 #### 1. Diagnostic Accuracy Score ($A_{\text{diag}}$)
-$$A_{\text{diag}} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{I}\left(\hat{y}_i = y_i^*\right)$$
-Where $\hat{y}_i$ is the primary diagnosis selected by the multi-agent system, $y_i^*$ is the USMLE board ground truth, and $\mathbb{I}(\cdot)$ is the indicator function.
+
+$$
+A_{\text{diag}} = \frac{1}{N} \sum_{i=1}^{N} \mathbb{I}(\hat{y}_i = y_i^*)
+$$
+
+*Where:*
+- $\hat{y}_i$: Primary clinical diagnosis formulated by the multi-agent system.
+- $y_i^*$: Verified USMLE board ground truth.
+- $\mathbb{I}(\cdot)$: Indicator function returning $1$ if true, $0$ otherwise.
 
 #### 2. Contraindication Interception Rate ($\text{CIR}$)
-$$\text{CIR} = \frac{\sum_{i=1}^{N_{\text{contra}}} \mathbb{I}(\text{SafetyGate}(\hat{p}_i) = \text{INTERCEPTED})}{N_{\text{contra}}} \times 100\%$$
-GovMed-AI achieves $\text{CIR} = 100.0\%$ (285/285 critical hazards intercepted under G3/G4) compared to $0.0\%$ under baseline G0.
+
+$$
+\text{CIR} = \left( \frac{1}{N_{\text{contra}}} \sum_{i=1}^{N_{\text{contra}}} \mathbb{I}\Big(\text{SafetyGate}(\hat{p}_i) = \text{INTERCEPTED}\Big) \right) \times 100\%
+$$
+
+*Empirical Finding:* GovMed-AI achieves $\text{CIR} = 100.0\%$ (285 / 285 critical hazards intercepted under G3/G4) compared to $0.0\%$ under baseline G0.
 
 #### 3. Pareto Multi-Objective Governance Utility ($U_{\text{gov}}$)
-$$\max_{\theta \in \{G_0 \dots G_4\}} U(\theta) = w_1 \cdot A_{\text{diag}}(\theta) + w_2 \cdot \text{CIR}(\theta) - w_3 \cdot \text{Cost}(\theta) - w_4 \cdot \text{Latency}(\theta)$$
-Where weights $w_1=0.4, w_2=0.4, w_3=0.1, w_4=0.1$ represent institutional healthcare priorities. G4 forms the Pareto-dominant frontier.
+
+$$
+\max_{\theta \in \mathcal{G}} U(\theta) = w_1 \cdot A_{\text{diag}}(\theta) + w_2 \cdot \text{CIR}(\theta) - w_3 \cdot \text{Cost}(\theta) - w_4 \cdot \text{Latency}(\theta)
+$$
+
+*Where:*
+- $\mathcal{G} = \{G_0, G_1, G_2, G_3, G_4\}$ represents the governance configurations.
+- Weights $w_1 = 0.40$, $w_2 = 0.40$, $w_3 = 0.10$, $w_4 = 0.10$ quantify institutional clinical safety priorities.
+- G4 (Full Defense-in-Depth) forms the Pareto-optimal frontier.
 
 ---
 
