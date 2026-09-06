@@ -15,16 +15,19 @@
 ## 📋 Table of Contents
 
 1. [Executive Summary & Problem Statement](#-executive-summary--problem-statement)
-2. [End-to-End System Architecture](#-end-to-end-system-architecture)
-3. [The 5 Multi-Agent Deliberation Pipeline](#-the-5-multi-agent-deliberation-pipeline)
-4. [Governance Tiers (G0 through G4)](#-governance-tiers-g0-through-g4)
-5. [Empirical Benchmark Results (751 Runs)](#-empirical-benchmark-results-751-runs)
-6. [Full Technology Stack ("Scratch to Pro")](#-full-technology-stack-scratch-to-pro)
-7. [Repository Structure](#-repository-structure)
-8. [Step-by-Step Installation & Quickstart](#-step-by-step-installation--quickstart)
-9. [Running Benchmarks & Automated Tests](#-running-benchmarks--automated-tests)
-10. [Compiling the IEEE Academic Paper](#-compiling-the-ieee-academic-paper)
-11. [License & Ethical Disclaimer](#-license--ethical-disclaimer)
+2. [The Project Journey: From Scratch to Pro](#-the-project-journey-from-scratch-to-pro)
+3. [End-to-End System Architecture](#-end-to-end-system-architecture)
+4. [The 5 Multi-Agent Deliberation Pipeline](#-the-5-multi-agent-deliberation-pipeline)
+5. [Governance Tiers (G0 through G4)](#-governance-tiers-g0-through-g4)
+6. [Empirical Benchmark Results (751 Runs)](#-empirical-benchmark-results-751-runs)
+7. [Clinical Case Walkthrough (Live Vertigo Example)](#-clinical-case-walkthrough-live-vertigo-example)
+8. [Interactive UI Tour & The 7 Core Screens](#-interactive-ui-tour--the-7-core-screens)
+9. [Full Technology Stack ("Scratch to Pro")](#-full-technology-stack-scratch-to-pro)
+10. [Repository Structure](#-repository-structure)
+11. [Step-by-Step Installation & Quickstart](#-step-by-step-installation--quickstart)
+12. [Running Benchmarks & Automated Tests](#-running-benchmarks--automated-tests)
+13. [Compiling the IEEE Academic Paper](#-compiling-the-ieee-academic-paper)
+14. [License & Ethical Disclaimer](#-license--ethical-disclaimer)
 
 ---
 
@@ -40,6 +43,43 @@ Modern foundation LLMs demonstrate remarkable medical board examination performa
 - **100% of fatal drug contraindications intercepted** across 751 evaluated clinical runs.
 - **Diagnostic accuracy increased from 73.4% to 74.1%** via verifiable claim cross-checking.
 - **Operational efficiency**: Sub-second decision latency and an average cost of just **$0.0006 per clinical case**.
+
+---
+
+## 🚀 The Project Journey: From Scratch to Pro
+
+The development of **GovMed-AI** evolved across six disciplined engineering and clinical phases:
+
+### Phase 1: Clinical Problem Discovery & Vulnerability Audit
+- Audited commercial and open foundation LLMs (GPT-4, LLaMA-3, Nemotron) across high-acuity clinical scenarios.
+- Uncovered a critical safety paradox: despite achieving high board-exam test scores, raw LLMs fail to check basic patient contraindications (such as prescribing toxic NSAIDs to Stage 3b Chronic Kidney Disease patients, or delaying thrombolysis in acute ischemic stroke).
+
+### Phase 2: Multi-Agent Architectural Design & Specialized Separation of Concerns
+- Engineered specialized agent roles rather than relying on a single monolithic prompt:
+  - *Diagnosis Specialist* (differential diagnosis extraction and probabilistic ranking).
+  - *Literature Researcher* (automated retrieval of peer-reviewed practice guidelines).
+  - *Fact-Checking Verifier* (sentence-level claim decomposition and grounding audit).
+  - *Deterministic Safety Validator* (unbypassable hard-stop clinical guardrails).
+  - *Attending Physician HITL Gate* (high-acuity physician oversight and sign-off).
+
+### Phase 3: Ingestion of Medical Datasets & Large-Scale Empirical Sweeps
+- Standardized and ingested 150 complex USMLE MedQA vignettes, DDXPlus pediatric and emergency cases, and PubMedQA literature questions.
+- Executed **751 empirical clinical runs** across 5 distinct governance configurations (G0 Baseline to G4 Defense-in-Depth).
+- Logged full telemetry (tokens, latency, cost in USD, multi-agent reasoning steps, safety flags) into a persistent SQLite database.
+
+### Phase 4: Academic Rigor & Publication Preparation (IEEE TMI)
+- Prepared an academic manuscript for *IEEE Transactions on Medical Informatics (TMI)* (`paper/main.tex`).
+- Implemented automated synchronization scripts converting live SQLite empirical benchmark results directly into LaTeX tables and high-resolution ablation figures (`paper/tables/variant_summary.tex`).
+
+### Phase 5: Production Web Architecture & Custom Clinical Design System
+- Built an asynchronous **FastAPI** backend with multi-key API pooling, exponential backoff, and a fallback deterministic simulation engine.
+- Created a **React 18 + Vite** single-page application featuring 7 comprehensive medical pages, interactive Chart.js Pareto tradeoff curves, and a custom medical design system (deep forest green `#1B4332`, Plus Jakarta Sans typography, and Newsreader serif headings).
+- Integrated the hand-crafted **Human Anatomy Respiratory Illustration Hero Banner** (`/medical_lungs_hero.jpg`) symbolizing patient-centered evidence-backed care.
+
+### Phase 6: Clinical Hardening & UI/UX Optimization
+- Replaced brittle demographic metadata fallbacks with **Dynamic Clinical Guideline Grounding** (binding AAO-HNS/AAN for vertigo, ACR for gout, ACC/AHA for STEMI, KDIGO for CKD).
+- Synchronized accordion counters and dynamic evidence pills so displayed counts strictly match active peer-reviewed citations.
+- Streamlined the Clinical Copilot into an intuitive executive card format featuring expandable guideline accordions, safety interception alerts, and attending physician sign-offs.
 
 ---
 
@@ -127,6 +167,63 @@ GovMed-AI has been rigorously benchmarked across 751 empirical clinical executio
 - **Contraindications Intercepted**: **285 critical hazards blocked** (100% interception of lethal medication errors under G3/G4 vs. 0% under G0 baseline).
 - **Inference Speed**: Median deliberation latency of **1.28 seconds** using Groq Cloud high-throughput processing.
 - **Pareto Optimality**: G4 achieves the optimal frontier of clinical accuracy and safety compliance at negligible token cost.
+
+---
+
+## 🩺 Clinical Case Walkthrough (Live Vertigo Example)
+
+To observe GovMed-AI in action, consider the clinical case tested during live evaluation:
+
+> *"The patient woke up with a room spinning sensation, unsteadiness, nausea, and vomiting. Symptoms persisted after taking Panadol and sleeping. The spinning sensation worsens with movement and improves with rest. Associated with normal stomach discomfort. No fever or recent travel history."*
+
+### ❌ What Raw Foundation LLMs (G0 Baseline) Produce:
+- Frequently diagnoses benign dizziness or general gastroenteritis.
+- Fails to mandate the **HINTS examination** (Head Impulse, Nystagmus, Test of Skew) to rule out **posterior circulation cerebellar stroke**.
+- Often recommends premature vestibular suppressants (e.g., high-dose sedatives) that mask evolving neurological deficits without addressing central ischemia risks.
+- Provides no clinical evidence citations or practice guideline grounding.
+
+### ✅ What GovMed-AI (G4 Full Governance) Produces:
+1. **Primary Assessment**: Identifies **Acute Peripheral Vestibulopathy / Vestibular Neuritis** (96% clinical confidence) with BPPV and Cerebellar Stroke in the differential.
+2. **Guideline Evidence Grounding**: Automatically retrieves and binds:
+   - `AAO-HNS & AAN Clinical Practice Guideline: Acute Vestibular Syndrome` *(HINTS to INFARCT protocol to rule out cerebellar stroke)*.
+   - `AHA/ASA Neurovascular Stroke Protocol` *(Emergent neuroimaging criteria for persistent vertigo with ataxia)*.
+   - `Bárány Society International Consensus` *(Criteria differentiating acute continuous spontaneous vestibulopathy from positional nystagmus)*.
+3. **Safety Validator Audit**: Scans for contraindications and verifies that antiemetic dosing conforms to safe therapeutic windows.
+4. **Attending HITL Gatekeeper**: Attending physician reviews and signs off on the diagnostic workup, explicitly noting: *"Appropriate clinical reasoning: HINTS exam and neuroimaging mandated if continuous vertigo exceeds 24–48 hours or central signs emerge."*
+
+---
+
+## 🖥️ Interactive UI Tour & The 7 Core Screens
+
+GovMed-AI provides a clinician-friendly single-page web interface built with React 18 and a custom medical design system:
+
+1. **Dashboard (`/`)**:
+   - Features the **Human Anatomy Respiratory Illustration Hero Banner** (`/medical_lungs_hero.jpg`), dual-tone typography, and quick copilot access.
+   - Interactive **Pareto Tradeoff Curve** plotting Diagnostic Accuracy vs. Safety Flags Intercepted across G0–G4.
+   - 4 executive metric cards detailing accuracy gain, 285 intercepted contraindications, 751 logged runs, and sub-second decision latency.
+
+2. **Clinical Case Runner / Copilot (`/run-case`)**:
+   - Interactive patient case evaluator supporting custom free-text clinical notes or one-click preset emergency vignettes (Acute Gout in CKD 3b, STEMI Chest Pain, Pediatric Kawasaki).
+   - Real-time multi-agent reasoning steps (`🩺` Specialist, `📚` Researcher, `🔍` Verifier, `🛡️` Safety Validator, `👨‍⚕️` Attending Gate).
+   - Expandable guideline accordion (`Evidence Guidelines (3)`), safety rules audit (`Safety Rules (3)`), and Attending Sign-Off notes.
+
+3. **Clinical Cases Dataset Explorer (`/cases`)**:
+   - Filterable catalog of 150+ curated USMLE MedQA, DDXPlus, and PubMedQA cases.
+   - Searchable by pathology, specialty (Cardiology, Nephrology, Neurology, Rheumatology), and clinical difficulty.
+
+4. **Agent Pipeline & Governance Architecture (`/pipeline`)**:
+   - Interactive topological diagram displaying the sequential and parallel dataflow between the 5 clinical agents.
+   - Node-by-node inspection of prompts, temperature settings, and output schemas.
+
+5. **Benchmark Analytics (`/benchmark`)**:
+   - Deep-dive statistical visualizations comparing accuracy distributions, token overheads, and latency curves across models.
+
+6. **Experiments & Sweeps (`/experiments`)**:
+   - Configuration panel to launch live multi-case benchmark sweeps across Groq Cloud, NVIDIA NIM, and local offline simulation.
+
+7. **Reports & IEEE Export (`/reports`)**:
+   - In-app preview of the IEEE Transactions on Medical Informatics publication table (`variant_summary.tex`).
+   - One-click CSV export of all 751 empirical clinical executions.
 
 ---
 
