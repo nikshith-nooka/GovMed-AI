@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  govbench-dashboard:
+    build: .
+    container_name: govbench-clinical-app
+    ports:
+      - "8501:8501"
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DEFAULT_LLM_PROVIDER=groq
+    volumes:
+      - ./results:/app/results
+      - ./benchmarks:/app/benchmarks
+    restart: unless-stopped
+
+  govbench-runner:
+    build: .
+    container_name: govbench-clinical-cli
+    profiles: ["cli"]
+    environment:
+      - GROQ_API_KEY=${GROQ_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - DEFAULT_LLM_PROVIDER=groq
+    volumes:
+      - ./results:/app/results
+      - ./benchmarks:/app/benchmarks
+    command: python run_benchmark.py --cases 10 --source stratified --variant all --provider groq

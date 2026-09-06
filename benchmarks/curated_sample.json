@@ -1,0 +1,1502 @@
+[
+  {
+    "id": "meddialog_001",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Neurology",
+    "difficulty": "High",
+    "gold_diagnosis": "Vestibular Migraine",
+    "question": "The patient woke up with a room spinning sensation, unsteadiness, nausea, and vomiting. Symptoms persisted after taking Panadol and sleeping. The spinning sensation worsens with movement and improves with rest. Associated with normal stomach discomfort. No fever or recent travel history.",
+    "clinical_rationale": "Primary diagnosis: Vestibular migraine. Clinical certainty: High. Differential analysis: Vestibular migraine is the most likely diagnosis due to its association with nausea, vomiting, and worsening symptoms with movement. Other possible diagnoses include Benign Paroxysmal Positional Vertigo (BPPV), ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform Dix-Hallpike maneuver to assess for BPPV. Order an MRI to rule out other central causes of vertigo. Consider prescribing vestibular suppressants or anti-nausea medication to manage symptoms."
+  },
+  {
+    "id": "meddialog_002",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pediatrics",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Diarrhea in Infant",
+    "question": "The infant has been experiencing frequent, watery stools with green stringy bits for a week, with a recent increase in frequency to 7 times a day. The infant also has a bad nappy rash. There is no fever or loss of appetite. The infant's age and sex are not specified.",
+    "clinical_rationale": "Primary diagnosis: Diarrhea. Clinical certainty: High. Differential analysis: Gastroenteritis (40% probability), Allergy (20% probability), Food intolerance (15% probability), Infection (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Stool culture, Dietary modification to exclude common allergens."
+  },
+  {
+    "id": "meddialog_003",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Fetal Opioid Exposure Risk Assessment",
+    "question": "The patient, an adult male, is concerned about the effect of Oxycodone on pregnancy and fetal health. His wife is trying to conceive, and he has been taking Oxycodone for one month due to a broken leg/surgery. No symptoms or findings have been mentioned.",
+    "clinical_rationale": "Primary diagnosis: Fetal opioid exposure. Clinical certainty: High. Differential analysis: 1) Potential teratogenic effects of Oxycodone (probability: 0.4) and 2) No significant risk due to short duration of Oxycodone use (probability: 0.2).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Discuss the risks of Oxycodone use during pregnancy with the patient and her husband, and consider alternative pain management options. Schedule a follow-up appointment to monitor fetal development an"
+  },
+  {
+    "id": "meddialog_004",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Lump Under Left Nipple and Stomach Pain",
+    "question": "A 3-week history of a lump under the left nipple that is painful to touch, size of a quarter, accompanied by stomach pains preventing eating and extreme pain. The patient is a male with no specified age.",
+    "clinical_rationale": "Primary diagnosis: Breast cancer (Clinical certainty: High). Differential diagnoses: Gallstones (Probability: 0.15), Pancreatitis (Probability: 0.05). Key clues: lump under left nipple, stomach pain, pain preventing eating, and extreme pain. Hypotheses: breast cancer, pancreatitis, gastric ulcers, a...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Mammogram and ultrasound of the left breast to confirm the presence and nature of the lump. Endoscopy to rule out gastric ulcers or metastasis to the stomach."
+  },
+  {
+    "id": "meddialog_005",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 5-month-old Baby with Congested Cough",
+    "question": "A 5-month-old female baby presents with a congested cough with a rattly/raspy and croupy sound, choking on mucous, fever, and runny nose. The symptoms have been ongoing and have progressed to choking on mucous.",
+    "clinical_rationale": "Primary diagnosis: Croup. Clinical certainty: High. Differential analysis: Bronchiolitis (40% probability), Pneumonia (15% probability), Viral upper respiratory tract infection (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a laryngoscopy to confirm the diagnosis of croup. Administer dexamethasone and epinephrine as needed to alleviate symptoms."
+  },
+  {
+    "id": "meddialog_006",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Severe Lower Back and Hip Pain",
+    "question": "A 38-year-old female, physically active, presents with severe lower back and hip pain. She experiences dull pain when lying down but sharp and shooting pain when moving. The pain has worsened over time, particularly with recent episodes of waking up with severe pain. She has a history of back pain and engages in triathlons, which may contribute to her risk factors.",
+    "clinical_rationale": "Primary diagnosis: Herniated disk. The sharp and shooting pain down legs, particularly worsening with movement, is consistent with nerve root irritation caused by a herniated disk. This is a common cause of lower back and hip pain in physically active individuals. Differential diagnoses: 1) Facet jo...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1) MRI of the lumbar spine to confirm the diagnosis, 2) Physical therapy to improve mobility and strength. The patient should avoid activities that exacerbate the pain and consider modifying her physi"
+  },
+  {
+    "id": "meddialog_007",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Chemical Pneumonitis",
+    "question": "The patient, a male with an unspecified age, presented with a history of exposure to acid smoke from a broken acid bottle in the bathroom for 15-20 minutes, followed by the development of interstitial lung disease (ILD). No other symptoms were mentioned.",
+    "clinical_rationale": "Primary diagnosis: Chemical pneumonitis. Clinical certainty: High. Differential analysis: 1) Acute exacerbation of pre-existing ILD (40% probability), 2) Idiopathic pulmonary fibrosis (20% probability), 3) Acute respiratory distress syndrome (ARDS) (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1) Pulmonary function tests (PFTs) to assess lung function and identify any abnormalities, 2) Chest imaging (e.g., chest X-ray or CT scan) to evaluate lung parenchyma and rule out other causes of ILD."
+  },
+  {
+    "id": "meddialog_008",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Surgery",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Bump on Left Leg",
+    "question": "A 69-year-old male patient developed a bump on his left leg, approximately the size of a half dollar, inside below the knee. The bump initially stung but does not hurt now. He has a history of triple bypass surgery 7 years ago.",
+    "clinical_rationale": "Primary diagnosis: Lipoma. Clinical certainty: High. Differential analysis: Lipoma (80% probability), Infected graft (10% probability), Cellulitis (5% probability), Bug bite (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order an ultrasound to confirm the diagnosis of lipoma. Obtain a detailed medical history to rule out other potential causes."
+  },
+  {
+    "id": "meddialog_009",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Persistent Cough and Flu Symptoms in a 9-year-old Boy",
+    "question": "A 9-year-old male patient presents with persistent cough and flu symptoms for three months. Initially improved but never fully resolved. Recently worsened. The patient is generally fit and well, active, and has a history of antibiotic use only once in life.",
+    "clinical_rationale": "Primary diagnosis: Recurrent Respiratory Infection. Clinical certainty: High. Differential analysis: Chronic Bronchitis (25% probability), Asthma (15% probability), and Cystic Fibrosis (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a chest X-ray to rule out other causes of persistent cough. Consider a sputum culture to identify the causative organism."
+  },
+  {
+    "id": "meddialog_010",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Infectious Disease",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Herpes Simplex Virus (HSV) infection",
+    "question": "Patient has been experiencing recurring issues with her vagina, including infections, yeast infections, herpes outbreaks, and a recent UTI. Symptoms persist despite treatment and include pain during sex and discomfort while urinating.",
+    "clinical_rationale": "HSV infection can cause recurring vaginal infections, yeast infections, and herpes outbreaks. The virus can also cause pain during sex and discomfort while urinating. The persistence of symptoms despite treatment is consistent with a chronic HSV infection.",
+    "recommended_plan": "Targeted clinical therapeutic protocol per standard care guidelines."
+  },
+  {
+    "id": "meddialog_011",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Allergic Contact Dermatitis",
+    "question": "The patient, a dental hygienist with an unknown age and sex, recently discovered an allergy to leotensin and is experiencing red skin lesions with a purple center. The patient is seeking advice on how to manage symptoms for upcoming workdays.",
+    "clinical_rationale": "Primary diagnosis: Allergic contact dermatitis. Clinical certainty: High. Differential analysis: Leotensin-induced urticaria (30% probability), Leotensin-induced vasculitis (20% probability), Erythema multiforme (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Patch testing for leotensin allergy, Topical corticosteroids for symptom management."
+  },
+  {
+    "id": "meddialog_012",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Severe Lower Back Pain in Cancer Patient",
+    "question": "The patient, a female with unknown age and a history of cancer, has been experiencing severe pain in her lower back radiating to her groin and thigh for the last couple of months. The pain is severe enough to bring tears to her eyes.",
+    "clinical_rationale": "Primary diagnosis: Metastatic cancer. Clinical certainty: High. Differential analysis: Metastatic cancer (80% probability), Spinal stenosis (15% probability), Cauda equina syndrome (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: MRI of the spine to evaluate for metastatic disease. Consult with oncology team to discuss potential causes and treatment options."
+  },
+  {
+    "id": "meddialog_013",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Shortness of Breath",
+    "question": "The patient's aunt is experiencing shortness of breath, with a breast infection that has developed black blisters. The blisters are spreading. The patient is on a ventilator. No other symptoms are mentioned.",
+    "clinical_rationale": "Primary diagnosis: Pneumonia. Clinical certainty: High. Differential analysis: The patient's symptoms and the presence of black blisters in the breast infection suggest a possible infectious etiology. The accumulation of water in the lungs is consistent with pneumonia. The differential diagnoses inc...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Chest X-ray to confirm the diagnosis of pneumonia. Start antibiotics to treat the infection."
+  },
+  {
+    "id": "meddialog_014",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Difficulty Conceiving",
+    "question": "The patient is a 28-year-old married woman with a 6-year history of marriage. She presents with difficulty conceiving and a history of pulmonary tuberculosis 6 years ago, treated for 6 months. She has experienced significant weight gain of nearly 20 kgs and irregular periods. Her current weight is 75 kgs.",
+    "clinical_rationale": "Primary diagnosis: Polycystic Ovary Syndrome (PCOS) with a clinical certainty of 60%. Differential diagnoses: Insulin Resistance (25%), Hypothyroidism (10%), Cushing's Syndrome (5%).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Hormonal blood tests (e.g. LH, FSH, testosterone) to confirm PCOS diagnosis. Pelvic ultrasound to evaluate ovarian morphology."
+  },
+  {
+    "id": "meddialog_015",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Contusion of the Foot",
+    "question": "The patient presents with a sprained foot, which occurred after stepping on a trough on Friday. The patient reports swelling started on Friday, bruising started after 24 hours of ice application, and has been spreading. Pain is localized to the outside of the foot, not the ankle. The patient's demographics are unknown, and there is no pertinent background information mentioned.",
+    "clinical_rationale": "The primary diagnosis is a contusion of the foot, with a clinical certainty of 0.8. The differential diagnoses include stress fracture (0.15 probability) and fracture (0.05 probability). The contusion diagnosis is supported by localized pain, swelling, and bruising on the outside of the foot, and tr...",
+    "recommended_plan": "The recommended next steps include imaging studies (X-rays or MRI) to confirm the diagnosis and rule out other injuries. Immobilization and pain management are also recommended to promote healing and reduce discomfort."
+  },
+  {
+    "id": "meddialog_016",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for H pylori Eradication",
+    "question": "The patient is a [sex not specified] individual of unknown age, recently diagnosed with H pylori. They are seeking information about treatment and long-term implications. The patient's chief complaint is related to their recent diagnosis and treatment with calithramycin, amoxicillin, and omeprazole.",
+    "clinical_rationale": "Primary diagnosis: H pylori eradication. Clinical certainty: High. Differential analysis: H pylori resistance (40% probability), H pylori long-term complications (20% probability), H pylori reinfection (40% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Follow-up endoscopy to confirm H pylori eradication. Discussion of lifestyle modifications to reduce risk of H pylori reinfection. Continued monitoring for potential long-term complications."
+  },
+  {
+    "id": "meddialog_017",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Elevated ALT Reading and Associated Symptoms",
+    "question": "A 40-year-old female patient presents with a chief complaint of concern about elevated ALT reading. She has a history of chronic vertigo, insomnia, and chronic sinus problems. She is currently taking multiple medications, including valium, fluticansone, qvair, claritin, and sinus rinses. She had a previous ALT reading of 43 two months ago, which has increased to 60. She has no history of alcohol consumption.",
+    "clinical_rationale": "Primary diagnosis: Non-alcoholic fatty liver disease (NAFLD). Clinical certainty: High. Differential analysis: Polycystic Ovary Syndrome (PCOS) (probability 0.3), Insulin Resistance Syndrome (probability 0.25), Medication-induced liver injury (probability 0.15).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver function tests (LFTs) to monitor ALT and AST levels, Triglyceride levels to monitor response to treatment, and a comprehensive metabolic panel (CMP) to evaluate liver function and insulin resist"
+  },
+  {
+    "id": "meddialog_018",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "26-year-old female patient presents with severe cervical pain during sex, abdominal cramps, abdominal pain, rectal pain, and pain during urination. She underwent surgery 5 months ago for scar tissue and adhesion removal and was recently diagnosed with a cyst on the right ovary.",
+    "clinical_rationale": "Primary diagnosis: Endometriosis. Clinical certainty: High. Differential analysis: Ovarian torsion (30% probability), Urethral syndrome (20% probability), Pelvic inflammatory disease (PID) (15% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Pelvic exam, Imaging studies (e.g. ultrasound, MRI) to evaluate for endometriosis and ovarian cyst."
+  },
+  {
+    "id": "meddialog_019",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Neurology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "The patient reports bilateral temple pain, numbness in left arm/hand/fingers, and mood changes. Symptoms have been ongoing for a few weeks. Headaches have been present since the aneurysm, but the current symptoms are different. The patient has a history of subarachnoid bleed and coiling of brain aneurysm.",
+    "clinical_rationale": "Primary diagnosis: Migraine variant. Clinical certainty: High. Differential analysis: 1) Neuropathic pain due to aneurysm coiling (40% probability), 2) Post-anesthetic neuralgia (20% probability), 3) Psychogenic pain (10% probability), 4) Other (30% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1) Neurological examination to assess for signs of neuropathic pain or nerve damage, 2) Imaging studies, such as MRI or CT, to evaluate for any changes in the aneurysm or surrounding structures."
+  },
+  {
+    "id": "meddialog_020",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Gastroesophageal Reflux Disease (GERD)",
+    "question": "The patient experiences a painful swallowing and heartburn after eating, with a burning sensation in the chest that improves with drinking water after swallowing. The patient also wakes up at night with heartburn and uses Tums for relief. There are no symptoms of throat pain.",
+    "clinical_rationale": "Primary diagnosis: Gastroesophageal reflux disease (GERD) with a clinical certainty of 80%. Differential diagnoses: Esophageal spasm (15% probability) and Achalasia (5% probability). The pathophysiological mechanism of GERD involves the reflux of stomach acid into the esophagus, causing a burning se...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Endoscopy to rule out esophagitis and other esophageal disorders, and 24-hour pH monitoring to confirm GERD."
+  },
+  {
+    "id": "meddialog_021",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Cholecystitis",
+    "question": "The patient has been experiencing upper abdominal distress for 6 days, which is not the first episode. They have had similar bouts in the past 2 years, with each episode lasting for several days. The patient has a history of gallbladder surgery 2 years ago. The patient has visited the emergency department multiple times, where cardiograms, X-rays, and blood work have been performed, all of which have come back normal.",
+    "clinical_rationale": "Primary diagnosis: Cholecystitis. Clinical certainty: High. Differential analysis: Functional abdominal pain syndrome (20% probability), Gastroesophageal reflux disease (GERD) (15% probability), Irritable bowel syndrome (IBS) (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Abdominal ultrasound to evaluate for gallstones or gallbladder inflammation, Endoscopic retrograde cholangiopancreatography (ERCP) to evaluate for gallbladder disease."
+  },
+  {
+    "id": "meddialog_022",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Anal Fissure",
+    "question": "The patient reports a hole at the beginning of the butt crack, approximately the size of a dime. The patient applied antibacterial ointment to the affected area with a Q-tip, which caused a sizzling sensation but no discharge or change. The patient's age and sex are not provided.",
+    "clinical_rationale": "Primary diagnosis: Anal fissure. Clinical certainty: High. Differential analysis: The presence of a hole at the beginning of the butt crack, combined with a sizzling sensation when antibacterial ointment was applied, is consistent with an anal fissure. The lack of discharge or change in the hole sup...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Digital rectal examination to confirm the presence of an anal fissure. Prescription of topical treatments to promote healing."
+  },
+  {
+    "id": "meddialog_023",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Ovulatory Dysfunction due to Primolut Not",
+    "question": "The patient is a female seeking fertility treatment, planning to undergo ICSI procedure. The patient was prescribed Primolut Not from day 16 to day 25, which may impact pregnancy. No symptoms or medical conditions are mentioned.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Ovulatory dysfunction due to Primolut Not\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Polycystic Ovary Syndrome (PCOS)\", \"probability\": 0.2, \"justification\": \"PCOS is a common cause of ovulatory dysfunction, but there is no mention of sy...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Discontinue Primolut Not\", \"diagnostic_action\": \"Reassess ovulation and consider additional fertility testing, such as semen analysis and hysterosalpingogram\"}"
+  },
+  {
+    "id": "meddialog_024",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Suspected Tetanus Infection and Anxiety/Panic Attack",
+    "question": "The patient, a senior at Clemson University, presented with anxiety/panic attack symptoms and suspected tetanus infection. Symptoms began approximately 1.5 months ago after cutting self with a razor that had been contaminated with bacterial spores. The patient reported irritability, lockjaw, shortness of breath, fevers, heart palpitations, and facial contortion when smiling. The patient has a history of unsanitary living conditions and used a contaminated razor.",
+    "clinical_rationale": "Primary diagnosis: Tetanus infection. Clinical certainty: High. Differential analysis: Anxiety disorder (0.20 probability), other infections (0.15 probability), other conditions causing lockjaw (0.05 probability). The combination of lockjaw symptoms, fever, shortness of breath, heart palpitations, a...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Tetanus immune globulin administration, immediate wound cleaning and debridement."
+  },
+  {
+    "id": "meddialog_025",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Chest Pains",
+    "question": "The patient experiences constant, non-severe chest pain that can occur at rest or with exercise, radiating to the back. Chest pain also occurs at night, waking the patient. The patient has a strong history of heart disease, with family members experiencing heart attacks at a young age.",
+    "clinical_rationale": "Primary diagnosis: Acute coronary syndrome (ACS) with a high clinical certainty. Differential diagnoses: Stable angina (25% probability), Costochondritis (15% probability), and Pulmonary embolism (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform an EKG and Troponin level to confirm the diagnosis of ACS. Monitor the patient's symptoms and vital signs closely."
+  },
+  {
+    "id": "meddialog_026",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Male Baldness Pattern",
+    "question": "A 28-year-old male patient presents with a male baldness pattern, which has been ongoing. He has tried two treatments: RICHFEEL tricology centres saw palmetto treatment (ineffective) and Minoxidil 5% (discontinued after 12 days due to side effects, including tiny boils on the forehead). No other symptoms are mentioned.",
+    "clinical_rationale": "Primary diagnosis: Androgenetic alopecia. Clinical certainty: High. Differential analysis: Contact dermatitis due to Minoxidil 5% is a possible differential diagnosis, but the primary complaint is male baldness pattern, making androgenetic alopecia more likely.",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Consult a dermatologist for further evaluation and treatment of androgenetic alopecia. Avoid using Minoxidil 5% and other potential allergens on the scalp."
+  },
+  {
+    "id": "meddialog_027",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Surgery",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Rib Fracture Suspected",
+    "question": "A 70-year-old female patient presented with a large lump and bruising on the left side of her chest after a fall last Sunday. She is currently taking Aleve for pain and arnica gel. The patient reports no other symptoms.",
+    "clinical_rationale": "Primary diagnosis: Rib fracture. Clinical certainty: High. Differential analysis: Rib fracture (80% probability), Pneumothorax (15% probability), Hematoma (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Chest X-ray to confirm rib fracture, Pain management with acetaminophen or NSAIDs."
+  },
+  {
+    "id": "meddialog_028",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 16-year-old male patient presents with a 4-year history of small, hard, painless bumps on the cheek near the gums. He is a habitual snuff user for a few years and has not previously mentioned these bumps to his dentist.",
+    "clinical_rationale": "Primary diagnosis: Snuff-induced lesions. Clinical certainty: High. Differential analysis: Snuff-induced lesions (80% probability), Benign growths (15% probability), Oral cancer (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Oral examination and biopsy to confirm diagnosis. Counseling on cessation of snuff use."
+  },
+  {
+    "id": "meddialog_029",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Vulvar Cancer",
+    "question": "An 80-year-old female patient with a history of asthma and cervical spondylosis presents with symptoms of vulva swelling, redness, discoloration, and a white growth extending to the rectum. The patient's mother has a history of vulva cancer.",
+    "clinical_rationale": "Primary diagnosis: Vulvar cancer. Clinical certainty: High. Differential analysis: Vulvar intraepithelial neoplasia (VIN) (20% probability), Vulvar dermatitis or eczema (10% probability), Other vulvar lesions (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Biopsy of the white growth to confirm the diagnosis of vulvar cancer. Imaging studies (e.g. CT or MRI) to assess the extent of the disease. Note: The patient's asthma and cervical spondylosis should b"
+  },
+  {
+    "id": "meddialog_030",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Excruciating Lower Right Back Pain",
+    "question": "The patient experienced sudden onset of lower right back pain while standing in the kitchen. Pain is isolated to the back and does not radiate to the legs. No nausea or hematuria. The patient's demographics are not specified.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Musculoskeletal strain\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Musculoskeletal strain\", \"probability\": 0.8, \"justification\": \"Sudden onset of pain, isolated to the back, and absence of nausea or hematuria support this diagnosis.\"}, {...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Musculoskeletal examination, including palpation and range of motion assessment\", \"recommended_diagnostic_action\": \"Imaging studies, such as X-rays or an MRI, if musculoskeletal strain is suspected\"}"
+  },
+  {
+    "id": "meddialog_031",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Histoplasmosis",
+    "question": "The patient is an adult with no specific age mentioned, no sex specified, and no pertinent background. The patient has been experiencing persistent cough and rib pain since December 28, 2012, despite treatment with three antibiotics, mucinex, and an inhaler. Additionally, the patient has developed ulcers in the mouth and facial breakouts.",
+    "clinical_rationale": "Primary diagnosis: Histoplasmosis. Clinical certainty: High. Differential analysis: Tuberculosis (TB) is less likely due to clear X-ray of lungs. Cystic Fibrosis exacerbation is less likely due to lack of specific respiratory symptoms. Sarcoidosis is less likely due to lack of lymphadenopathy or oth...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Histoplasma antigen test, Biopsy of ulcers or facial lesions."
+  },
+  {
+    "id": "meddialog_032",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Hypertrophic Cardiomyopathy",
+    "question": "The patient's wife has been experiencing blackouts, panic attacks, high blood pressure, low blood pressure, and bruising around her lower back. The patient's symptoms have been ongoing for an unknown duration.",
+    "clinical_rationale": "Primary diagnosis: Hypertrophic Cardiomyopathy. Clinical certainty: High. Differential analysis: Pheochromocytoma (30% probability), Coarctation of the Aorta (20% probability), Munchausen Syndrome by Proxy (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Echocardiogram to assess heart function, 24-hour blood pressure monitoring to evaluate for episodic hypertension/hypotension."
+  },
+  {
+    "id": "meddialog_033",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Concern about Liver Function Test Results",
+    "question": "The patient is a [not specified] year-old female with a history of Polycystic Ovary Syndrome (PCOS), family history of cardiac disease, and currently taking multiple medications, including metformin, Percocet, Zoloft, Adderall, and Clonazepam. She consumes a glass of red wine nightly for heart health. The patient's chief complaint is concern about liver function test results.",
+    "clinical_rationale": "Primary diagnosis: Drug-induced liver injury (DILI) with a high level of clinical certainty. Differential diagnoses include Non-alcoholic fatty liver disease (NAFLD) with a probability of 0.40, Alcoholic liver disease (ALD) with a probability of 0.20, and Cardiac disease-related liver dysfunction wi...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver function tests (LFTs) to confirm the diagnosis and discontinue or adjust medications suspected to cause DILI. Monitor the patient closely for signs of serotonin syndrome and consider alternative"
+  },
+  {
+    "id": "meddialog_034",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Late Menstrual Period after Stopping Birth Control",
+    "question": "The patient, a female of unknown age, presents with a late menstrual period after stopping microgestin on 12/5/13. She experienced withdrawal bleeding from 12/9/13-12/13/13 and is now late for her expected period on 1/5/14. The patient and her boyfriend have been using the pullout method before and after stopping the pill. She has a history of regular 28-29 day cycles before birth control and has been on microgestin for 2.5 months.",
+    "clinical_rationale": "Primary diagnosis: Pregnancy. Clinical certainty: High. Differential analysis: The patient's late menstrual period after stopping birth control, combined with the history of regular cycles before birth control, and frequent use of the pullout method, increase the likelihood of pregnancy. Withdrawal ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Pregnancy test. Confirm with a urine or blood test."
+  },
+  {
+    "id": "meddialog_035",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Jaundice due to Hepatitis E",
+    "question": "The patient has been experiencing jaundice, stomach weakness, and acidity for an unspecified duration. They have been hospitalized for 5 days and are currently on complete rest. The patient has noticed fluctuations in their condition, with periods of feeling better and worse. The patient's demographics are not specified.",
+    "clinical_rationale": "Primary diagnosis: Hepatitis E. Clinical certainty: High. Differential analysis: Acute Liver Failure (probability: 0.3), Biliary Obstruction (probability: 0.2), Pancreatitis (probability: 0.1).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver function tests (LFTs) to monitor liver enzyme levels, Complete blood count (CBC) to assess for signs of infection or inflammation, Imaging studies (e.g., ultrasound) to evaluate liver and biliar"
+  },
+  {
+    "id": "meddialog_036",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Persistent Scabies Infestation",
+    "question": "The patient, an adult with recent household exposure to scabies mite, reports persistent scabies infestation despite multiple treatments. The patient has tried Permethern cream, Eurax, tea tree oils, and poroxide, but remains infested. They have also attempted to treat themselves by sanding their skin. The patient has no other symptoms or conditions.",
+    "clinical_rationale": "Primary diagnosis: Treatment-resistant scabies. Clinical certainty: High. Differential analysis: 1) Misdiagnosis or incorrect treatment (30% probability), 2) Allergic reaction to treatment (20% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Consult dermatology for further evaluation and treatment. Consider skin scraping or biopsy to confirm scabies diagnosis."
+  },
+  {
+    "id": "meddialog_037",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Panic Disorder",
+    "question": "The patient experiences episodic panic attacks characterized by tight feeling in the back of the head, temples, throat, and chest, accompanied by emotional episodes, difficulty breathing, and rapid heartbeat. Symptoms resolve in 2-3 minutes with relaxation and deep breathing. The patient's recent MRI showed normal heart function.",
+    "clinical_rationale": "Primary diagnosis: Panic Disorder. Clinical certainty: High. Differential analysis: Anxiety Disorder (30% probability), Hyperventilation Syndrome (20% probability), Migraine with Aura (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Psychiatric evaluation, Panic Disorder screening tools (e.g. Panic Disorder Severity Scale)."
+  },
+  {
+    "id": "meddialog_038",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Acute Knee Sprain",
+    "question": "The patient, an adult with no specific age or sex mentioned, presented with a chief complaint of knee injury from a fall on an uneven sidewalk on July 3rd. The patient has no pertinent background or past medical history.",
+    "clinical_rationale": "Primary diagnosis: Acute knee sprain. Clinical certainty: High. Differential analysis: The most likely diagnosis is an acute knee sprain, with a 60% probability. The differential diagnoses include Ligamentous knee injury (40% probability), Patellofemoral pain syndrome (25% probability), Osteochondra...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a knee examination, including range of motion, stability, and ligament testing. Order imaging studies, such as X-rays or an MRI, to confirm the diagnosis and rule out other injuries."
+  },
+  {
+    "id": "meddialog_039",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Elevated SGPT Levels and Need for Clearance for New Job",
+    "question": "A 33-year-old male presented with elevated SGPT levels (194) and a recent history of loose motions treated with Ofloxacin-200mg and Ornidazole-500mg for 5 days. He is awaiting ultrasound results for full abdomen.",
+    "clinical_rationale": "Primary diagnosis: Drug-induced liver injury. Clinical certainty: High. Differential analysis: Acute viral hepatitis (probability: 0.3), Fatty liver disease (probability: 0.2), Autoimmune hepatitis (probability: 0.1).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver function tests (LFTs) to monitor liver enzyme levels, Ultrasound follow-up to monitor liver condition, and review of medication list to assess for potential hepatotoxic medications."
+  },
+  {
+    "id": "meddialog_040",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Infectious Disease",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Nasolabial Cyst or Abscess",
+    "question": "40-year-old female with type one diabetes, presenting with a 2-year history of tooth infection with swelling and discharge, recent symptoms of sinus cold, and a sore on the inside of the left nostril.",
+    "clinical_rationale": "Primary diagnosis: Nasolabial cyst or abscess. Clinical certainty: High. Differential analysis: Sinusitis (20% probability), Dental infection with orbital or facial cellulitis (15% probability), Diabetic ketoacidosis (DKA) with facial or orbital involvement (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Imaging studies (e.g., CT or MRI) to confirm the diagnosis and rule out other conditions. Incision and drainage of the abscess if present."
+  },
+  {
+    "id": "meddialog_041",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Dental Abscess",
+    "question": "The patient is a male adult with severe pain in the lower left rear molar, top molar, and back jaw muscle, along with neck swelling and tenderness, 36 hours post-partial root canal. The patient has a history of previous wisdom teeth extraction and travel plans (flying and diving). There are no systemic symptoms such as fever.",
+    "clinical_rationale": "Primary diagnosis: Dental abscess. Clinical certainty: High. Differential analysis: The combination of severe pain in the lower left rear molar, top molar, and back jaw muscle, along with neck swelling and tenderness, is highly suggestive of a dental abscess. The recent partial root canal increases ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order a panoramic radiograph to confirm the presence of an abscess. Prescribe antibiotics and pain medication, and schedule a follow-up appointment to drain the abscess if necessary. Note: Avoid flyin"
+  },
+  {
+    "id": "meddialog_042",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Concerns about Ultrasound Findings during Pregnancy",
+    "question": "The patient is a female of unspecified age, who is pregnant. She underwent a transvaginal ultrasound, during which the doctor had difficulty locating the baby. The yolk sac was visible, and the pregnancy was confirmed at 9 weeks, but what was thought to be the baby measured 7 weeks. The patient is concerned about the ultrasound findings.",
+    "clinical_rationale": "The primary diagnosis is Multiple gestation, with a clinical certainty of 60%. The differential diagnoses include Multiple gestation (60%), Molar pregnancy (25%), Ectopic pregnancy (10%), and Fetal growth restriction (5%).",
+    "recommended_plan": "The recommended next steps are an ultrasound with detailed fetal measurement and a non-stress test to assess fetal well-being."
+  },
+  {
+    "id": "meddialog_043",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Wrist Pain",
+    "question": "The patient, an adult with no specified age or sex, presented with pain in the wrist after hitting a volleyball with the underside of their hand. The pain persists for 7 hours, worsens with movement, and is sharp in nature. The patient reports no pain with gripping or picking up objects.",
+    "clinical_rationale": "Primary diagnosis: Scaphoid fracture. Clinical certainty: High. Differential analysis: Scaphoid fracture (60% probability), Wrist sprain (25% probability), Radial styloid fracture (10% probability), Ulnar styloid fracture (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: X-ray of wrist, Immobilization of wrist with splint. Consider ordering a scaphoid-specific view X-ray or a CT scan to rule out scaphoid fracture, especially in patients with risk factors for osteoporo"
+  },
+  {
+    "id": "meddialog_044",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Warfarin-induced Nausea and Vomiting",
+    "question": "Patient has been taking 750 mg of coumadin daily, but experiences nausea and dizziness, making it difficult to function. Patient is concerned about the effectiveness of coumadin and seeks alternative methods to thin the blood.",
+    "clinical_rationale": "Warfarin-induced nausea and vomiting is a common side effect of Coumadin therapy, particularly at high doses. The patient's symptoms of nausea and dizziness are consistent with this diagnosis, and the patient's concern about the effectiveness of Coumadin therapy suggests that the side effects are im...",
+    "recommended_plan": "Targeted clinical therapeutic protocol per standard care guidelines."
+  },
+  {
+    "id": "meddialog_045",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Hepatocellular Carcinoma (HCC)",
+    "question": "A 15-year-old patient presents with an enlarged liver and spleen. The patient's younger brother has been experiencing a loss of appetite and has an enlarged liver and spleen. The patient's demographics are as follows: Age: 15, Sex: Not mentioned, Weight: 28 kg.",
+    "clinical_rationale": "Primary diagnosis: Hepatocellular carcinoma (HCC) due to chronic hepatitis B and C infection. Clinical certainty: High. Differential analysis: 1. Liver metastasis (probability: 0.20), 2. Focal nodular hyperplasia (FNH) (probability: 0.10), 3. Congenital hepatic fibrosis (probability: 0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver biopsy, imaging studies to evaluate the extent of disease."
+  },
+  {
+    "id": "meddialog_046",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Rheumatology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Temporomandibular Joint (TMJ) Disorder",
+    "question": "A 40-year-old male patient presents with a 2-day history of soreness on the right side of the jaw, tenderness on the tendon that attaches the jaw together, swelling inside the cheek, and soreness on the right side of the tongue. Swallowing is also slightly sore. The patient has a history of not having wisdom teeth.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Temporomandibular joint (TMJ) disorder\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Dental abscess\", \"probability\": 0.15, \"justification\": \"Unlikely due to history of not having wisdom teeth, but cannot be completely ruled out without fur...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Prescribe pain medication to alleviate symptoms\", \"recommended_diagnostic_action\": \"Order a TMJ MRI to confirm the diagnosis\", \"recommended_non_pharmacological_action\": \"Recommend jaw exercises to alleviate symptoms\""
+  },
+  {
+    "id": "meddialog_047",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 4-year-old Female with Aplastic Anemia",
+    "question": "A 4-year-old female patient has been suffering from Aplastic Anemia since April 2010. No specific timeline of symptoms is provided. The patient's background information is limited.",
+    "clinical_rationale": "Primary diagnosis: Fanconi Anemia. Clinical certainty: High. Differential analysis: Aplastic Anemia (0.6 probability), Diamond-Blackfan Anemia (0.2 probability), Leukemia (0.1 probability), and Idiopathic Thrombocytopenic Purpura (ITP) (0.1 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Bone marrow biopsy and genetic testing for Fanconi Anemia are recommended."
+  },
+  {
+    "id": "meddialog_048",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Neurology",
+    "difficulty": "High",
+    "gold_diagnosis": "Aphasic Stroke",
+    "question": "The patient, a <40-year-old individual with a history of Transient Ischemic Attacks (TIAs) before age 40, presented with difficulty organizing thoughts and speaking. The symptoms began on April 15 and recurred the next day. The patient was unable to say 'good afternoon' and instead spoke in a manner suggesting the words were not in their brain. No other symptoms were mentioned.",
+    "clinical_rationale": "Primary diagnosis: Aphasic Stroke. Clinical certainty: High. Differential analysis: The combination of vascular risk factors and acute neurological symptoms suggests a vascular-related condition such as aphasic stroke. The inability to retrieve words (anomia) is a common feature of aphasic stroke. D...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1. Immediate CT or MRI scan to rule out stroke, 2. Neurological examination to assess for other signs of stroke or neurological dysfunction."
+  },
+  {
+    "id": "meddialog_049",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 1-year-8-month-old male with delayed gross motor skills",
+    "question": "The child is a 1-year-8-month-old male who is not walking on his own. The parent reports that the child has been experiencing delayed gross motor skills. There is no past medical history or allergies mentioned.",
+    "clinical_rationale": "Primary diagnosis: White matter injury or demyelination. Clinical certainty: High. Differential analysis: Hydrocephalus or increased intracranial pressure (20% probability), cerebral palsy or other motor disorders (15% probability), and developmental delay or intellectual disability (5% probability)...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: MRI follow-up to assess for progression or resolution of white matter injury, neurodevelopmental evaluation to assess for potential developmental delays or intellectual disability."
+  },
+  {
+    "id": "meddialog_050",
+    "dataset": "MedDialog (Consultations)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Kawasaki Disease",
+    "question": "An 18-month-old male child presents with a 5-day history of red and swollen eyes, isolated to the outside of the eye (eyelid and beneath), with a rash all over the body appearing the night before. The child has no additional background information.",
+    "clinical_rationale": "Primary diagnosis: Kawasaki disease. Clinical certainty: High. Differential analysis: Stevens-Johnson syndrome (probability: 0.3), measles (probability: 0.2), contact dermatitis (probability: 0.1).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Complete a complete blood count (CBC) to check for signs of inflammation, such as elevated white blood cell count. Obtain a blood culture to rule out bacterial infection. Consider Stevens-Johnson synd"
+  },
+  {
+    "id": "medqa_hf_001",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Carpal Tunnel Repair Complication",
+    "question": "The patient is a [unknown] year old [unknown] undergoing carpal tunnel repair. A complication occurred during the procedure, specifically an inadvertent cut of the flexor tendon. The patient underwent tendon repair without complication. No other complications were mentioned.",
+    "clinical_rationale": "Primary diagnosis: Failure to report the surgical error to the appropriate authorities (D). Clinical certainty: High. Differential analysis: The top differential diagnoses are Failure to disclose surgical error to patient (A, 60% probability), Failure to document surgical error in operative report (...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Document the error in the operative report, inform the attending physician of the surgical mistake, and disclose the error to the patient."
+  },
+  {
+    "id": "medqa_hf_002",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Ototoxicity Assessment in a Patient with Transitional Cell Carcinoma",
+    "question": "A 67-year-old man presents with a 2-day history of a ringing sensation in his ear, which began after receiving his first course of neoadjuvant chemotherapy 1 week ago. He has a history of transitional cell carcinoma of the bladder. The patient's symptoms are consistent with sensorineural hearing loss, with a 45 dB loss.",
+    "clinical_rationale": "Primary diagnosis: Ototoxicity from chemotherapy (A). Clinical certainty: High. Differential diagnoses: Inhibition of proteasome (0.1 probability), Hyperstabilization of microtubules (0.05 probability), Generation of free radicals (0.05 probability), Cross-linking of DNA (0.05 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Ototoxicity assessment with audiometry, Review of chemotherapy regimen and dose. Recommended next steps: Consider dose reduction or modification of chemotherapy regimen if ototoxicity is confirmed."
+  },
+  {
+    "id": "medqa_hf_003",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Cholesterol Embolization Syndrome",
+    "question": "A 61-year-old man with a history of type 2 diabetes mellitus and osteoarthritis of the hips, who underwent cardiac catheterization with stenting for unstable angina pectoris two weeks prior, presents with decreased urinary output and malaise. He reports mottled, reticulated purplish discoloration of the feet, fever, tachycardia, and elevated leukocyte count.",
+    "clinical_rationale": "Primary diagnosis: Cholesterol embolization syndrome. Clinical certainty: High. Differential diagnoses: Renal papillary necrosis (20% probability), Allergic interstitial nephritis (15% probability), Eosinophilic granulomatosis with polyangiitis (5% probability), Polyarteritis nodosa (5% probability)...",
+    "recommended_plan": "Immediate initiation of anticoagulation therapy to prevent further embolization. Renal angiography to confirm the presence of cholesterol emboli."
+  },
+  {
+    "id": "medqa_hf_004",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 39-year-old woman presents with fevers, chills, and left lower quadrant pain. She has a history of mucopurulent discharge from the cervical os, left adnexal tenderness, and blood oozing around the site of a peripheral intravenous line. She is experiencing fever (39.1\u00b0C), tachycardia (126/min), tachypnea (28/min), and hypotension (80/50 mm Hg).",
+    "clinical_rationale": "Primary diagnosis: Sepsis (A). Clinical certainty: High. Differential analysis: Sepsis (0.6 probability), Disseminated Intravascular Coagulation (DIC) (0.25 probability), Pelvic Inflammatory Disease (PID) (0.15 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Blood cultures, pelvic ultrasound, and administration of broad-spectrum antibiotics."
+  },
+  {
+    "id": "medqa_hf_005",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Itchy, Watery Eyes",
+    "question": "A 35-year-old male elementary school teacher presents with itchy, watery eyes for the past week, accompanied by sneezing multiple times a day. He has a history of iron deficiency anemia and ankylosing spondylitis.",
+    "clinical_rationale": "Primary diagnosis: Allergic conjunctivitis. Clinical certainty: High. Differential analysis: Allergic conjunctivitis (80% probability) is the most likely diagnosis, followed by viral conjunctivitis (15% probability) and ankylosing spondylitis-related uveitis (5% probability).",
+    "recommended_plan": "Prescribe ketotifen eye drops for 2 weeks to treat allergic conjunctivitis. Recommend avoiding allergens and using artificial tears to alleviate symptoms."
+  },
+  {
+    "id": "medqa_hf_006",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 39-year-old man with a history of untreated hypertension, smoking, and cocaine abuse presented with progressively worsening chest pain radiating to the epigastric area, accompanied by nausea, diaphoresis, and marked distress. The symptoms started 30 minutes prior to presentation.",
+    "clinical_rationale": "Primary diagnosis: Acute Coronary Syndrome (ACS) with a high clinical certainty. Differential diagnoses include Labetalol (30% probability), Nitroglycerin (20% probability), Propranolol (15% probability), and Reassurance and continuous monitoring (35% probability).",
+    "recommended_plan": "Immediate administration of Diltiazem, ECG, and Troponin levels are recommended. The patient should be closely monitored for any changes in symptoms."
+  },
+  {
+    "id": "medqa_hf_007",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Nephrology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Renal Artery Stenosis",
+    "question": "A 68-year-old male with a history of diabetes and peripheral artery disease presents with right flank pain. The patient has been experiencing this pain for an unknown duration. He denies any symptoms of urinary tract infection.",
+    "clinical_rationale": "Primary diagnosis: Renal artery stenosis (RAS) due to peripheral artery disease. Clinical certainty: High. Differential analysis: Diabetic nephropathy (DN) with secondary complications (probability 0.25), Common iliac artery aneurysm (CIAA) causing ureteral compression (probability 0.20), Urethral s...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Abdominal CT scan with contrast to evaluate the renal arteries and ureters. Urology consultation to further evaluate and manage the patient's condition."
+  },
+  {
+    "id": "medqa_hf_008",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Acute Chest Pain",
+    "question": "A 65-year-old man with a history of hypertension and asthma presents with acute chest pain. The patient reports a 30-minute onset of symptoms, which were treated for acute coronary syndrome. The patient's symptoms include pale appearance, diaphoretic appearance, and a pulse of 114/min.",
+    "clinical_rationale": "Primary diagnosis: Acute Coronary Syndrome (A). The patient's presentation of acute chest pain, ST-segment depressions in leads II, III, and aVF, and increased serum troponin T concentration is consistent with acute coronary syndrome. Clinical certainty: High. Differential diagnoses: Pulmonary Embol...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: ECG monitoring, Serial troponin T concentrations. Nifedipine, a calcium channel blocker, may be considered as a treatment for acute coronary syndrome."
+  },
+  {
+    "id": "medqa_hf_009",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Request for New Form of Birth Control",
+    "question": "A 37-year-old woman has been using oral contraceptive pills (OCPs) for 8 years and wants to switch to an intrauterine device (IUD). She reports no symptoms and has a physical examination within normal limits.",
+    "clinical_rationale": "Primary diagnosis: A history of stroke or venous thromboembolism. Clinical certainty: High. Differential analysis: The patient's long history of OCP use increases the risk of venous thromboembolism (VTE), which can manifest as a stroke. This risk is a contraindication for estrogen-containing contrac...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Review patient's medical history for any history of VTE or stroke, and assess for other risk factors for VTE. Consider alternative contraceptive options that do not contain estrogen."
+  },
+  {
+    "id": "medqa_hf_010",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Nail Deformity",
+    "question": "A 23-year-old woman presents with embarrassment about the appearance of her nails. She has no history of serious illness, takes no medications, and appears well. She reports no other symptoms.",
+    "clinical_rationale": "Primary diagnosis: Psoriasis (A). Clinical certainty: High. Differential analysis: Psoriasis is the most likely diagnosis due to the presence of silvery plaques on the nails. Nail fungus and nutritional deficiency are less likely due to the patient's lack of history of serious illness and medication...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a physical examination to look for other signs of psoriasis, such as silvery plaques on the skin. Consider a skin biopsy to confirm the diagnosis."
+  },
+  {
+    "id": "medqa_hf_011",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 24-year-old, G2P1, female at 39 weeks' gestation presents with painful contractions occurring every 10 minutes for the past 2 hours. She reports no vaginal discharge, bleeding, or fluid leakage. Her medical history is significant for a positive rapid screening test for HIV, with unknown sexually transmitted infections status and inconsistent condom use.",
+    "clinical_rationale": "Primary diagnosis: E (HIV infection). Clinical certainty: High. Differential analysis: Other sexually transmitted infections (0.20 probability) and false positive rapid screening test (0.10 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Confirmatory HIV antibody test and counseling on HIV testing and prevention."
+  },
+  {
+    "id": "medqa_hf_012",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "72-year-old man with 2-month history of fatigue, worsening abdominal pain, excessive night sweats, shortness of breath on exertion, and 5.6-kg weight loss over 3 months. Relevant past medical history includes myocardial infarction 3 years ago, hypertension, diabetes mellitus, chronic bronchitis, and a 45-year smoking history.",
+    "clinical_rationale": "Primary diagnosis: Primary myelofibrosis (PMF). Clinical certainty: High. Differential analysis: The presence of a palpable spleen, low hemoglobin, low platelet count, and positive JAK 2 assay are consistent with PMF. Other differential diagnoses include polycythemia vera and myelofibrosis with myel...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Bone marrow biopsy to confirm diagnosis. Complete blood count (CBC) with differential to monitor disease progression."
+  },
+  {
+    "id": "medqa_hf_013",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Bilateral Sensorineural Hearing Loss and Gait Unsteadiness",
+    "question": "A 20-year-old man presents with worsening gait unsteadiness and bilateral hearing loss for 1 month, with intermittent tingling sensations on both cheeks. He has no history of serious medical illness and is not taking any medications. He has a family history of neurofibromatosis type 2 (NF2).",
+    "clinical_rationale": "Primary diagnosis: Meningioma (B). The NF2 mutation leads to the loss of merlin function, which is a tumor suppressor. This increases the risk of developing meningiomas. Bilateral sensorineural hearing loss is a common presenting symptom of NF2, likely due to the growth of meningiomas in the auditor...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: MRI of the brain with contrast to evaluate for meningiomas. Genetic counseling to discuss the implications of the NF2 mutation."
+  },
+  {
+    "id": "medqa_hf_014",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 47-year-old Male Executive",
+    "question": "The patient is a 47-year-old male executive who claims to be 'as fit as a fiddle' with no complaints. He is undergoing a routine medical check-up.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Aortic stenosis\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"An increase in right atrial pressure\", \"probability\": 0.05, \"justification\": \"Unlikely due to lack of symptoms or findings suggestive of right-sided heart disease\"}, {\"rank\": 2,...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Echocardiogram to confirm the diagnosis of aortic stenosis\", \"diagnostic_action\": \"Cardiac catheterization to assess the severity of the stenosis\"}"
+  },
+  {
+    "id": "medqa_hf_015",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "No patient symptoms or history provided. No patient demographics available.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Human immunodeficiency virus (HIV)\", \"clinical_certainty\": \"Moderate\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Cytomegalovirus\", \"probability\": 0.3, \"justification\": \"Cytomegalovirus can cause asymptomatic infection, but it is less common than HIV and typically pre...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Obtain HIV screening test\", \"diagnostic_action\": \"Conduct thorough patient interview to gather risk factors and exposure history\"}"
+  },
+  {
+    "id": "medqa_hf_016",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Severe Abdominal Pain",
+    "question": "A 59-year-old, female, overweight patient presents with severe abdominal pain for 2 hours, dull back pain, nausea, and vomiting. The patient has no relation with food intake. The patient has a family history of abdominal cancer and a history of cholelithiasis.",
+    "clinical_rationale": "Primary diagnosis: Acute cholecystitis (inflammation of the gallbladder). Clinical certainty: High. Differential analysis: Choledocholithiasis (gallstones in the bile duct), Gallbladder cancer, Pancreatitis (inflammation of the pancreas), Duodenal peptic ulcer. The presence of a calcified mass near ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Abdominal ultrasound to confirm gallstones, Blood work to check for elevated liver enzymes and bilirubin levels."
+  },
+  {
+    "id": "medqa_hf_017",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Asthma Exacerbation",
+    "question": "A 7-year-old male patient presents with exacerbation of asthma symptoms, particularly in springtime when exposed to pollen. Symptoms include chest tightness and shortness of breath. The patient has a family history of allergies, with the mother having a backyard garden.",
+    "clinical_rationale": "Primary diagnosis: IL-4. Clinical certainty: High. Differential analysis: IL-5 (30% probability), IL-10 (20% probability), IL-13 (15% probability), IL-2 (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Allergy testing (skin prick test or blood test for IgE antibodies) and consideration of starting a course of corticosteroids to control asthma symptoms."
+  },
+  {
+    "id": "medqa_hf_018",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for 3-month-old Boy with Episode of Cyanosis and Muscle Hypotonia",
+    "question": "A 3-month-old boy presented with an episode of cyanosis and muscle hypotonia that resolved after 2 minutes. The exact etiology was not discovered. The patient has a history of feeding problems and recent upper respiratory infection. His socioeconomic background and family history of medical illness are also relevant. The boy's age is a significant risk factor.",
+    "clinical_rationale": "Primary diagnosis: A neurological condition. Clinical certainty: High. Differential analysis: The patient's presentation is most consistent with a neurological condition, given the brief resolved unexplained event (BRUE), history of feeding problems, and recent upper respiratory infection. Metabolic...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Electroencephalogram (EEG) to rule out neurological conditions. Metabolic panel to evaluate for metabolic disorders. Further evaluation and management will be guided by the results of these tests."
+  },
+  {
+    "id": "medqa_hf_019",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 29-year-old man presents with constant central chest pain over the past 3 days, sharp and severe, unrelated to exertion, worsens with lying down and improves with leaning forward, radiating to shoulders and neck. He has no past medical history, is a smoker (10 cigarettes/day for 7 years), and an occasional alcohol drinker.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Pericarditis\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Pericarditis\", \"probability\": 0.75, \"justification\": \"Central chest pain radiating to shoulders and neck, worsens with lying down and improves with leaning forward, and pericardial...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Colchicine and NSAIDs for pain management\", \"recommended_diagnostic_action\": \"Echocardiogram to confirm pericarditis\"}"
+  },
+  {
+    "id": "medqa_hf_020",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Neurology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Altered Mental Status",
+    "question": "A 46-year-old man was found on the floor in front of his apartment, somnolent but responsive when aroused. He has a history of alcohol use and was found to have an alcoholic smell, slurred speech, diminished deep tendon reflexes bilaterally, and an ataxic gait. There is no history of trauma and no focal neurological deficits.",
+    "clinical_rationale": "Primary diagnosis: Ethanol intoxication. Clinical certainty: High. Differential analysis: Hypoglycemia (0.1 probability), Cerebral ischemia (0.05 probability), Cannabis intoxication (0.05 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Obtain blood glucose level to rule out hypoglycemia. Administer naloxone to counteract potential ethanol intoxication."
+  },
+  {
+    "id": "medqa_hf_021",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 77-year-old woman with a remote history of breast cancer, extensive travel to Africa, and 30-pack-year history of smoking presents with fever, malaise, and night sweats. She recently observed enlargement of axillary lymph nodes and has been performing weekly self-examination.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"E. Previous breast cancer\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"NHL - diffuse large B cell variant\", \"probability\": 0.6, \"justification\": \"Fine-needle aspiration results demonstrating centroblastic and immunoblastic cell presence s...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Fine-needle aspiration biopsy for further histopathological examination\", \"diagnostic_action\": \"Imaging studies (e.g. CT scan) to assess for lymph node involvement and potential metastasis\"}"
+  },
+  {
+    "id": "medqa_hf_022",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 3-month-old Female Infant",
+    "question": "The patient, a 3-month-old female infant, presents with coughs and difficulty breathing while feeding, less energy, and listlessness. The infant was born by cesarean section and has a normal APGAR score. There is no history of cyanosis.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Congenital heart defect, likely ventricular septal defect (VSD)\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Deletion of genes on chromosome 7\", \"probability\": 0.2, \"justification\": \"While possible, deletion of genes on chromosome 7 is le...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Echocardiogram to confirm the presence and severity of the congenital heart defect\", \"diagnostic_action\": \"Cardiac catheterization to assess the need for surgical intervention\"}"
+  },
+  {
+    "id": "medqa_hf_023",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Rheumatology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Histoplasma capsulatum Infection",
+    "question": "A 30-year-old African American female smoker (1 pack/day for 10 years) presents with a 3-day history of dry cough, chest discomfort, headaches, muscle aches, joint pain, fever, and chills. She has a history of asthma and a family history of lung disease.",
+    "clinical_rationale": "Primary diagnosis: D. Histoplasma capsulatum infection. Clinical certainty: High. Differential analysis: Histoplasma capsulatum infection (60% probability) is the most likely diagnosis due to the patient's smoking history, polysaccharide antigen positive result, and presence of septate hyphae on bro...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Histoplasma capsulatum antigen test, Chest CT scan. The patient should be started on antifungal therapy and monitored for response."
+  },
+  {
+    "id": "medqa_hf_024",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Neurology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Hospital-Acquired Pneumonia",
+    "question": "62-year-old male developed fever and purulent cough one week into hospitalization for stroke. No symptoms or findings suggestive of alternative diagnoses.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Hospital-acquired pneumonia (HAP)\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Streptococcus pneumoniae\", \"probability\": 0.3, \"justification\": \"The patient's symptoms and findings could be consistent with pneumococcal pneumonia, but the p...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Initiate antibiotic therapy\", \"diagnostic_action\": \"Chest CT scan to confirm the diagnosis of HAP and to identify any complications, such as abscesses or empyema. Sputum culture and Gram stain to identify the causati"
+  },
+  {
+    "id": "medqa_hf_025",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Asthma Exacerbation",
+    "question": "A 6-year-old boy with a history of asthma and eczema presents with worsening wheezing and shortness of breath over the past day. He has missed his asthma medications for the past week. He does not have a fever, cough, vomiting, or diarrhea.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Asthma Exacerbation\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Status Asthmaticus\", \"probability\": 0.3, \"justification\": \"The patient's respiratory rate is elevated, and the decreased inspiratory to expiratory ratio is concerning for se...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Administer bronchodilators, such as albuterol, via nebulizer or inhaler, and consider a corticosteroid, such as prednisone, to reduce inflammation.\", \"diagnostic_action\": \"Monitor the patient's oxygen saturation and "
+  },
+  {
+    "id": "medqa_hf_026",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Recurrent Infections",
+    "question": "A 5-year-old female patient presents with recurrent infections by Aspergillus species, Pseudomonas species, and Staphylococcus aureus. The patient has a history of chronic granulomatous disease (CGD) and failed to react during the nitroblue tetrazolium test.",
+    "clinical_rationale": "Primary diagnosis: Myeloperoxidase deficiency. Clinical certainty: High. Differential analysis: Chronic granulomatous disease (CGD) is a plausible diagnosis, but the failure of neutrophils to react during the nitroblue tetrazolium test makes myeloperoxidase deficiency more likely. Leukocyte adhesion...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Nitroblue tetrazolium test, Neutrophil function studies. The patient should be referred to a specialist for further evaluation and management."
+  },
+  {
+    "id": "medqa_hf_027",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for 3-year-old Boy with Cough-like-a-Seal Bark and High-pitched Inspiratory Noise",
+    "question": "The patient, a 3-year-old boy, presents with a cough-like-a-seal bark and high-pitched inspiratory noise. His symptoms worsened over the last few hours, and he is experiencing respiratory distress, suprasternal and intercostal retractions, inspiratory stridor, frequent barking cough, and hoarse voice. There is no history of wheezing.",
+    "clinical_rationale": "Primary diagnosis: Croup. Clinical certainty: High. Differential analysis: Croup is the most likely diagnosis given the presence of classic signs such as barking cough, inspiratory stridor, and suprasternal and intercostal retractions. Epiglottitis and foreign body aspiration are less likely due to ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Rapid sequence intubation if stridor worsens or if the patient becomes severely distressed, and administration of corticosteroids and racemic epinephrine to reduce inflammation and improve airway pate"
+  },
+  {
+    "id": "medqa_hf_028",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Missed Period and Pulmonary Tuberculosis Treatment",
+    "question": "A 26-year-old woman presents with a missed period, recently started treatment for pulmonary tuberculosis (TB) 2 months ago, and is taking rifampin, isoniazid, pyrazinamide, and ethambutol. She is also pregnant, as confirmed by a positive pregnancy test result.",
+    "clinical_rationale": "Primary diagnosis: A. Induction of CYP3A4 by rifampin leading to decreased serum levels of ethinylestradiol and progesterone. Clinical certainty: High. Differential diagnoses: B. Induction of CYP2A6 by rifampin leading to increased inactivation of ethinylestradiol (30% probability), C. Induction of ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Confirm pregnancy with ultrasound, consider switching to a different contraceptive method."
+  },
+  {
+    "id": "medqa_hf_029",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for 4-year-old boy with Intermittent Vomiting and Bloody Stools",
+    "question": "A 4-year-old boy presents with 4 days of intermittent vomiting, 5-6 daily loose stools, bloody stools, decreased oral intake, fever (102.2\u00b0F), and lower extremity weakness and tingling. He has a history of daycare attendance and recently returned from daycare.",
+    "clinical_rationale": "Primary diagnosis: A. Gram stain positive CSF, with a clinical certainty of 90%. Differential diagnoses: B. Peripheral eosinophilia (5%), C. Xanthochromia on cerebrospinal fluid analysis (10%), D. Increased cerebrospinal fluid protein with normal cell count (15%), and E. Oligoclonal bands on cerebro...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a lumbar puncture to obtain cerebrospinal fluid for Gram stain and culture, and administer antibiotics immediately."
+  },
+  {
+    "id": "medqa_hf_030",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clubfoot in a 3-week-old Male Newborn",
+    "question": "A 3-week-old male newborn, born at 38 weeks' gestation, presented with inward turning of his left forefoot, noted at birth. The newborn's mother reported oligohydramnios during pregnancy and breech presentation. The newborn's symptoms have been present since birth.",
+    "clinical_rationale": "Primary diagnosis: Clubfoot. Clinical certainty: High. Differential analysis: Clubfoot is a common congenital deformity characterized by inward turning of the foot, concavity of the medial border, and convexity of the lateral border. The increased angle between the 1st and 2nd metatarsal bones on X-...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order X-rays of the foot to confirm the diagnosis and rule out other conditions. Refer the patient to a pediatric orthopedic specialist for further evaluation and treatment. Prescribe a foot abduction"
+  },
+  {
+    "id": "medqa_hf_031",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 42-year-old woman presents with a 2-day history of right upper abdominal pain and nausea. She is 163 cm (5 ft 4 in) tall, 91 kg (200 lb), with a BMI of 34 kg/m2. She has a history of obesity.",
+    "clinical_rationale": "Primary diagnosis: Autodigestion of pancreatic parenchyma (pancreatitis). Clinical certainty: High. Differential analysis: Hypomotility of the gallbladder (20% probability), Fistula between the gallbladder and small intestine (10% probability), Infection with a hepatotropic virus (5% probability), O...",
+    "recommended_plan": "Order abdominal ultrasound to confirm pancreatitis. Administer analgesics and antiemetics for pain and nausea management."
+  },
+  {
+    "id": "medqa_hf_032",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Mitral Valve Regurgitation",
+    "question": "A 72-year-old woman presented to the ICU with shortness of breath and palpitations. She has a history of these symptoms and was admitted for further evaluation.",
+    "clinical_rationale": "Primary diagnosis: Mitral valve regurgitation. Clinical certainty: High. Differential analysis: The most plausible explanation for the pressure-volume loop abnormality and symptoms is mitral valve regurgitation. Other possible explanations include increased systemic vascular resistance, increased ve...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Echocardiogram to confirm mitral valve regurgitation. Assess for signs of heart failure and optimize management."
+  },
+  {
+    "id": "medqa_hf_033",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Infectious Disease",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 22-year-old woman presents with a 2-day history of fever, intermittent rigors, and night sweats, and a 1-month history of progressive fatigue. She has a history of bacterial meningitis.",
+    "clinical_rationale": "Primary diagnosis: Doxycycline-induced agranulocytosis. Clinical certainty: High. Differential analysis: Sepsis (probability 0.4), Bone Marrow Suppression (probability 0.3), Drug Reaction (probability 0.3).",
+    "recommended_plan": "Discontinue doxycycline, obtain a complete blood count (CBC) with differential, and consider a bone marrow biopsy to evaluate for agranulocytosis."
+  },
+  {
+    "id": "medqa_hf_034",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Ectopic Secretion of Gastrin",
+    "question": "A 50-year-old man presents with a 6-month history of increasingly frequent episodes of upper abdominal pain, nausea, vomiting, and diarrhea, accompanied by 3.2-kg weight loss. He also reports bilateral pitting pedal edema.",
+    "clinical_rationale": "Primary diagnosis: Ectopic secretion of gastrin. Clinical certainty: High. Differential analysis: Excessive somatostatin secretion (probability: 0.2), Neoplasia of submucosal lymphoid tissue (probability: 0.1), and Proliferation of gastric mucus-producing cells (probability: 0.05) were considered bu...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Gastrin level measurement and Endoscopy with gastric biopsy are recommended to confirm the diagnosis and guide treatment."
+  },
+  {
+    "id": "medqa_hf_035",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Unresponsive Patient",
+    "question": "A 27-year-old man, IV drug abuser, attends methadone clinic, found unresponsive at homeless shelter with no known past medical history. Chief complaint is unresponsiveness. Patient has a history of IV drug abuse and homelessness.",
+    "clinical_rationale": "Primary diagnosis: Diabetic Ketoacidosis (DKA) with a clinical certainty of 0.8. Differential diagnoses: Hyperglycemic Hyperosmolar State (HHS) with a probability of 0.15 and Hyperkalemia with a probability of 0.05.",
+    "recommended_plan": "Administer insulin, potassium, IV fluids, and glucose, and monitor for improvement in glucose levels and resolution of tachycardia and tachypnea."
+  },
+  {
+    "id": "medqa_hf_036",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 67-year-old man with Right knee swelling and pain",
+    "question": "Patient presents with bilateral knee swelling and pain, difficulty walking, back pain, and improvement of pain with rest. He also has dandruff and pitting of his nails. No fever, weight loss, or other systemic symptoms.",
+    "clinical_rationale": "Primary diagnosis: Psoriatic Arthritis (A) with 90% clinical certainty. Differential diagnoses: Rheumatoid Arthritis (30% probability), Arthritis Mutilans (20% probability), Familial Mediterranean Fever (15% probability), Mixed Connective Tissue Disease (35% probability).",
+    "recommended_plan": "Order skin biopsy to confirm psoriasis. Perform joint imaging to assess joint damage. Monitor patient for improvement of symptoms with treatment."
+  },
+  {
+    "id": "medqa_hf_037",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for 65-year-old Woman with Weight Loss and Weakness",
+    "question": "A 65-year-old woman presents with weight loss and weakness. Her symptoms include weakness that improves with brief exercise, but worsens with prolonged activity, and bladder incontinence for 4 weeks. She has not shown improvement with anticholinesterase agent. Her risk factors include age 65.",
+    "clinical_rationale": "Primary diagnosis: Myasthenia gravis. Clinical certainty: High. Differential analysis: Botulism (20% probability), Duchenne muscular dystrophy (5% probability), Hypothyroidism (10% probability), Paraneoplastic syndrome from small cell carcinoma of the lung (15% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order acetylcholine receptor antibodies, Perform electromyography (EMG)."
+  },
+  {
+    "id": "medqa_hf_038",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Persistent Diarrhea, Oral Candidiasis, and RSV Pneumonia in a 3-Month-Old Boy",
+    "question": "A 3-month-old boy presents with persistent diarrhea, oral candidiasis, and signs and symptoms suggestive of respiratory syncytial virus (RSV) pneumonia. The patient's weight is in the 10th percentile, and there are no symptoms of other infections. The patient has a history of immunodeficiency disease.",
+    "clinical_rationale": "Primary diagnosis: Defective T cell function. Clinical certainty: High. Differential analysis: Grossly reduced levels of B cells (20% probability), An X-linked inheritance of HLA genes (10% probability), Defective isotype switching (5% probability), and Selective IgA deficiency (5% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a T cell subset analysis to confirm T cell dysfunction. Consider starting empiric treatment for T cell dysfunction, such as immunoglobulin replacement therapy."
+  },
+  {
+    "id": "medqa_hf_039",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Recurrent Pancreatic Adenocarcinoma",
+    "question": "A 53-year-old man with recurrent pancreatic adenocarcinoma enrolled in a clinical trial for a novel chemotherapeutic agent. The patient has shown improvement in 6/59 patients at 10 mg dose, 19/49 patients at 20 mg dose, 26/53 patients at 30 mg dose, and 46/51 patients at 40 mg dose. However, no improvement was observed in patients at 60 mg, 80 mg, and 100 mg doses. The patient has experienced treatment-related adverse events at higher doses.",
+    "clinical_rationale": "Primary diagnosis: C (Dose-dependent efficacy of the novel chemotherapeutic agent). Clinical certainty: 0.8. Differential analysis: 1. Dose-dependent efficacy of the novel chemotherapeutic agent (probability: 0.8, justification: improvement in patients at lower doses). 2. Toxicity at higher doses (p...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Dose titration to find optimal dose. Monitoring for treatment-related adverse events."
+  },
+  {
+    "id": "medqa_hf_040",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Arcuate fasciculus",
+    "question": "patient was noticed to be speaking strangely by family, treated with tPA, and able to recover most of speech, but unable to complete tasks involving verbal repetition",
+    "clinical_rationale": "Damage to the arcuate fasciculus disrupts the connection between Broca's area (responsible for speech production) and Wernicke's area (responsible for speech comprehension), leading to difficulties with speech repetition.",
+    "recommended_plan": "Targeted clinical therapeutic protocol per standard care guidelines."
+  },
+  {
+    "id": "medqa_hf_041",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Polycystic Ovarian Syndrome (PCOS)",
+    "question": "A 27-year-old woman presents with concerns about physical appearance, including severe inflammatory acne over the cheeks and forehead, dark coarse hairs on the back, and a long-standing struggle with these issues since adolescence. She has tried numerous diet plans, exercise regimens, and cosmetic products with little to no effect. Her glucose tolerance test result shows a plasma glucose level of 160 mg/dL (8.9 mmol/L) after 2 hours of a 75 g dose of oral glucose. She also reports an irregular menstrual cycle (every 45 days) and a family history of type 2 diabetes mellitus.",
+    "clinical_rationale": "Primary diagnosis: Polycystic ovarian syndrome (PCOS). Clinical certainty: High. Differential analysis: Cushing's disease (probability 0.15), Ovarian hyperthecosis (probability 0.1), and Idiopathic hirsutism (probability 0.05) were considered but eliminated due to lack of typical symptoms and glucos...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order a fasting insulin level and a lipid profile to confirm insulin resistance and dyslipidemia, and to rule out other metabolic complications. Consider ordering a pelvic ultrasound to evaluate for o"
+  },
+  {
+    "id": "medqa_hf_042",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "B. Femoro-Ileal artery bypass",
+    "question": "Patient presenting for clinical evaluation regarding B. Femoro-Ileal artery bypass. Diagnostic deliberation conducted under multi-agent clinical consensus.",
+    "clinical_rationale": "The patient's symptoms of tingling and numbness in the lower limbs, along with the decreased sensation to pain, suggest PAD. The ABPI of 1.1 on the right side further supports this diagnosis, indicating some degree of arterial stenosis. The patient's history of type 2 diabetes mellitus and inconsist...",
+    "recommended_plan": "Targeted clinical therapeutic protocol per standard care guidelines."
+  },
+  {
+    "id": "medqa_hf_043",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for 1-day-old Male with Bilious Vomiting",
+    "question": "A 1-day-old male, born at 38 weeks gestation to a 36-year-old gravida 3 via vaginal delivery, presents with bilious vomiting and a firm and distended abdomen. The patient has urinated multiple times since birth but has not yet passed meconium. The patient's risk factors include gestational diabetes, decreased maternal serum alpha-fetoprotein (AFP), increased beta-hCG, decreased unconjugated estriol, increased inhibin A, and a low amniotic fluid index (AFI) of 28 cm.",
+    "clinical_rationale": "Primary Diagnosis: A. Duodenal atresia. Clinical Certainty: High. Differential Analysis: B. Intestinal malrotation (Probability: 0.25), C. Meconium ileus (Probability: 0.15), D. Necrotizing enterocolitis (Probability: 0.10), E. Pyloric stenosis (Probability: 0.05).",
+    "recommended_plan": "Immediate Therapeutic and Diagnostic Action Plan: Abdominal X-ray to confirm intestinal obstruction. Surgical consultation for possible duodenal atresia repair."
+  },
+  {
+    "id": "medqa_hf_044",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Exercise Stress Test Abnormality",
+    "question": "A 23-year-old male patient participated in an exercise stress test as part of a physiology class. He is a healthy individual with no reported symptoms or past medical history. The patient's participation in the exercise stress test revealed low oxygen content in venous blood.",
+    "clinical_rationale": "Primary diagnosis: A (Superior Vena Cava issue). Clinical certainty: High. Differential analysis: The patient's symptoms and findings are most consistent with an issue related to venous return, which is more closely associated with the superior vena cava. Other possible causes, including inferior ve...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Repeat exercise stress test with echocardiography to evaluate superior vena cava compression. Measure central venous pressure to assess for decreased venous return."
+  },
+  {
+    "id": "medqa_hf_045",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "A 45-year-old female, G5P4105, presents with six months of increasingly heavy periods, irregular cycles, intermenstrual bleeding, dysmenorrhea, dyspareunia, heavy feeling in pelvis, and increased urinary frequency. She has a history of obesity and type II diabetes.",
+    "clinical_rationale": "Primary diagnosis: Uterine fibroids. Clinical certainty: High. Differential analysis: Adnexal mass (30% probability), Endometriosis (20% probability), Pelvic inflammatory disease (PID) (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Pelvic ultrasound, Gynecologic consultation."
+  },
+  {
+    "id": "medqa_hf_046",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Neurology",
+    "difficulty": "High",
+    "gold_diagnosis": "Ethanol Intoxication",
+    "question": "The patient, an adult male with a history of public alcohol intoxication and homelessness, presented to the emergency department with erratic behavior, slurred speech, ataxia, and difficulty walking and standing without support. He has been experiencing these symptoms for an unknown duration.",
+    "clinical_rationale": "Primary diagnosis: Ethanol intoxication (A). Clinical certainty: High. Differential analysis: Ethanol intoxication is the most likely diagnosis given the clinical presentation and risk factors. Other possible diagnoses include metabolic acidosis and respiratory alkalosis, but they are less likely.",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Administer activated charcoal if patient is stable. Perform ethanol level and ABG to confirm diagnosis and monitor for complications."
+  },
+  {
+    "id": "medqa_hf_047",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Myocardial Infarction (MI)",
+    "question": "Adult patients presenting to the emergency department with a chief complaint of myocardial infarction (MI), with a history of death from cardiac causes and hyperkalemia. No specific age or sex mentioned.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Acute Myocardial Infarction (A)\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Acute Myocardial Infarction\", \"probability\": 0.8, \"justification\": \"Chief complaint of MI and history of cardiac causes\"}, {\"rank\": 2, \"condition\": \"Cardiogenic ...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"ECG to confirm MI\", \"immediate_diagnostic_action\": \"Cardiac biomarkers to confirm MI and Potassium level to assess severity of hyperkalemia\"}"
+  },
+  {
+    "id": "medqa_hf_048",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Tingling Pain in the Right Foot",
+    "question": "A 55-year-old man with a 34-year history of smoking and 8-year history of type 2 diabetes mellitus presents with a 6-week history of tingling pain in the right foot, calf cramps when using the incline feature on the treadmill, and pain that disappears after resting. The patient reports no pain in the back and normal muscle strength.",
+    "clinical_rationale": "Primary diagnosis: Femoropopliteal artery stenosis (Clinical certainty: High). Differential analysis: Femoropopliteal artery stenosis (75% probability), Vasculitis of the right popliteal artery (15% probability), Acute thrombosis of right popliteal vein (10% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Ankle-brachial index (ABI) test and Doppler ultrasound of the right lower extremity are recommended to confirm the diagnosis and assess the severity of the stenosis."
+  },
+  {
+    "id": "medqa_hf_049",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Cardiology",
+    "difficulty": "High",
+    "gold_diagnosis": "Fetal Demise at 35 Weeks' Gestation",
+    "question": "A 29-year-old primigravid woman at 35 weeks' gestation was admitted to the hospital in labor with no history of serious medical illness and an uncomplicated pregnancy. She reported no history of serious medical illness, and her last ultrasound at 22 weeks' gestation was normal. The patient's chief complaint is no fetal heartbeats detected by fetal doppler monitor.",
+    "clinical_rationale": "Primary diagnosis: Fetal demise due to decreased amniotic fluid levels. Clinical certainty: High. Differential analysis: Fetal demise (0.8 probability), Placental abruption (0.15 probability), Other severe fetal distress (0.05 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Obtain photographs, x-ray imaging, and MRI to confirm fetal demise. Perform autopsy to determine the cause of fetal demise."
+  },
+  {
+    "id": "medqa_hf_050",
+    "dataset": "MedQA (USMLE)",
+    "specialty": "Pulmonology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 67-year-old Man with Fever and Increasing Shortness of Breath",
+    "question": "The patient is a 67-year-old man who presents with several days of fever and increasing shortness of breath, worsening despite oseltamivir therapy, requiring ICU transfer and intubation. He has no mention of other underlying conditions or symptoms.",
+    "clinical_rationale": "Primary diagnosis: Squamous cell proliferation. Clinical certainty: Moderate. Differential analysis: The patient's presentation is consistent with Acute Respiratory Distress Syndrome (ARDS) (probability 0.6), secondary bacterial pneumonia (probability 0.25), and pneumonia (probability 0.15).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Bronchoscopy with bronchoalveolar lavage to rule out secondary bacterial infection. Consider extracorporeal membrane oxygenation (ECMO) for severe respiratory compromise."
+  },
+  {
+    "id": "pubmedqa_10575390",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Abnormal Papanicolaou (Pap) Smear Results",
+    "question": "Adult women from three northern California family planning clinics with a history of previous abnormal Pap smear results and no specific timeline of symptoms mentioned. Chief complaint is abnormal Pap smear results.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Cervical dysplasia\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Cervical cancer\", \"probability\": 0.4, \"justification\": \"Cervical cancer can also cause abnormal Pap smear results, but it is less likely than cervical dysplasia given the abs...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Colposcopy and HPV DNA testing recommended\", \"diagnostic_action\": \"Further evaluation and management of cervical dysplasia\"}"
+  },
+  {
+    "id": "pubmedqa_10808977",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 1099 Women Aged 50 and Older",
+    "question": "No chief complaint mentioned. No narrative timeline of symptoms provided. The patient's age (50 and older) is a significant risk factor for osteoporosis, menopause, and age-related cognitive decline.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Osteoporosis\", \"clinical_certainty\": \"Moderate\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Menopause\", \"probability\": 0.4, \"justification\": \"Menopause is a common condition in women aged 50 and older, but it does not directly explain the lack of chief complaint or hi...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Order a bone density test to assess the patient's risk for osteoporosis\", \"diagnostic_action\": \"Review the patient's medical history for any previous fractures or osteoporosis-related conditions\"}"
+  },
+  {
+    "id": "pubmedqa_10966337",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Children under 2 years old",
+    "question": "The patient is a child under 2 years old with no specified chief complaint. The patient has a history of asthma, gastroenteritis, convulsion, pneumonia, and simple surgical conditions. The patient's risk factors include young age less than 2 years.",
+    "clinical_rationale": "Primary diagnosis: B (Developmental stage-related illness). The most likely diagnosis is related to the child's developmental stage due to their young age and exposure to pathogens. Differential diagnoses: Respiratory Syncytial Virus (RSV) infection (60% probability), Adenovirus infection (25% proba...",
+    "recommended_plan": "Perform a thorough physical examination, obtain a complete medical history, and consider ordering laboratory tests such as complete blood count (CBC), blood culture, and viral PCR to determine the underlying cause of the child's symptoms."
+  },
+  {
+    "id": "pubmedqa_10966943",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Amblyopia",
+    "question": "465 patients with age-related macular degeneration reported visual loss in amblyopic eyes. Patients had attended a specialist macular clinic between 1990 and 1998, with a full clinical examination and standardised refraction carried out on a minimum of two occasions. Improvement of one or more lines of either distance or near acuity in the eye unaffected by macular disease was observed, with a mean improvement in distance and near acuity in amblyopic eyes by 12 months of 3.3 and 1.9 lines logMAR respectively.",
+    "clinical_rationale": "Primary diagnosis: A (Amblyopia). Clinical certainty: High. Differential analysis: Spontaneous improvement (probability: 0.2), other causes of visual loss (probability: 0.1), and no treatment (probability: 0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Review treatment records for amblyopia, assess current visual acuity to determine if improvement has plateaued."
+  },
+  {
+    "id": "pubmedqa_11481599",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "High",
+    "gold_diagnosis": "Acute Respiratory Distress Syndrome (ARDS) in Children with Hemato-oncology Malignancy",
+    "question": "A 10.5 +/- 5.1-year-old child with hemato-oncology malignancy presents with symptoms of ARDS, including respiratory distress. The child was admitted to a pediatric intensive care unit from January 1987 to January 1997. The patient's history of malignant and ARDS necessitated mechanical ventilation.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Sepsis syndrome is a known risk factor for the development of ARDS, particularly in immunocompromised patients with hemato-oncology malignancy.\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"ARDS\", \"probability\": 0.8, \"justification\": \"Clin...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Administer broad-spectrum antibiotics to cover potential pathogens.\", \"diagnostic_action\": \"Perform blood cultures to identify the causative organism of sepsis syndrome.\"}"
+  },
+  {
+    "id": "pubmedqa_11729377",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "High",
+    "gold_diagnosis": "Evaluation of Split-Liver Transplantation and Living-Related Liver Transplantation in Children",
+    "question": "Children with liver disease requiring transplantation are being assessed for the value of split-liver transplantation (SLT) and living-related liver transplantation (LRT). The in situ split technique is also being considered. The primary goal is to evaluate the effectiveness of these transplantation methods in children with liver disease.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"SLT and LRT are effective in children with liver disease requiring transplantation.\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Alternative transplantation methods\", \"probability\": 0.05, \"justification\": \"The abolition of deaths on the w...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Review literature on SLT and LRT outcomes in children\", \"immediate_diagnostic_action\": \"Consult with pediatric transplant specialists\", \"long_term_planning\": \"Develop a comprehensive treatment plan for children with "
+  },
+  {
+    "id": "pubmedqa_14599616",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Lymphedema Detection in Breast Cancer Patients",
+    "question": "90 breast cancer patients with no specific age or sex mentioned, underwent quarterly circumference measurements for 3 years. No specific timeline of symptoms mentioned. Patients with 10% volume increase in arm circumference, greater than 1 cm increase in arm circumference, and lymphedema identified by a lymphedema specialist.",
+    "clinical_rationale": "Primary diagnosis: Lymphedema (A). The presence of lymphedema identified by a lymphedema specialist, along with significant increases in arm circumference, strongly supports the diagnosis of lymphedema. This condition is a known complication of breast cancer treatment. Differential diagnoses: Lymphe...",
+    "recommended_plan": "Confirm diagnosis with lymphoscintigraphy or MRI. Develop a comprehensive treatment plan to manage lymphedema."
+  },
+  {
+    "id": "pubmedqa_15703931",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Cervical Cancer",
+    "question": "Adult patients with untreated locally advanced primary or clinically curable recurrent cervical carcinoma, presenting with symptoms suggestive of cervical cancer. The diagnostic power of PET in identifying metastatic lesions and primary tumours/local recurrence, combined with the presence of untreated locally advanced primary or clinically curable recurrent cervical carcinoma, supports the diagnosis of cervical cancer.",
+    "clinical_rationale": "Primary diagnosis: Cervical cancer (A). Clinical certainty: 0.90. Differential diagnoses: 1. Cervical cancer (0.90), 2. Other malignancies (0.05), 3. False positives due to hyperglycaemia (0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform a biopsy to confirm the diagnosis of cervical cancer. Review the patient's medical history to assess the stage of the disease."
+  },
+  {
+    "id": "pubmedqa_16418930",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Assessment of Visual Acuity and Comparison of Landolt C and Snellen E Acuity",
+    "question": "100 patients, aged 8-90 years, with a median age of 60.5 years, including 39 with amblyopia due to strabismus and 13 healthy volunteers, underwent visual acuity testing using Snellen E and Landolt C optotypes. Patients with various eye disorders, including amblyopia due to strabismus, were assessed.",
+    "clinical_rationale": "Primary diagnosis: Strabismus amblyopia. Clinical certainty: High. Differential analysis: Strabismus amblyopia (0.8 probability) is the most likely diagnosis, followed by other eye disorders (0.15 probability) and normal vision (0.05 probability).",
+    "recommended_plan": "Perform a comprehensive eye examination, including refraction and orthoptic assessment, to confirm the diagnosis of strabismus amblyopia and rule out other eye disorders."
+  },
+  {
+    "id": "pubmedqa_16432652",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Per-oral Transgastric Splenectomy in Pigs",
+    "question": "The pigs were fed liquids for 3 days prior to the procedure, underwent general anesthesia with endotracheal intubation, and underwent per-oral transgastric splenectomy. No complications were reported during the procedure.",
+    "clinical_rationale": "Primary diagnosis: Aspiration (A). The risk of aspiration is increased when pigs are fed liquids before a procedure, especially one involving general anesthesia and endotracheal intubation. This increases the likelihood of aspiration, which is a critical complication that can occur during the proced...",
+    "recommended_plan": "Monitor for signs of aspiration, such as respiratory distress or cyanosis, and consider performing a chest X-ray to rule out aspiration pneumonia. The pigs should be closely monitored for any signs of complications."
+  },
+  {
+    "id": "pubmedqa_17096624",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Patterns of Knowledge and Attitudes among Unvaccinated Adults Aged >65 Years",
+    "question": "The patient, an adult aged >65 years, Medicare beneficiary, presented with patterns of knowledge and attitudes among unvaccinated adults. The patient was surveyed in 5 areas, clustered by immunization-related knowledge and attitudes. Key findings include 45% of seniors willing to receive influenza vaccine to prevent disease, 75% of this group having received the vaccine, and 19% of seniors believing influenza vaccine causes illness.",
+    "clinical_rationale": "Primary diagnosis: 'Yes', indicating that the majority of seniors are likely to receive influenza vaccines and believe in their efficacy. Differential diagnoses include: Misinformed about vaccine efficacy/effectiveness (30% probability), Fearful of vaccine side effects (25% probability), and Doubtfu...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Conduct targeted education campaigns to address vaccine misconceptions. Develop strategies to increase vaccine acceptance among seniors."
+  },
+  {
+    "id": "pubmedqa_17113061",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Evaluation of Relationship between Low HDL Cholesterol and Carotid Intima-Media Thickness",
+    "question": "Adults with low HDL cholesterol and carotid intima-media thickness (cIMT) measurements were evaluated. No specific timeline of symptoms was provided. The patient's demographics are adults, sex and age-related (+/-5 y), n=114.",
+    "clinical_rationale": "Primary diagnosis: Genetic mutations causing low HDL-C. Clinical certainty: 0.8. Differential analysis: Genetic mutations causing low HDL-C (0.8), Familial hypercholesterolemia (0.15), Atherosclerotic cardiovascular disease (0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Genetic testing for mutations causing low HDL-C, Lifestyle modifications to improve HDL cholesterol and apolipoprotein A-I levels."
+  },
+  {
+    "id": "pubmedqa_17208539",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Fecal Incontinence",
+    "question": "The patient is a child over 3 years old with a history of Hirschsprung disease (HD) treatment between 1995 and 2003. The patient's symptoms and history suggest new-onset fecal incontinence.",
+    "clinical_rationale": "Primary diagnosis: B (new-onset fecal incontinence). Clinical certainty: Moderate. Differential analysis: Hirschsprung disease recurrence (10% probability), complication of HD treatment (20% probability), and other gastrointestinal condition (70% probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Fecal incontinence questionnaire and anorectal manometry are recommended to further evaluate the patient's symptoms and diagnose the underlying condition."
+  },
+  {
+    "id": "pubmedqa_17919952",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Chronic Oro-facial Pain",
+    "question": "The patient presents with chronic oro-facial pain associated with self-reported mechanical factors: teeth grinding, facial trauma, missing teeth, and feeling that the teeth do not fit together properly. The patient is an adult registered with a General Medical Practice in North West, England. The patient's symptoms have been ongoing and are not fully explained by normal findings or symptoms ruled out.",
+    "clinical_rationale": "The primary diagnosis is Temporomandibular Joint Disorder (TMJD) with a clinical certainty of A. The combination of teeth grinding, facial trauma, missing teeth, and feeling that the teeth do not fit together properly strongly suggests a mechanical or structural issue with the temporomandibular join...",
+    "recommended_plan": "The recommended next steps are: 1) Dental examination and imaging of the temporomandibular joint, and 2) Consider referral to a specialist in orofacial pain or dentistry. It is also recommended to provide more detailed information on potential comorb"
+  },
+  {
+    "id": "pubmedqa_17940352",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Locally Advanced Urothelial Carcinoma",
+    "question": "The patient has a history of surgery alone or adjuvant methotrexate, vinblastine, epirubicin, and cisplatin (M-VEC) chemotherapy for locally advanced urothelial carcinoma. The patient's demographics are not specified, but 114 formalin-fixed paraffin-embedded specimens have been examined. The patient's symptoms and timeline are not provided.",
+    "clinical_rationale": "The primary diagnosis is HER2-positive urothelial carcinoma, with a clinical certainty of A. The differential diagnoses include: 1. HER2-positive urothelial carcinoma (probability: 0.8, justification: HER2 immunoreactivity in urothelial carcinoma of the bladder and upper urinary tract urothelial car...",
+    "recommended_plan": "The recommended next steps are: 1. Immunohistochemistry for HER2 protein to confirm HER2 positivity, and 2. Evaluation of nodal status for metastasis."
+  },
+  {
+    "id": "pubmedqa_18239988",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Differentiation of Nonalcoholic from Alcoholic Steatohepatitis",
+    "question": "A 61% male and 39% female patient population with steatohepatitis underwent liver biopsies. Their data prior to biopsy were reevaluated. The patients' symptoms are not specified, and normal liver function is not mentioned.",
+    "clinical_rationale": "Primary diagnosis: Alcoholic Steatohepatitis (ASH) with 85% clinical certainty. The combination of high-grade fibrosis, AST/ALT ratio >1, and elevated MCV in ASH patients, along with the risk factor of alcohol consumption, supports this diagnosis. Differential diagnoses: Alcoholic Steatohepatitis (A...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Liver function tests to confirm liver damage, and alcohol use disorder screening to assess risk factor."
+  },
+  {
+    "id": "pubmedqa_18269157",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Adult Human Corneal Specimens Post Excimer Laser Keratorefractive Surgery",
+    "question": "Normal human corneal specimens underwent excimer laser keratorefractive surgery, including LASIK, SBK, PRK, ASA, and keratoconus. The patient experienced postoperative complications such as keratectasia, corneal haze, and interface wound complications.",
+    "clinical_rationale": "Primary diagnosis: Keratectasia (A). The differences in collagen fibrils and lamellar interweaving, along with the cohesive tensile strength testing, suggest that the cornea is more prone to keratectasia, which is a known complication of LASIK. The fact that PRK and ASA are biomechanically safer tha...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Further histologic and ultrastructural studies to confirm the diagnosis of keratectasia, and biomechanical testing to assess the cornea's tensile strength."
+  },
+  {
+    "id": "pubmedqa_18534072",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Evaluation of IT Innovation in Primary Care",
+    "question": "The patient, a group of adults with diabetes, general practitioners, and nurses, presents with recent evaluations of IT innovations in primary care highlighting variations between centres and practices in uptake and use. The study evaluated the use of a web-based clinical information system underpinning a Managed Clinical Network in diabetes between 2001 and 2003.",
+    "clinical_rationale": "Primary diagnosis: A. Limited IT innovation uptake in primary care. Clinical certainty: High. Differential analysis: The primary issue is Limited IT innovation uptake in primary care, which is evident from the variations in use of the web-based clinical information system and the decreasing mean GP ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Evaluate the current IT infrastructure and training programs for GPs and nurses. Develop targeted strategies to improve IT innovation uptake in primary care."
+  },
+  {
+    "id": "pubmedqa_18847643",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pulmonology",
+    "difficulty": "High",
+    "gold_diagnosis": "Trauma Patients Requiring Therapeutic Anticoagulation",
+    "question": "The patient is a trauma patient requiring therapeutic anticoagulation due to various indications, including deep venous thrombosis (46%). The patient's history of chronic obstructive pulmonary disease and lower initial platelet count are also relevant. The patient's symptoms and timeline are as follows: sudden drop in hemoglobin requiring blood transfusion, lower initial platelet count, and deep venous thrombosis.",
+    "clinical_rationale": "Primary diagnosis: Heparin-induced thrombocytopenia (HIT) with a high clinical certainty. Differential diagnoses: thrombotic thrombocytopenic purpura (TTP) with a probability of 0.2, disseminated intravascular coagulation (DIC) with a probability of 0.15, and chronic obstructive pulmonary disease (C...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: discontinue heparin and initiate alternative anticoagulation, perform HIT antibody testing, and monitor platelet count and hemoglobin levels closely."
+  },
+  {
+    "id": "pubmedqa_19054501",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Schizophrenia Symptoms",
+    "question": "Adult patients with schizophrenia exhibited eye-tracking difficulties, motion perception deficits, and significantly higher speed discrimination thresholds. No significant difference in speed discrimination thresholds was observed between schizophrenia patients and control subjects at 150 msec stimulus duration. No significant correlation was found between eye-tracking frequency and speed discrimination in schizophrenia patients.",
+    "clinical_rationale": "Primary diagnosis: Schizophrenia (A). Clinical certainty: 0.8. Differential diagnoses: Other neurodevelopmental disorders (0.1), Motion perception disorders (0.05), and Sensory processing disorders (0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Further neuropsychological evaluation to assess cognitive function and sensory processing. Consideration of antipsychotic medication to manage symptoms."
+  },
+  {
+    "id": "pubmedqa_19394934",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Multiple Casualty Incidents (MCI) due to Terrorism-Related Attacks",
+    "question": "The patient presents with multiple casualty incidents (MCI) due to terrorism-related attacks, with no specific patient demographics mentioned. The study involves a retrospective analysis of 32 attacks, with a mean number of arriving casualties to a single hospital being 20.8 +/- 13.3. The patient's history of present illness is not specified, but the study notes that 10 or more casualties were involved, with 4 or more casualties having an Injury Severity Score (ISS) >= 16.",
+    "clinical_rationale": "Primary diagnosis: A. The high number of casualties with severe injuries (ISS >= 16) and high casualty load in a short period are consistent with High-impact explosive device (HIED) attacks, which are a common mechanism of terrorism-related attacks. The presence of multiple casualties and severe inj...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Conduct thorough trauma assessment and stabilization of all casualties. Activate mass casualty incident protocols and coordinate with emergency services."
+  },
+  {
+    "id": "pubmedqa_19504993",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Clinical Diagnostic Note for Fournier's Gangrene",
+    "question": "The patient presented with Fournier's gangrene, a severe and potentially life-threatening condition characterized by necrotizing fasciitis of the genital or perineal region. The patient's high morbidity and mortality rate, as well as the lack of specific risk factors, are key findings that support this diagnosis. The patient's symptoms and timeline are not specified, but the condition is known to be associated with high morbidity and mortality.",
+    "clinical_rationale": "The primary diagnosis is Fournier's gangrene, a severe and potentially life-threatening condition characterized by necrotizing fasciitis of the genital or perineal region. The presence of Fournier's gangrene and its associated high morbidity and mortality rate are key findings that support this diag...",
+    "recommended_plan": "The recommended next steps include performing emergency surgical debridement and administering broad-spectrum antibiotics. Additionally, a more detailed plan for monitoring the patient's response to treatment should be included."
+  },
+  {
+    "id": "pubmedqa_20084845",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Aerobiological Monitoring and Allergenic Pollen Identification",
+    "question": "No patient symptoms or history provided. The patient is a researcher or scientist involved in aerobiological monitoring, or a healthcare provider or clinician with a specific interest in allergies, or a patient with a history of allergies seeking biomolecular identification of allergenic pollen.",
+    "clinical_rationale": "Primary diagnosis: A (The patient is a researcher or scientist involved in aerobiological monitoring). Clinical certainty: High. Differential analysis: Option B (The patient is a healthcare provider or clinician with a specific interest in allergies) with a probability of 0.25, and option C (The pat...",
+    "recommended_plan": "Request more information about the patient's role or interest in aerobiological monitoring. Review the patient's laboratory results and research methods for further clarification."
+  },
+  {
+    "id": "pubmedqa_20537205",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Potential Ototoxicity of Halofantrine",
+    "question": "No specific symptoms were mentioned in the patient's history. However, experimental data suggests potential ototoxicity of halofantrine in Guinea pigs, with no specific age or sex mentioned.",
+    "clinical_rationale": "Primary Diagnosis: Ototoxicity due to halofantrine (A). The primary justification for this diagnosis is that halofantrine is known to cause ototoxicity, particularly at therapeutic doses, and the observed loss and distortion of inner hair cells, inner phalangeal cells, and spiral ganglia cells are c...",
+    "recommended_plan": "Immediate Therapeutic and Diagnostic Action Plan: Further investigation into the mechanisms of halofantrine-induced ototoxicity and consideration of alternative treatments for the experimental model."
+  },
+  {
+    "id": "pubmedqa_20571467",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Nephrology",
+    "difficulty": "High",
+    "gold_diagnosis": "Kidney Transplantation Study",
+    "question": "The patient is an elderly donor (older than 60 years) and a young recipient (younger than 60 years) who underwent kidney transplantation. There is no specific timeline of symptoms mentioned, but rather a description of the transplant study. The patient's demographics, history of present illness, and pertinent positives and negatives are as follows: demographics - elderly donors and young recipients; history of present illness - no specific timeline of symptoms mentioned; pertinent positives - kidneys from elderly donors were transplanted into young recipients, no differences between groups with regard to recipient age, sex, cause of death, and renal function of the donor; pertinent negatives - no differences in survival rates between the study and control groups at 1, 5, and 10 years, no differences in graft survival rates between the study and control groups at 1, 5, and 10 years.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"A\", \"primary_justification\": \"The use of kidneys from elderly donors does not affect the survival rates or graft survival rates of young recipients, as evidenced by the lack of significant differences between the study and control groups at 1, 5, and 10 years. Additionally, th...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Further analysis of the data to identify potential confounding variables\", \"diagnostic_action\": \"Consideration of additional studies to confirm the findings\"}"
+  },
+  {
+    "id": "pubmedqa_21402341",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Cardiology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Assessment of Carotid Artery Stenosis before Coronary Artery Bypass Surgery",
+    "question": "Adult patients undergoing coronary artery bypass surgery with risk factors for significant carotid stenosis, including peripheral vascular disease, carotid bruit, diabetes mellitus, age>70 years, and/or history of cerebrovascular disease.",
+    "clinical_rationale": "Primary diagnosis: Significant carotid stenosis. Clinical certainty: High. Differential analysis: Carotid artery disease (rank 1, probability 0.8), Atherosclerotic disease (rank 2, probability 0.15), Other vascular disease (rank 3, probability 0.05).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order carotid ultrasonography to assess stenosis severity. Consider carotid endarterectomy or angioplasty if significant stenosis is found."
+  },
+  {
+    "id": "pubmedqa_21645374",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Programmed Cell Death (PCD) in Lace Plant Leaves",
+    "question": "A lace plant (Aponogeton madagascariensis) exhibits programmed cell death (PCD) in its leaves, characterized by PCD occurring in the cells at the center of areoles, progressing outwards and stopping approximately five cells from the vasculature. The PCD is developmentally regulated and involves mitochondrial dynamics, fragmented nDNA, and permeability transition pore (PTP) formation. This process is less studied in plants compared to animals.",
+    "clinical_rationale": "Primary diagnosis: Programmed Cell Death (PCD) pathway. Clinical certainty: High. Differential analysis: The PCD pathway is the most likely explanation given the developmental regulation of PCD, mitochondrial dynamics, fragmented nDNA, and PTP formation. Mitochondrial dysfunction and apoptosis-like ...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Further research on plant-specific PCD pathways is recommended. Investigation of the role of mitochondrial dynamics and PTP formation in PCD is also recommended."
+  },
+  {
+    "id": "pubmedqa_21669959",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "High",
+    "gold_diagnosis": "Secondhand Smoke Exposure in Infants Discharged from NICU",
+    "question": "The patient is an infant born at very low birth weight, ventilated >12 hours, with a family of varying socioeconomic status, race, and mental health status. The family reported a smoker in the household, with 26% having a household smoker and 46.2% having a total smoking ban in place in both homes and cars. The infant's high-risk status and secondhand smoke exposure are of concern.",
+    "clinical_rationale": "Primary diagnosis: Secondhand smoke exposure (B). Clinical certainty: High. Differential analysis: The presence of a smoker in the household and the socioeconomic status of the family are significant risk factors for secondhand smoke exposure. The differential diagnoses include Secondhand smoke expo...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Assess the infant's respiratory status and consider a smoking cessation program for the household. Evaluate the mother's mental health status and provide support if necessary."
+  },
+  {
+    "id": "pubmedqa_22537902",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Gastroenterology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Colorectal Cancer with Synchronous Liver Metastases",
+    "question": "Adult patients with colorectal cancer and synchronous liver metastases underwent resection at different centers or at the same center. There is no mention of symptoms or physical exam findings, and no abnormal lab values are reported.",
+    "clinical_rationale": "Primary diagnosis: Metastatic Colorectal Cancer (A). The presence of synchronous liver metastases and the comprehensive treatment approach, including resection of SLM and CLC, chemotherapy prior to liver surgery, and liver resection during colorectal surgery, indicate that the patient's condition is...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Review of imaging studies to assess for any residual disease or recurrence, and follow-up with oncology team to discuss treatment plan and schedule next appointment."
+  },
+  {
+    "id": "pubmedqa_22694248",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Nephrology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for 15 Piglets Undergoing Retroperitoneoscopic Nephrectomy",
+    "question": "None. No chief complaint or history of illness. Background: experimental subjects.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"A. Surgical vascular complications\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Surgical vascular complications\", \"probability\": 0.6, \"justification\": \"Risk factor for hemorrhage and operative time range\"}, {\"rank\": 2, \"condition\": \"Hemor...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Monitor vital signs and blood loss closely\", \"diagnostic_action\": \"Consider imaging studies to rule out hemorrhage\"}"
+  },
+  {
+    "id": "pubmedqa_22990761",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Cardiology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Elevated Resting Heart Rate in Rural West African Adults",
+    "question": "The patient is an adult aged 18-65 years, randomly sampled from a population register in Ghana, presenting with an elevated resting heart rate (RHR) without a specific timeline of symptoms. No specific symptoms or findings have been ruled out.",
+    "clinical_rationale": "Primary diagnosis: A condition affecting the autonomic nervous system, likely Anxiety Disorder, with a clinical certainty of 0.6. Differential diagnoses: Anxiety Disorder (0.6 probability), Chronic Stress (0.25 probability), and Hypertension (0.15 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Anxiety screening questionnaire and 24-hour ambulatory blood pressure monitoring."
+  },
+  {
+    "id": "pubmedqa_23690198",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Effectiveness of Epidural Analgesia in Pain Relief during Childbirth",
+    "question": "The patient is seeking pain relief during childbirth. No specific demographics or timeline of symptoms are mentioned. However, good satisfaction levels have been reported by patients and caregivers.",
+    "clinical_rationale": "{\"Primary Diagnosis\": \"Effective pain relief during childbirth\", \"Clinical Certainty\": \"High (0.90)\", \"Differential Analysis\": [{\"Rank\": 1, \"Condition\": \"Effective pain relief during childbirth\", \"Probability\": 0.9, \"Justification\": \"Significant increase in epidural analgesia and decrease in VAS sco...",
+    "recommended_plan": "{\"Immediate Therapeutic Action\": \"Continue to monitor VAS scores in future patients\", \"Diagnostic Action\": \"Consider implementing epidural analgesia in more patients\"}"
+  },
+  {
+    "id": "pubmedqa_23806388",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Evaluation of Postoperative Nomograms for Predicting Prostate Cancer-Specific Mortality (PCSM) and Biochemical Recurrence (BCR)",
+    "question": "1778 men, age not specified, sex: male, underwent radical prostatectomy (RP) between 1990 and 2009. No specific timeline of symptoms is provided, as this is a clinical context and inquiry rather than a patient case.",
+    "clinical_rationale": "Primary diagnosis: Evaluation of postoperative nomograms for predicting PCSM and BCR. Clinical certainty: 0.95. Differential analysis: 1. Evaluation of postoperative nomograms for predicting PCSM and BCR (probability: 0.95), 2. Evaluation of preoperative nomograms for predicting PCSM and BCR (probab...",
+    "recommended_plan": "Review the patient's PSA and PSADT values to further evaluate the risk of biochemical recurrence. Consult with a urologist or oncologist to discuss the results of the nomograms and develop a treatment plan."
+  },
+  {
+    "id": "pubmedqa_23831910",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Evaluation of Anemia/Gastrointestinal Bleed, Small Bowel IBD, and Dilation of Strictures",
+    "question": "A 62-year-old African-American female patient with a history of anemia/gastrointestinal bleed, small bowel IBD, and dilation of strictures. No specific timeline of symptoms provided. The patient has undergone 44 antegrade and 44 retrograde DBEs, with electrocautery performed in 20 patients and biopsy in 17 patients. Dilation of Crohn's-related small bowel strictures was performed in 4 patients.",
+    "clinical_rationale": "Primary diagnosis: Crohn's disease (A). Clinical certainty: 0.60. Differential analysis: Ulcerative colitis (0.25) and small bowel cancer (0.15) are less likely due to small bowel involvement and dilation of strictures, respectively. Angiodysplasia is less likely due to electrocautery performed to a...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Colonoscopy to rule out ulcerative colitis, Endoscopic evaluation of the small bowel to confirm Crohn's disease."
+  },
+  {
+    "id": "pubmedqa_24153338",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Aneurysmal Subarachnoid Hemorrhage",
+    "question": "The patient is an 80-98 year old individual with a male:female ratio of 9:60, presenting with acute aneurysmal subarachnoid hemorrhage. The patient's premorbid modified Rankin Scale and WFNS grade on admission are also relevant.",
+    "clinical_rationale": "Primary diagnosis: Ruptured anterior circulation aneurysm (A). Clinical certainty: High. Differential analysis: The top differential diagnoses are 1) Ruptured anterior circulation aneurysm (0.85 probability), 2) Atherosclerotic disease (0.05 probability), 3) Hypertension (0.05 probability), and 4) V...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1) CT angiography to confirm aneurysm location and size, 2) Immediate surgical intervention to prevent further bleeding."
+  },
+  {
+    "id": "pubmedqa_24183388",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Avascular Necrosis in Talar Neck Fractures",
+    "question": "A 23-patient retrospective study of talar neck fractures over 13 years revealed 7 type I, 11 type II, 4 type III, and 1 type IV fractures. The study found a statistically significant association between the Hawkins sign and the development of avascular necrosis in 4 cases (2 Hawkins type II and 2 type III).",
+    "clinical_rationale": "Primary diagnosis: Avascular necrosis in talar neck fractures. Clinical certainty: 0.8. Differential analysis: Hawkins type II and III fractures are associated with avascular necrosis. Soft tissue injury, delay in treatment, and displacement of fracture are not significant predictors of avascular ne...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Order MRI to confirm avascular necrosis. Review treatment plan to ensure timely and proper management of talar neck fractures."
+  },
+  {
+    "id": "pubmedqa_24237112",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "The patient's response to the chief complaint question was 'None', indicating a lack of symptoms. No patient demographics, history, or relevant findings are available.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Asymptomatic patient\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Asymptomatic patient\", \"probability\": 0.8, \"justification\": \"The patient's response to the chief complaint question was 'None', indicating a lack of symptoms.\"}, {\"rank\": 2...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Request additional patient information\", \"immediate_diagnostic_action\": \"Verify the accuracy of the patient's response\"}"
+  },
+  {
+    "id": "pubmedqa_24866606",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Impact of Emergency Ultrasound Fellowship Programs on Emergency Medicine Residents' Ultrasound Education",
+    "question": "244 EM residents participated in a study on the impact of EUS fellowships on EM residents' US education. 30% reported performing more than 150 scans. No specific timeline of symptoms, but rather a study on the impact of EUS fellowships on EM residents' US education.",
+    "clinical_rationale": "Primary diagnosis: EUS fellowships have a positive impact on residents' ultrasound educational experiences. Clinical certainty: High. Differential analysis: The significant differences in most applications of bedside US and barriers to US education between residency programs with and without fellows...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Further investigation into the specific applications of bedside US and barriers to US education in residency programs with and without EUS fellowships."
+  },
+  {
+    "id": "pubmedqa_25432938",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Traffic Fatalities and Injuries Reduction in Chile",
+    "question": "The patient (Chilean population) presented with a concern of traffic fatalities and injuries from 2000-2012. The patient's symptoms included a significant reduction in traffic fatalities and severe injuries, with notable reductions of 8% and 7%, respectively. The patient's past history revealed that police traffic enforcement was implemented during this period, resulting in a 59% reduction in fatalities and a 37% reduction in severe injuries.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"A\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"B\", \"probability\": 0.05, \"justification\": \"The lack of significant reduction in traffic fatalities and severe injuries in the absence of police traffic enforcement makes this option less like...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Review of traffic safety policies and enforcement strategies\", \"immediate_diagnostic_action\": \"Analysis of road infrastructure investment and its impact on traffic safety\", \"recommended_next_steps\": [\"Review of traff"
+  },
+  {
+    "id": "pubmedqa_25489696",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Local Recurrence of Rectal Cancer",
+    "question": "Adult patient with primary rectal cancer, presenting with local recurrence after undergoing radiotherapy for the primary cancer. No specific symptoms or findings ruled out.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Local recurrence of rectal cancer (A)\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"Local recurrence of rectal cancer\", \"probability\": 0.8, \"justification\": \"Strong history of radiotherapy for primary rectal cancer and now presenting with ...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Imaging studies (e.g., MRI, CT scan) to confirm local recurrence\", \"immediate_diagnostic_action\": \"Biopsy to confirm cancer cells\"}"
+  },
+  {
+    "id": "pubmedqa_25957366",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Cardiology",
+    "difficulty": "Medium",
+    "gold_diagnosis": "B",
+    "question": "No specific symptoms mentioned, patients had a moderate or strong familial risk for heart disease, stroke, diabetes, and breast, colorectal, or ovarian cancer",
+    "clinical_rationale": "The patient's age range and moderate or strong familial risk for various chronic conditions suggest a need for screening and preventive measures, but no specific symptoms or findings are mentioned to support a diagnosis of a specific condition. The lack of symptoms or findings makes option B (no) th...",
+    "recommended_plan": "Targeted clinical therapeutic protocol per standard care guidelines."
+  },
+  {
+    "id": "pubmedqa_26037986",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "High Surgical Risk in Emergency Laparotomy Patients >70 Years",
+    "question": "The patient is a high-risk individual undergoing emergency laparotomy, with no specific timeline of symptoms provided. The patient's age (>70 years) is a significant risk factor.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"High surgical risk\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"High surgical risk\", \"probability\": 0.8, \"justification\": \"High mortality rates in patients >70 years undergoing emergency laparotomy\"}, {\"rank\": 2, \"condition\": \"Sepsis\", \"p...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"Assess cardiovascular and respiratory reserve before surgery\", \"immediate_diagnostic_action\": \"Optimize perioperative care to minimize complications\"}"
+  },
+  {
+    "id": "pubmedqa_26298839",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "High",
+    "gold_diagnosis": "Dysphonia due to Phonotraumatic Vocal Fold Lesions",
+    "question": "Adult patients (age range not specified), both male and female, experienced dysphonia due to phonotraumatic vocal fold lesions, with symptoms lasting for an unspecified duration. Significant improvement in vocal function and perceived quality of life improvement were observed.",
+    "clinical_rationale": "Primary diagnosis: Phonotraumatic vocal fold lesions (A). Clinical certainty: High. Differential analysis: Vocal cord nodules (rank 1, probability 0.3), vocal cord polyps (rank 2, probability 0.2), and no treatment (rank 3, probability 0.1) are considered. Elimination of vocal cord paralysis is base...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Vocal function assessment and treatment for phonotraumatic vocal fold lesions."
+  },
+  {
+    "id": "pubmedqa_26578404",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Breathlessness in Advanced Disease",
+    "question": "Adult patients with advanced disease experienced severe breathlessness, which increased quickly and were refractory to other treatments. Symptoms not specified as ruled out.",
+    "clinical_rationale": "Primary diagnosis: Terminal illness (Clinical certainty: High). Differential diagnoses: 1. Terminal illness (80% probability), 2. Chronic obstructive pulmonary disease (COPD) exacerbation (15% probability), 3. Cardiogenic pulmonary edema (5% probability).",
+    "recommended_plan": "Review patient's treatment plan for terminal illness, assess symptom control, and consider palliative care consultation."
+  },
+  {
+    "id": "pubmedqa_26852225",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note for Sleep Disorders",
+    "question": "The patient is an adult Japanese individual, aged 18 years and over, presenting with sleep disorders and energy-related problems. No specific timeline of symptoms was provided. The patient has multiple comorbidities and lacks regular exercise.",
+    "clinical_rationale": "Primary diagnosis: Insomnia (A) with a high likelihood (0.6 probability). Differential diagnoses: Sleep apnea (B) with a moderate likelihood (0.25 probability), and chronic fatigue syndrome (C) with a low likelihood (0.15 probability).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: 1. Sleep diary to track sleep patterns. 2. Questionnaire to assess sleep quality and energy levels."
+  },
+  {
+    "id": "pubmedqa_28707539",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "High",
+    "gold_diagnosis": "Obesity Risk Monitoring",
+    "question": "A 30-year-old male, mean age 51 (41-68) years, with a mean body weight of 71.1 (50.9-101.9) kg, underwent workplace screenings twice within a 1-year interval. The patient's chief complaint is the measurement of visceral adipose tissue (VAT) for risk monitoring. The patient has a history of obesity and metabolic syndrome.",
+    "clinical_rationale": "{\"Primary diagnosis\": \"Obesity\", \"Clinical certainty\": \"High\", \"Differential analysis\": [{\"Rank\": 1, \"Condition\": \"Metabolic syndrome\", \"Probability\": 0.6, \"Justification\": \"The presence of obesity and metabolic syndrome suggests a high likelihood of metabolic syndrome, which is often associated wit...",
+    "recommended_plan": "{\"Immediate therapeutic and diagnostic action plan\": [\"Measure waist circumference\", \"Assess for other risk factors such as hypertension and dyslipidemia\"]}"
+  },
+  {
+    "id": "pubmedqa_7482275",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Surgery",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Necrotizing Fasciitis",
+    "question": "A 37-year-old patient with necrotizing fasciitis, treated with HBO and surgical excision and antibiotics alone. The patient's symptoms and treatment history suggest a high mortality rate and increased number of surgical debridements.",
+    "clinical_rationale": "Primary diagnosis: Necrotizing fasciitis treatment outcomes. Clinical certainty: 0.6. Differential analysis: Necrotizing fasciitis treatment outcomes (0.6), HBO efficacy in necrotizing fasciitis (0.25), and surgical debridement frequency (0.15).",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Review individual patient risk factors for ominous prognosis and consider alternative treatments for necrotizing fasciitis."
+  },
+  {
+    "id": "pubmedqa_8847047",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Gastroenterology",
+    "difficulty": "High",
+    "gold_diagnosis": "Solitary Small Hepatocellular Carcinoma (HCC)",
+    "question": "The patient has a solitary small hepatocellular carcinoma (HCC) up to 3 cm in diameter. The patient underwent hepatectomy and was observed for at least 2 years for possible recurrence. The patient's demographics are not specified, but the patient has solitary small HCCs. The patient's history of present illness includes fibrous capsule formation in less differentiated HCCs, intrahepatic metastasis in both well differentiated and less differentiated HCCs, portal vein invasion in both well differentiated and less differentiated HCCs, and minute cancerous foci present at the time of operation.",
+    "clinical_rationale": "The primary diagnosis is Hepatocellular carcinoma (HCC) with a clinical certainty of 0.90. The differential diagnoses include Cholangiocarcinoma (0.05 probability) and Fibrolamellar hepatocellular carcinoma (0.05 probability). The presence of intrahepatic metastasis and portal vein invasion in both ...",
+    "recommended_plan": "The recommended next steps include Liver function tests (LFTs) to assess liver function and detect any signs of recurrence, and Imaging studies (e.g. CT or MRI) to assess for any signs of recurrence or metastasis."
+  },
+  {
+    "id": "pubmedqa_9488747",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Pediatrics",
+    "difficulty": "High",
+    "gold_diagnosis": "Anaphylaxis due to Dermographism in Infants",
+    "question": "Eight infants, aged 2 to 15 months, male and female, presented with apparent life-threatening events during bathing. Symptoms included pale appearance, hypotonia, stillness, and unreactivity during bath immersion, with recovery after withdrawal and stimulation. These symptoms occurred repeatedly. Family history of dermographism and eruption after exposure to water or sun was also noted.",
+    "clinical_rationale": "Primary diagnosis: Anaphylaxis due to dermographism. Clinical certainty: High. Differential analysis: Mastocytosis (20% probability), Neurological disorder (10% probability), Cardiac condition (5% probability). The combination of pale appearance, hypotonia, stillness, unreactivity, and dermographism...",
+    "recommended_plan": "Immediate therapeutic and diagnostic action plan: Perform skin prick test to confirm dermographism. Monitor blood histamine levels after bath immersion. Further management will be based on the results of these tests."
+  },
+  {
+    "id": "pubmedqa_9645785",
+    "dataset": "PubMedQA (Biomedical)",
+    "specialty": "Internal Medicine",
+    "difficulty": "Medium",
+    "gold_diagnosis": "Clinical Diagnostic Note",
+    "question": "The patient has no reported symptoms or chief complaint. No patient demographics or history are available.",
+    "clinical_rationale": "{\"primary_diagnosis\": \"Asymptomatic or no condition (B)\", \"clinical_certainty\": \"High\", \"differential_analysis\": [{\"rank\": 1, \"condition\": \"A\", \"probability\": 0.4, \"justification\": \"This option cannot be ruled out entirely, but the lack of symptoms and history makes it less likely.\"}, {\"rank\": 2, \"c...",
+    "recommended_plan": "{\"immediate_therapeutic_action\": \"None\", \"diagnostic_action\": [\"Obtain patient demographics and history\", \"Conduct a thorough physical examination\"]}"
+  }
+]

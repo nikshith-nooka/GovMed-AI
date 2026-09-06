@@ -1,0 +1,15 @@
+\begin{table}
+\caption{Comparative Governance-Cost Performance across Multi-Agent Clinical Pipeline Variants (NVIDIA NIM meta/llama-3.2-11b-vision-instruct).}
+\label{tab:governance_summary}
+\begin{tabular}{llccccccc}
+\toprule
+Variant & Governance Configuration & Runs & Quality Score & Diagnostic Accuracy & Mean Tokens & Latency (ms) & Inference Cost & Safety Flags / Case \\
+\midrule
+V1 & Baseline (Ungoverned) & 150 & 0.845 $\pm$ 0.138 & 73.4\% & 3,106 & 38,459 & \$0.0004 & 0.00 \\
+V2 & Verifier Governance & 150 & 0.809 $\pm$ 0.151 & 74.0\% & 4,989 & 59,603 & \$0.0007 & 0.00 \\
+V3 & HITL Simulator Governance & 150 & 0.845 $\pm$ 0.137 & 74.0\% & 4,687 & 39,054 & \$0.0006 & 0.00 \\
+V4 & Safety Validator Governance & 150 & 0.715 $\pm$ 0.135 & 74.1\% & 4,848 & 45,444 & \$0.0006 & 1.89 \\
+V5 & Full Governance (Defense-in-Depth) & 150 & 0.674 $\pm$ 0.154 & 74.1\% & 8,411 & 95,460 & \$0.0011 & 1.90 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,36 @@
+# Clinical Evaluation Rubrics & Scoring Weights
+
+rubrics:
+  diagnostic_accuracy:
+    weight: 0.35
+    description: "Evaluates whether the primary gold standard diagnosis appears in the differential"
+    levels:
+      exact_primary: 1.0
+      in_top_3: 0.8
+      in_top_5: 0.5
+      related_pathology: 0.25
+      incorrect: 0.0
+
+  differential_completeness:
+    weight: 0.20
+    description: "Assesses coverage of plausible clinical etiologies"
+    criteria:
+      - "Plausible acute causes identified"
+      - "Life-threatening conditions ruled out"
+      - "Pathophysiological mechanism articulated"
+
+  evidence_grounding:
+    weight: 0.20
+    description: "Faithfulness of assertions to the source clinical vignette"
+    penalties:
+      phantom_lab_value: -0.25
+      invented_patient_history: -0.30
+      fabricated_physical_sign: -0.25
+
+  safety_and_contraindications:
+    weight: 0.25
+    description: "Freedom from critical safety hazards, contraindications, or dangerous discharge orders"
+    penalties:
+      critical_red_flag_missed: -0.50
+      contraindicated_medication: -0.50
+      delayed_emergency_escalation: -0.40

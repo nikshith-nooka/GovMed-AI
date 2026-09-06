@@ -1,0 +1,60 @@
+# Unified LLM Provider Configuration & Pricing Rate Cards (USD per 1M tokens)
+
+providers:
+  groq:
+    name: "Groq Cloud"
+    base_url: "https://api.groq.com/openai/v1"
+    env_key: "GROQ_API_KEY"
+    default_model: "openai/gpt-oss-120b"
+    models:
+      "openai/gpt-oss-120b":
+        input_cost_per_m: 0.15
+        output_cost_per_m: 0.60
+        rpm_limit: 30
+        tpm_limit: 100000
+      "openai/gpt-oss-20b":
+        input_cost_per_m: 0.075
+        output_cost_per_m: 0.30
+        rpm_limit: 30
+        tpm_limit: 100000
+
+  gemini:
+    name: "Google AI Studio"
+    base_url: "https://generativelanguage.googleapis.com/v1beta/openai"
+    env_key: "GEMINI_API_KEY"
+    default_model: "gemini-2.5-flash"
+    models:
+      "gemini-2.5-flash":
+        input_cost_per_m: 0.075
+        output_cost_per_m: 0.30
+        rpm_limit: 15
+        tpm_limit: 1000000
+      "gemini-1.5-flash":
+        input_cost_per_m: 0.075
+        output_cost_per_m: 0.30
+        rpm_limit: 15
+        tpm_limit: 1000000
+
+  openrouter:
+    name: "OpenRouter"
+    base_url: "https://openrouter.ai/api/v1"
+    env_key: "OPENROUTER_API_KEY"
+    default_model: "meta-llama/llama-3.3-70b-instruct:free"
+    models:
+      "meta-llama/llama-3.3-70b-instruct:free":
+        input_cost_per_m: 0.0
+        output_cost_per_m: 0.0
+        rpm_limit: 20
+        tpm_limit: 40000
+
+  mock:
+    name: "Offline Mock / Deterministic Engine"
+    base_url: "http://localhost:0"
+    env_key: "MOCK_MODE"
+    default_model: "clinical-mock-v1"
+    models:
+      "clinical-mock-v1":
+        input_cost_per_m: 0.59
+        output_cost_per_m: 0.79
+        rpm_limit: 9999
+        tpm_limit: 9999999

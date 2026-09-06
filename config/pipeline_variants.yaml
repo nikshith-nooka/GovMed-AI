@@ -1,0 +1,69 @@
+# Configuration of 5 Pipeline Variants for Governance Ablation
+
+variants:
+  baseline:
+    id: "V1"
+    name: "Baseline (Ungoverned)"
+    description: "Standard diagnostic pipeline without external oversight layers"
+    agents:
+      - "research_agent"
+      - "diagnosis_agent"
+      - "report_agent"
+    governance_layers: []
+    risk_profile: "High hallucination risk; minimal token & latency overhead"
+
+  verifier:
+    id: "V2"
+    name: "Verifier Governance"
+    description: "Pipeline augmented with source-grounded claim verifier"
+    agents:
+      - "research_agent"
+      - "diagnosis_agent"
+      - "verifier_agent"
+      - "report_agent"
+    governance_layers:
+      - "fact_verifier"
+    risk_profile: "Substantial hallucination reduction; moderate token cost"
+
+  hitl:
+    id: "V3"
+    name: "HITL Simulator Governance"
+    description: "Pipeline augmented with simulated human-in-the-loop attending gate"
+    agents:
+      - "research_agent"
+      - "diagnosis_agent"
+      - "hitl_simulator"
+      - "report_agent"
+    governance_layers:
+      - "hitl_approval_gate"
+    risk_profile: "High clinical safety; adds simulated clinician queue latency"
+
+  safety:
+    id: "V4"
+    name: "Safety Validator Governance"
+    description: "Pipeline augmented with automated contraindication & red-flag validator"
+    agents:
+      - "research_agent"
+      - "diagnosis_agent"
+      - "safety_validator"
+      - "report_agent"
+    governance_layers:
+      - "safety_validator"
+    risk_profile: "Zero critical contraindication misses; targeted overhead"
+
+  full_governance:
+    id: "V5"
+    name: "Full Governance (Defense-in-Depth)"
+    description: "All governance layers active: Verifier + Safety Validator + HITL Gate"
+    agents:
+      - "research_agent"
+      - "diagnosis_agent"
+      - "verifier_agent"
+      - "safety_validator"
+      - "hitl_simulator"
+      - "report_agent"
+    governance_layers:
+      - "fact_verifier"
+      - "safety_validator"
+      - "hitl_approval_gate"
+    risk_profile: "Maximum clinical safety; highest token consumption and latency"

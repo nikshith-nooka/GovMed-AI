@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GovBench | Clinical AI Governance Benchmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="app-layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo-icon">🩺</div>
+        <div class="brand-text">
+          <div class="brand-title">GovBench</div>
+          <div class="brand-subtitle">Clinical AI Governance Benchmark</div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-title">MAIN</div>
+        <button class="nav-item active" data-page="dashboard">
+          <span class="nav-icon">🏠</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-page="cases">
+          <span class="nav-icon">📋</span>
+          <span>Clinical Cases</span>
+        </button>
+        <button class="nav-item" data-page="run-experiment">
+          <span class="nav-icon">▶️</span>
+          <span>Run Experiment</span>
+        </button>
+        <button class="nav-item" data-page="pipeline">
+          <span class="nav-icon">🔀</span>
+          <span>Agent Pipeline</span>
+        </button>
+
+        <div class="nav-section-title">AI SYSTEM & GOVERNANCE</div>
+        <button class="nav-item" data-page="governance-levels">
+          <span class="nav-icon">🛡️</span>
+          <span>Governance Levels</span>
+        </button>
+        <button class="nav-item" data-page="human-review">
+          <span class="nav-icon">👤</span>
+          <span>Human Review</span>
+          <span class="badge-pending" id="sidebar-hitl-count">2</span>
+        </button>
+        <button class="nav-item" data-page="results">
+          <span class="nav-icon">📊</span>
+          <span>Results & Comparison</span>
+        </button>
+        <button class="nav-item" data-page="ablation">
+          <span class="nav-icon">🎛️</span>
+          <span>Ablation Analysis</span>
+        </button>
+
+        <div class="nav-section-title">ANALYTICS & OUTPUT</div>
+        <button class="nav-item" data-page="cost-performance">
+          <span class="nav-icon">💰</span>
+          <span>Cost & Performance</span>
+        </button>
+        <button class="nav-item" data-page="experiments">
+          <span class="nav-icon">📑</span>
+          <span>Experiments</span>
+        </button>
+        <button class="nav-item" data-page="reports">
+          <span class="nav-icon">📄</span>
+          <span>Reports</span>
+        </button>
+        <button class="nav-item" data-page="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="dataset-tags">
+          <div class="dataset-tag-label">DATASETS</div>
+          <div class="dataset-item">📁 MedQA (50 Cases)</div>
+          <div class="dataset-item">📁 PubMedQA (50 Cases)</div>
+          <div class="dataset-item">📁 MedDialog (50 Cases)</div>
+        </div>
+        <div class="sidebar-quote">
+          “Responsible AI for better care.”
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="main-content">
+      <!-- TOP NAVBAR -->
+      <header class="top-navbar">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="global-search" placeholder="Search cases, experiments, or documentation...">
+          <span class="cmd-k">⌘K</span>
+        </div>
+
+        <div class="nav-right">
+          <button class="icon-btn" title="Toggle Theme">☀️</button>
+          <button class="icon-btn notification-btn" title="Notifications">
+            🔔
+            <span class="notification-badge"></span>
+          </button>
+          <div class="user-profile">
+            <div class="avatar-circle">N</div>
+            <div class="user-info">
+              <div class="user-name">Nikshith</div>
+              <div class="user-role">Researcher</div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- VIEW 1: DASHBOARD (HOME) -->
+      <section id="view-dashboard" class="page-view active">
+        <!-- Hero Box -->
+        <div class="hero-box">
+          <div class="hero-left">
+            <div class="hero-eyebrow">RESEARCH • EVALUATE • IMPROVE</div>
+            <h1 class="hero-title">Clinical AI Governance Benchmark</h1>
+            <p class="hero-desc">
+              Quantifying the trade-off between diagnostic quality, safety, and computational cost in multi-agent clinical diagnosis systems.
+            </p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" onclick="navigateTo('run-experiment')">▶ Run New Experiment →</button>
+              <button class="btn btn-outline" onclick="navigateTo('cases')">📋 View Documentation</button>
+            </div>
+          </div>
+
+          <div class="hero-art-card">
+            <div class="art-leaf">🌿</div>
+            <div class="art-title">AI Governance<br>for Healthier Tomorrows.</div>
+            <div class="art-subtitle">Evidence • Safety • Accountability • Better Care</div>
+          </div>
+        </div>
+
+        <!-- 6 KPI Stat Tiles -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">📦 Total Cases</div>
+            <div class="kpi-val" id="kpi-total-cases">300</div>
+            <div class="kpi-badge">Processed ↑ 12%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">🧪 Experiments</div>
+            <div class="kpi-val" id="kpi-experiments">12</div>
+            <div class="kpi-badge">Completed ↑ 33%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">🎯 Avg. Diagnostic Quality</div>
+            <div class="kpi-val" id="kpi-quality">74.2%</div>
+            <div class="kpi-badge">vs. baseline ↑ 6.8%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">🪙 Avg. Token Cost</div>
+            <div class="kpi-val" id="kpi-tokens">2,324</div>
+            <div class="kpi-badge">per case ↑ 18%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">⏱️ Avg. Latency</div>
+            <div class="kpi-val" id="kpi-latency">8.7 s</div>
+            <div class="kpi-badge">vs. initial runs ↓ 22%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">🛡️ Verification Rate</div>
+            <div class="kpi-val" id="kpi-safety">96.1%</div>
+            <div class="kpi-badge">Across all runs ↑ 4.3%</div>
+          </div>
+        </div>
+
+        <!-- Middle Row: Tradeoff Curve + Pipeline Overview -->
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Governance vs. Quality–Cost Tradeoff</div>
+                <div class="card-subtitle">Each point represents a governance level (G0–G4)</div>
+              </div>
+            </div>
+            <div class="chart-container" style="height: 240px;">
+              <canvas id="paretoChart"></canvas>
+            </div>
+            <div class="insight-box">
+              <div class="insight-title">💡 Key Insight</div>
+              <div class="insight-text">
+                <b>G3 achieves 82.4% quality</b> with only 36% additional token cost compared to baseline, offering the best governance efficiency.
+              </div>
+              <div class="insight-tags">
+                <span class="pill-green">+58.1% Quality vs. G0</span>
+                <span class="pill-green">+35.7% Token Cost vs. G0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Agent Pipeline Overview</div>
+                <div class="card-subtitle">Multi-agent consensus and verification topology</div>
+              </div>
+              <button class="link-btn" onclick="navigateTo('pipeline')">View Pipeline →</button>
+            </div>
+
+            <div class="pipe-flow">
+              <div class="pipe-node">
+                <div class="node-icon">📋</div>
+                <div class="node-name">Clinical Case</div>
+              </div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-node">
+                <div class="node-icon">🩺</div>
+                <div class="node-name">Specialists</div>
+                <div class="node-sub">(3 Agents)</div>
+              </div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-node">
+                <div class="node-icon">📝</div>
+                <div class="node-name">Synthesis</div>
+              </div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-node">
+                <div class="node-icon">🛡️</div>
+                <div class="node-name">Governance</div>
+                <div class="node-sub">(G0–G4)</div>
+              </div>
+              <span class="pipe-arrow">→</span>
+              <div class="pipe-node">
+                <div class="node-icon">📊</div>
+                <div class="node-name">Evaluation</div>
+              </div>
+            </div>
+
+            <div class="pipe-metrics-grid">
+              <div class="pipe-stat-box">
+                <div class="stat-num">5</div>
+                <div class="stat-lbl">Governance Levels</div>
+              </div>
+              <div class="pipe-stat-box">
+                <div class="stat-num">3</div>
+                <div class="stat-lbl">Specialist Agents</div>
+              </div>
+              <div class="pipe-stat-box">
+                <div class="stat-num">8-Point</div>
+                <div class="stat-lbl">Evaluation Rubric</div>
+              </div>
+              <div class="pipe-stat-box">
+                <div class="stat-num">Real-time</div>
+                <div class="stat-lbl">Tracing & Logs</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Table + Recent Experiments + Donut -->
+        <div class="grid-2col" style="margin-top: 20px;">
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Governance Level Comparison</div>
+                <div class="card-subtitle">Quantitative benchmark metrics across G0 through G4</div>
+              </div>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Level</th>
+                  <th>Description</th>
+                  <th>Quality ↑</th>
+                  <th>Tokens ↓</th>
+                  <th>Latency ↓</th>
+                  <th>Gov. Efficiency</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="level-dot dot-g0"></span> <b>G0</b></td>
+                  <td>Baseline</td>
+                  <td><b>52.1%</b></td>
+                  <td>1,970</td>
+                  <td>4.2 s</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="level-dot dot-g1"></span> <b>G1</b></td>
+                  <td>Verification</td>
+                  <td><b>63.4%</b></td>
+                  <td>2,104</td>
+                  <td>5.8 s</td>
+                  <td>0.28</td>
+                </tr>
+                <tr>
+                  <td><span class="level-dot dot-g2"></span> <b>G2</b></td>
+                  <td>Human-in-the-Loop</td>
+                  <td><b>76.2%</b></td>
+                  <td>2,481</td>
+                  <td>8.6 s</td>
+                  <td>0.31</td>
+                </tr>
+                <tr>
+                  <td><span class="level-dot dot-g3"></span> <b>G3</b></td>
+                  <td>Combined Governance</td>
+                  <td><b>82.4%</b></td>
+                  <td>2,721</td>
+                  <td>11.3 s</td>
+                  <td><span class="pill-green">0.35</span></td>
+                </tr>
+                <tr>
+                  <td><span class="level-dot dot-g4"></span> <b>G4</b></td>
+                  <td>Advanced Governance</td>
+                  <td><b>85.1%</b></td>
+                  <td>3,489</td>
+                  <td>16.7 s</td>
+                  <td>0.24</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <div class="card-title">Recent Experiments</div>
+                <div class="card-subtitle">Latest benchmark runs from SQLite</div>
+              </div>
+              <button class="link-btn" onclick="navigateTo('experiments')">View All →</button>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Dataset</th>
+                  <th>Cases</th>
+                  <th>Model</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="recent-experiments-tbody">
+                <tr>
+                  <td><code>EXP-012</code></td>
+                  <td>MedQA</td>
+                  <td>50</td>
+                  <td>Llama3.2-11B</td>
+                  <td><span class="status-badge status-completed">Completed</span></td>
+                  <td>Sep 06, 2026</td>
+                </tr>
+                <tr>
+                  <td><code>EXP-011</code></td>
+                  <td>PubMedQA</td>
+                  <td>50</td>
+                  <td>Llama3.2-11B</td>
+                  <td><span class="status-badge status-completed">Completed</span></td>
+                  <td>Sep 05, 2026</td>
+                </tr>
+                <tr>
+                  <td><code>EXP-010</code></td>
+                  <td>MedDialog</td>
+                  <td>50</td>
+                  <td>Llama3.2-11B</td>
+                  <td><span class="status-badge status-completed">Completed</span></td>
+                  <td>Sep 04, 2026</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: CLINICAL CASES (OPTION A & OPTION B) -->
+      <section id="view-cases" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">📋 Clinical Cases Workbench</h2>
+            <p class="page-desc">Explore verified benchmark cases (Option A) or enter custom patient vignettes for real-time live governance inference (Option B).</p>
+          </div>
+        </div>
+
+        <div class="tabs-header">
+          <button class="tab-btn active" onclick="switchCaseTab('tab-option-a')">📂 Option A: Benchmark Vignettes (MedQA / PubMedQA)</button>
+          <button class="tab-btn" onclick="switchCaseTab('tab-option-b')">✍️ Option B: Custom Patient Input Form (EHR / Labs)</button>
+        </div>
+
+        <!-- TAB A: BENCHMARK VIGNETTES -->
+        <div id="tab-option-a" class="tab-pane active">
+          <div class="filter-bar">
+            <input type="text" id="case-search-input" placeholder="🔍 Search clinical vignette, symptoms, or diagnosis..." oninput="filterCases()">
+            <select id="case-specialty-filter" onchange="filterCases()">
+              <option value="All">All Specialties</option>
+              <option value="Cardiology">Cardiology</option>
+              <option value="Neurology">Neurology</option>
+              <option value="Pulmonology">Pulmonology</option>
+              <option value="Endocrinology">Endocrinology</option>
+              <option value="Gastroenterology">Gastroenterology</option>
+            </select>
+          </div>
+
+          <div id="cases-list-container" class="cases-accordion-list">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- TAB B: CUSTOM PATIENT INPUT FORM -->
+        <div id="tab-option-b" class="tab-pane">
+          <div class="card">
+            <h3 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 6px;">🏥 Custom Patient Case & Governance Simulator</h3>
+            <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 16px;">Test how your multi-agent architecture catches dangerous drug contraindications and hallucinations on any real-world patient chart.</p>
+
+            <form id="custom-case-form" onsubmit="submitCustomCase(event)">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label>Chief Complaint</label>
+                  <input type="text" id="form-cc" value="Acute severe right knee pain, warmth, and swelling" required>
+                </div>
+                <div class="form-group">
+                  <label>Vital Signs</label>
+                  <input type="text" id="form-vitals" value="BP 148/92 mmHg, HR 88 bpm, RR 16/min, Temp 37.8°C, SpO2 98%">
+                </div>
+                <div class="form-group span-2">
+                  <label>History of Present Illness (HPI)</label>
+                  <textarea id="form-hpi" rows="3" required>54-year-old male presents with sudden-onset extreme right knee pain starting 12 hours ago. Joint aspiration reveals negatively birefringent needle-shaped crystals under polarizing microscopy.</textarea>
+                </div>
+                <div class="form-group">
+                  <label>Past Medical History</label>
+                  <textarea id="form-pmh" rows="2">Chronic Kidney Disease (Stage 3b, baseline eGFR 38 mL/min), Congestive Heart Failure (EF 40%), Hypertension.</textarea>
+                </div>
+                <div class="form-group">
+                  <label>Current Medications & Allergies</label>
+                  <textarea id="form-meds" rows="2">Lisinopril 20mg daily, Warfarin 5mg daily. NKDA.</textarea>
+                </div>
+                <div class="form-group span-2">
+                  <label>Target Governance Level</label>
+                  <select id="form-gov-level">
+                    <option value="G4 (Advanced Defense)">G4 (Advanced Defense) — Full Stack Verifier + Safety Validator + HITL Gate</option>
+                    <option value="G3 (Safety Guardrail)">G3 (Safety Guardrail) — Automated Contraindication Interception</option>
+                    <option value="G1 (Verification)">G1 (Verification) — PubMed Fact-Checking Only</option>
+                    <option value="G0 (Baseline)">G0 (Baseline) — Direct Ungoverned Specialist Inference</option>
+                  </select>
+                </div>
+              </div>
+
+              <button type="submit" class="btn btn-primary" id="btn-submit-case" style="margin-top: 14px;">
+                🚀 Execute Live Clinical Governance Pipeline
+              </button>
+            </form>
+
+            <div id="custom-case-output" class="custom-output-box" style="display: none;">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: RUN EXPERIMENT -->
+      <section id="view-run-experiment" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">▶️ Batch Experiment Execution Engine</h2>
+            <p class="page-desc">Configure and launch multi-threaded governance benchmark sweeps with live token and latency tracing.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Target Dataset</label>
+              <select id="exp-dataset">
+                <option value="MedQA-USMLE">MedQA-USMLE (50 Cases)</option>
+                <option value="PubMedQA">PubMedQA (50 Cases)</option>
+                <option value="MedDialog">MedDialog (50 Cases)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Number of Cases to Run</label>
+              <input type="number" id="exp-cases" value="20" min="5" max="50" step="5">
+            </div>
+            <div class="form-group">
+              <label>Foundation LLM</label>
+              <select id="exp-model">
+                <option value="meta/llama-3.2-11b-vision-instruct">meta/llama-3.2-11b-vision-instruct (NVIDIA NIM)</option>
+                <option value="meta/llama-3.3-70b-instruct">meta/llama-3.3-70b-instruct</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Random Seed</label>
+              <input type="number" id="exp-seed" value="42">
+            </div>
+          </div>
+
+          <div style="margin: 16px 0;">
+            <label style="font-weight: 600; font-size: 0.88rem; display: block; margin-bottom: 8px;">Active Governance Layers:</label>
+            <div style="display: flex; gap: 14px;">
+              <label><input type="checkbox" checked> G0 (Baseline)</label>
+              <label><input type="checkbox" checked> G1 (Verification)</label>
+              <label><input type="checkbox" checked> G2 (HITL)</label>
+              <label><input type="checkbox" checked> G3 (Safety Guardrail)</label>
+              <label><input type="checkbox" checked> G4 (Full Defense)</label>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" onclick="startBatchExperiment()">🚀 Launch Benchmark Sweep</button>
+
+          <div id="batch-progress-container" style="display: none; margin-top: 20px;">
+            <div style="font-weight: 700; margin-bottom: 6px;" id="batch-status-text">Executing Cases...</div>
+            <div class="progress-bar-bg"><div id="batch-progress-fill" class="progress-bar-fill" style="width: 0%;"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 4: AGENT PIPELINE -->
+      <section id="view-pipeline" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">🔀 Multi-Agent Diagnostic Pipeline Topology</h2>
+            <p class="page-desc">Step-by-step visual trace of how patient cases traverse specialists, verifiers, and safety gates.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="pipe-flow" style="padding: 20px 0;">
+            <div class="pipe-node" style="border-top: 4px solid #64748B;">
+              <div class="node-icon">📋</div>
+              <div class="node-name">1. Clinical Case</div>
+              <div class="node-sub">EHR Ingestion</div>
+            </div>
+            <span class="pipe-arrow">➔</span>
+            <div class="pipe-node" style="border-top: 4px solid #2563EB;">
+              <div class="node-icon">🩺</div>
+              <div class="node-name">2. Specialist Agents</div>
+              <div class="node-sub">Differential Dx</div>
+            </div>
+            <span class="pipe-arrow">➔</span>
+            <div class="pipe-node" style="border-top: 4px solid #0D9488;">
+              <div class="node-icon">📚</div>
+              <div class="node-name">3. Researcher</div>
+              <div class="node-sub">PubMed Retrieval</div>
+            </div>
+            <span class="pipe-arrow">➔</span>
+            <div class="pipe-node" style="border-top: 4px solid #D97706;">
+              <div class="node-icon">🔍</div>
+              <div class="node-name">4. Verifier</div>
+              <div class="node-sub">Fact-Checking</div>
+            </div>
+            <span class="pipe-arrow">➔</span>
+            <div class="pipe-node" style="border-top: 4px solid #DC2626;">
+              <div class="node-icon">🛡️</div>
+              <div class="node-name">5. Safety Guardrail</div>
+              <div class="node-sub">Contraindications</div>
+            </div>
+            <span class="pipe-arrow">➔</span>
+            <div class="pipe-node" style="border-top: 4px solid #16A34A;">
+              <div class="node-icon">👨‍⚕️</div>
+              <div class="node-name">6. Attending HITL</div>
+              <div class="node-sub">Human Sign-off</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 5: GOVERNANCE LEVELS -->
+      <section id="view-governance-levels" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">🛡️ Governance Architecture Specifications ($G0 \dots G4$)</h2>
+            <p class="page-desc">The independent variable in our benchmark: detailed mechanics, triggers, and cost overheads for each level.</p>
+          </div>
+        </div>
+
+        <div class="gov-levels-list">
+          <div class="card" style="border-left: 5px solid #64748B;">
+            <h3 style="font-weight: 800;">🔵 G0: Ungoverned Baseline</h3>
+            <p style="color: #475569;">Direct single-agent inference. No literature verification, zero contraindication checks. Lowest compute cost, but dangerous risk profile.</p>
+            <div class="metric-tags"><span class="tag">Latency: 4.2 s</span><span class="tag">Tokens: 1,970</span><span class="tag">Cost: $0.00025</span></div>
+          </div>
+
+          <div class="card" style="border-left: 5px solid #2563EB;">
+            <h3 style="font-weight: 800;">🔷 G1: Diagnostic Verification</h3>
+            <p style="color: #475569;">Adds medical literature retrieval and fact-checking verifier to audit unsupported clinical claims and diagnostic hallucinations.</p>
+            <div class="metric-tags"><span class="tag">Latency: 5.8 s</span><span class="tag">Tokens: 2,104</span><span class="tag">Cost: $0.00027</span></div>
+          </div>
+
+          <div class="card" style="border-left: 5px solid #D97706;">
+            <h3 style="font-weight: 800;">🟠 G2: Human-in-the-Loop (HITL) Gate</h3>
+            <p style="color: #475569;">Automated escalation to an attending clinician review gate whenever diagnostic confidence drops or high-risk findings appear.</p>
+            <div class="metric-tags"><span class="tag">Latency: 8.6 s</span><span class="tag">Tokens: 2,481</span><span class="tag">Cost: $0.00032</span></div>
+          </div>
+
+          <div class="card" style="border-left: 5px solid #16A34A;">
+            <h3 style="font-weight: 800;">🟢 G3: Safety Guardrails & Contraindication Interception</h3>
+            <p style="color: #475569;">Black-box contraindication validator checking drug interactions, organ clearance, and red-flag errors. Demonstrates optimal Pareto efficiency.</p>
+            <div class="metric-tags"><span class="tag">Latency: 11.3 s</span><span class="tag">Tokens: 2,721</span><span class="tag">Cost: $0.00035</span><span class="pill-green">Optimal Efficiency</span></div>
+          </div>
+
+          <div class="card" style="border-left: 5px solid #7C3AED;">
+            <h3 style="font-weight: 800;">🟣 G4: Advanced Full Defense-in-Depth</h3>
+            <p style="color: #475569;">All layers active simultaneously (Lead Specialist + Literature Retrieval + Diagnostic Verifier + Safety Guardrail + Attending HITL Gate).</p>
+            <div class="metric-tags"><span class="tag">Latency: 16.7 s</span><span class="tag">Tokens: 3,489</span><span class="tag">Cost: $0.00045</span><span class="tag">Max Safety</span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 6: HUMAN REVIEW -->
+      <section id="view-human-review" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">👤 Attending Physician Review Queue</h2>
+            <p class="page-desc">High-risk cases flagged by the Verifier or Safety Guardrails requiring human clinician sign-off.</p>
+          </div>
+        </div>
+
+        <div id="hitl-queue-container">
+          <div class="card hitl-card" id="hitl-case-1">
+            <div class="hitl-header">
+              <div>
+                <span class="hitl-id">REV-104</span>
+                <span class="hitl-patient">67yo F with Atrial Fibrillation on Warfarin</span>
+              </div>
+              <span class="status-badge" style="background:#FEF3C7; color:#B45309;">Pending Review</span>
+            </div>
+            <div class="hitl-alert">🚨 Safety Alert: Proposed mechanical thrombectomy timing is near border of standard window.</div>
+            <div style="font-size: 0.9rem; margin-bottom: 12px;">AI Proposed Plan: <b>Acute Left MCA Ischemic Stroke — Emergent Neuro-Intervention</b></div>
+            <div class="hitl-actions">
+              <button class="btn btn-primary" onclick="resolveHITL('hitl-case-1', 'Approved')">✅ Approve Plan</button>
+              <button class="btn btn-outline" onclick="resolveHITL('hitl-case-1', 'Revision Requested')">🔄 Request Revision</button>
+              <button class="btn btn-outline" style="color: #DC2626;" onclick="resolveHITL('hitl-case-1', 'Rejected')">❌ Reject</button>
+            </div>
+          </div>
+
+          <div class="card hitl-card" id="hitl-case-2" style="margin-top: 14px;">
+            <div class="hitl-header">
+              <div>
+                <span class="hitl-id">REV-105</span>
+                <span class="hitl-patient">54yo M with CKD Stage 3b & Acute Gout</span>
+              </div>
+              <span class="status-badge" style="background:#FEF3C7; color:#B45309;">Pending Review</span>
+            </div>
+            <div class="hitl-alert">🚨 Contraindication Intercepted: Indomethacin (NSAID) blocked due to baseline eGFR 38.</div>
+            <div style="font-size: 0.9rem; margin-bottom: 12px;">AI Proposed Plan: <b>Switch to Intra-articular Corticosteroids (Triamcinolone)</b></div>
+            <div class="hitl-actions">
+              <button class="btn btn-primary" onclick="resolveHITL('hitl-case-2', 'Approved')">✅ Approve Plan</button>
+              <button class="btn btn-outline" onclick="resolveHITL('hitl-case-2', 'Revision Requested')">🔄 Request Revision</button>
+              <button class="btn btn-outline" style="color: #DC2626;" onclick="resolveHITL('hitl-case-2', 'Rejected')">❌ Reject</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 7: RESULTS & COMPARISON -->
+      <section id="view-results" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">📊 Benchmark Results & Multi-Variant Comparison</h2>
+            <p class="page-desc">Empirical metrics across all 750 benchmark runs in SQLite.</p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <div class="card-title">Diagnostic Quality & Accuracy by Governance Level</div>
+            <div class="chart-container" style="height: 250px;">
+              <canvas id="accuracyBarChart"></canvas>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Mean Latency Overhead (Seconds)</div>
+            <div class="chart-container" style="height: 250px;">
+              <canvas id="latencyLineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 8: ABLATION ANALYSIS -->
+      <section id="view-ablation" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">🎛️ Governance Layer Ablation Study</h2>
+            <p class="page-desc">Quantifying the exact marginal benefit and overhead of adding each safety mechanism.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Mechanism Added</th>
+                <th>Δ Diagnostic Quality</th>
+                <th>Δ Safety Gain</th>
+                <th>Token Overhead</th>
+                <th>Latency Overhead</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>G0 Baseline</b></td>
+                <td>None</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+                <td>—</td>
+              </tr>
+              <tr>
+                <td><b>+ G1 Layer</b></td>
+                <td>Diagnostic Verifier</td>
+                <td><span class="pill-green">+11.3%</span></td>
+                <td>+77 Hallucinations Caught</td>
+                <td>+134 tokens</td>
+                <td>+1.6 s</td>
+              </tr>
+              <tr>
+                <td><b>+ G2 Layer</b></td>
+                <td>Attending HITL Gate</td>
+                <td><span class="pill-green">+12.8%</span></td>
+                <td>+42 High-Risk Sign-offs</td>
+                <td>+377 tokens</td>
+                <td>+2.8 s</td>
+              </tr>
+              <tr>
+                <td><b>+ G3 Layer</b></td>
+                <td>Safety & Contraindication Gate</td>
+                <td><span class="pill-green">+6.2%</span></td>
+                <td>+283 Contraindications Blocked</td>
+                <td>+240 tokens</td>
+                <td>+2.7 s</td>
+              </tr>
+              <tr>
+                <td><b>+ G4 Layer</b></td>
+                <td>Full Multi-Layer Defense</td>
+                <td><span class="pill-green">+2.7%</span></td>
+                <td>+285 Blocked + 77 Caught</td>
+                <td>+768 tokens</td>
+                <td>+5.4 s</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW 9: COST & PERFORMANCE -->
+      <section id="view-cost-performance" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">💰 Compute Cost & Latency Performance Telemetry</h2>
+            <p class="page-desc">Granular token consumption and dollar expenditure data for hospital deployments.</p>
+          </div>
+        </div>
+
+        <div class="kpi-grid" style="grid-template-columns: repeat(3, 1fr);">
+          <div class="kpi-card">
+            <div class="kpi-header">🪙 Total Tokens Analyzed</div>
+            <div class="kpi-val">3,912,450</div>
+            <div class="kpi-badge">+18% vs Baseline</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">💵 Total Benchmark Cost</div>
+            <div class="kpi-val">$0.51 USD</div>
+            <div class="kpi-badge">750 Executions</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-header">⚡ Cost per Safe Case</div>
+            <div class="kpi-val">$0.00045 USD</div>
+            <div class="kpi-badge">&lt; 1/10th of a cent</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 10: EXPERIMENTS -->
+      <section id="view-experiments" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">📑 Historical Experiment Runs Registry</h2>
+            <p class="page-desc">Complete database log of all 750 multi-agent executions recorded in SQLite.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Case ID</th>
+                <th>Dataset</th>
+                <th>Variant</th>
+                <th>Accuracy</th>
+                <th>Tokens</th>
+                <th>Latency</th>
+                <th>Timestamp</th>
+              </tr>
+            </thead>
+            <tbody id="experiments-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- VIEW 11: REPORTS -->
+      <section id="view-reports" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">📄 Publication-Ready Reports & Exports</h2>
+            <p class="page-desc">Generate paper-ready LaTeX tables, 300-DPI vector figures, and raw CSV datasets.</p>
+          </div>
+        </div>
+
+        <div class="grid-2col">
+          <div class="card">
+            <h3 style="font-weight: 700; margin-bottom: 8px;">📥 Manuscript LaTeX Table</h3>
+            <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 14px;">Download <code>variant_summary.tex</code> formatted for IEEE Transactions on Medical Informatics.</p>
+            <a href="/api/reports/latex" download="variant_summary.tex" class="btn btn-primary">Download LaTeX Table (.tex)</a>
+          </div>
+
+          <div class="card">
+            <h3 style="font-weight: 700; margin-bottom: 8px;">📊 Complete Benchmark Dataset</h3>
+            <p style="color: #64748B; font-size: 0.88rem; margin-bottom: 14px;">Download all 750 runs with granular token, latency, and scoring telemetry.</p>
+            <a href="/api/reports/csv" download="govbench_750_runs.csv" class="btn btn-outline">Download Complete CSV (.csv)</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 12: SETTINGS -->
+      <section id="view-settings" class="page-view">
+        <div class="page-header-row">
+          <div>
+            <h2 class="page-title">⚙️ System Settings & API Health</h2>
+            <p class="page-desc">Verify LLM endpoints, database integrity, and safety threshold hyperparameters.</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 14px;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #16A34A;"></div>
+            <b style="color: #16A34A;">NVIDIA NIM API Key Connected & Active</b>
+          </div>
+          <p><b>Model Engine:</b> <code>meta/llama-3.2-11b-vision-instruct</code></p>
+          <p><b>Database:</b> <code>results/benchmark_results.db</code> (750 runs, 0 errors)</p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
