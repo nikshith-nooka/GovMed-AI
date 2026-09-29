@@ -56,6 +56,14 @@ results/seed_*.db
 results/seeded_*.db
 results/validation_judge.db
 results/ui_experiments.db
+results/jobs.db
+results/pilot_*.db
+
+# LaTeX build output
+paper_out/
+paper/*.aux
+paper/*.log
+paper/*.out
 !results/benchmark_results.db.bak
 
 # Unrelated documents

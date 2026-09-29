@@ -35,6 +35,11 @@ class LiveInferenceUnavailable(RuntimeError):
     """Raised instead of substituting simulated output when allow_mock_fallback=False."""
 
 
+# Provider names that select the deterministic offline demo generator (not an AI model).
+DEMO_PROVIDERS = ("mock", "simulation", "offline", "demo")
+DEMO_PROVIDER_LABEL = "Offline demo (not AI)"
+
+
 class UnifiedLLMClient:
     _key_cursor = itertools.count()
 
@@ -71,6 +76,15 @@ class UnifiedLLMClient:
         # False = raise instead of silently answering with simulated output (use for clinical UI and benchmarks).
         self.allow_mock_fallback = allow_mock_fallback
         self.mock_fallbacks = 0
+        # Optional callable(event_dict) told about every provider rate-limit wait, so a UI can show it live.
+        self.rate_limit_listener = None
+        self.rate_limit_waits = 0
+        self.rate_limit_wait_s = 0.0
+
+        # Strict callers (benchmarks, experiments) must never be handed the demo generator by name.
+        if self.provider in DEMO_PROVIDERS and not force_mock and not allow_mock_fallback:
+            raise LiveInferenceUnavailable(
+                f"'{self.provider}' is the {DEMO_PROVIDER_LABEL} generator; strict runs require a live provider.")
 
         # Configure provider specific endpoints and keys
         if self.provider == "groq":
@@ -122,6 +136,20 @@ class UnifiedLLMClient:
             )
             self.force_mock = True
 
+    def _notify_rate_limit(self, wait_s: float, attempt: int, max_attempts: int) -> None:
+        self.rate_limit_waits += 1
+        self.rate_limit_wait_s += wait_s
+        if self.rate_limit_listener is None:
+            return
+        try:
+            self.rate_limit_listener({"type": "rate_limit", "provider": self.provider, "wait_s": wait_s,
+                                      "attempt": attempt, "max_attempts": max_attempts, "at": time.time()})
+        except Exception:  # a broken listener must never break inference
+            logger.exception("Rate-limit listener failed")
+
+    # Optional sampling seed forwarded with every request (set by the benchmark runner's --seed).
+    seed: Optional[int] = None
+
     def calculate_cost(self, model: str, prompt_tokens: int, completion_tokens: int) -> float:
         rates = self.PRICING_TABLE.get(model, {"input": 0.50, "output": 0.80})
         cost = (prompt_tokens / 1_000_000 * rates["input"]) + (
@@ -172,6 +200,9 @@ class UnifiedLLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        # OpenAI-compatible providers accept a best-effort sampling seed; it does not guarantee determinism.
+        if self.seed is not None:
+            payload["seed"] = int(self.seed)
         if self.reasoning_effort and self.provider == "groq" and "gpt-oss" in target_model:
             payload["reasoning_effort"] = self.reasoning_effort
 
@@ -197,6 +228,7 @@ class UnifiedLLMClient:
                             continue
                         
                         logger.warning(f"Rate limited by {self.provider} (429). Waiting {retry_after}s for quota reset... (attempt {attempt+1}/{max_retries})")
+                        self._notify_rate_limit(retry_after, attempt + 1, max_retries)
                         time.sleep(retry_after)
                         continue
 

@@ -2,10 +2,9 @@
 
 from __future__ import annotations
 
-import json
 import random
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 from src.config.governance_economics import (
@@ -55,9 +54,9 @@ class HITLSimulatorAgent(BaseClinicalAgent):
         case_text = raw_source_case.get("question", "") or raw_source_case.get("clinical_note", "")
         prompt = (
             f"Review this diagnostic plan as an Attending Physician Gatekeeper:\n\n"
-            f"--- CLINICAL PRESENTATION ---\n{case_text}\n\n"
-            f"--- AI DIAGNOSTIC PROPOSAL ---\n{json.dumps(diagnostic_output, indent=2)}\n\n"
-            f"--- SAFETY EVALUATION INPUT ---\n{json.dumps(safety_output or {}, indent=2)}\n\n"
+            f"--- CLINICAL PRESENTATION ---\n{wrap_case_data(case_text, 'case_note')}\n\n"
+            f"--- AI DIAGNOSTIC PROPOSAL ---\n{wrap_case_data(diagnostic_output, 'diagnosis_output')}\n\n"
+            f"--- SAFETY EVALUATION INPUT ---\n{wrap_case_data(safety_output or {}, 'safety_output')}\n\n"
             f"Decide whether to Approve, Request Revision, or Reject. Respond in JSON."
         )
 

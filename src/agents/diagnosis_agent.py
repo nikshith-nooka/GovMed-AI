@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, List, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -78,13 +77,13 @@ class DiagnosisAgent(BaseClinicalAgent):
         if case_options:
             options_text = (
                 f"\n**IMPORTANT — You MUST select your primary_diagnosis from one of these options:**\n"
-                f"{json.dumps(case_options, indent=2)}\n"
+                f"{wrap_case_data(case_options, 'answer_options')}\n"
                 f"Your primary_diagnosis MUST be the EXACT text of one of the above options.\n"
             )
 
         prompt = (
             f"Based on the patient's structured findings, formulate the differential diagnosis.{options_text}\n"
-            f"Findings: {json.dumps(extracted_findings, indent=2)}\n\n"
+            f"Findings:\n{wrap_case_data(extracted_findings, 'extracted_findings')}\n\n"
             f"Think step-by-step. Identify key clues, generate hypotheses, eliminate contradictions, then select the best answer.\n"
             f"Respond in JSON format."
         )
@@ -108,7 +107,7 @@ class DiagnosisAgent(BaseClinicalAgent):
     ) -> Tuple[Dict[str, Any], AgentStepLog]:
         """Reconsider the diagnosis in light of governance concerns (one bounded round)."""
         options_text = (
-            f"\nYou MUST still select primary_diagnosis from these options:\n{json.dumps(case_options, indent=2)}\n"
+            f"\nYou MUST still select primary_diagnosis from these options:\n{wrap_case_data(case_options, 'answer_options')}\n"
             if case_options
             else ""
         )
@@ -123,9 +122,9 @@ class DiagnosisAgent(BaseClinicalAgent):
         }
         prompt = (
             "Independent governance reviewers raised concerns about your prior assessment.\n"
-            f"--- PATIENT FINDINGS ---\n{json.dumps(extracted_findings)}\n\n"
-            f"--- YOUR PRIOR ASSESSMENT ---\n{json.dumps(compact_prior)}\n\n"
-            f"--- REVIEWER CONCERNS ---\n{feedback_text}\n{options_text}\n"
+            f"--- PATIENT FINDINGS ---\n{wrap_case_data(extracted_findings, 'extracted_findings')}\n\n"
+            f"--- YOUR PRIOR ASSESSMENT ---\n{wrap_case_data(compact_prior, 'prior_assessment')}\n\n"
+            f"--- REVIEWER CONCERNS ---\n{wrap_case_data(feedback_text, 'reviewer_concerns')}\n{options_text}\n"
             "Address each concern against the findings. Keep your primary diagnosis if the concerns do not "
             "change what is most likely; change it only if the evidence supports a different diagnosis. "
             "Remove claims not supported by the findings. Respond in the same JSON format, adding "

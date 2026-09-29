@@ -57,13 +57,45 @@ def _describe(item: Any) -> str:
     return f"{text} ({str(section).replace('_', ' ')})" if text and section else text or ", ".join(f"{k}: {v}" for k, v in item.items())
 
 
+def rechecked(raw: Dict[str, Any]) -> bool:
+    return bool((raw.get("recheck") or {}).get("ran"))
+
+
+def final_outputs(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """Raw outputs with the verifier/safety results replaced by their re-check on the revised diagnosis."""
+    if not rechecked(raw):
+        return raw
+    merged = dict(raw)
+    for key in ("verifier", "safety"):
+        if key in raw["recheck"]:
+            merged[key] = raw["recheck"][key]
+    return merged
+
+
+def rule_alerts(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
+    return [{
+        "source": "Rule-based check (deterministic, not AI)",
+        "origin": "rule",
+        "severity": _severity(rule.get("severity")),
+        "category": str(rule.get("title") or "Contraindication"),
+        "description": str(rule.get("description") or ""),
+        "action": str(rule.get("action") or ""),
+        "reference": str(rule.get("reference") or ""),
+        "rule_id": rule.get("rule_id"),
+    } for rule in _as_list((raw.get("rules") or {}).get("alerts")) if isinstance(rule, dict)]
+
+
 def collect_alerts(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Alerts on the final diagnosis: LLM checks (origin "llm") plus deterministic rules (origin "rule")."""
+    initial_only = "initial diagnosis" if rechecked(raw) else None
+    raw = final_outputs(raw)
     alerts: List[Dict[str, Any]] = []
     safety = _clean(raw.get("safety"))
     for flag in _as_list((safety or {}).get("safety_flags")):
         if isinstance(flag, dict):
             alerts.append({
                 "source": "Safety validator (AI)",
+                "origin": "llm",
                 "severity": _severity(flag.get("severity")),
                 "category": str(flag.get("hazard_type") or "SAFETY").replace("_", " ").title(),
                 "description": str(flag.get("description") or "").strip(),
@@ -74,6 +106,7 @@ def collect_alerts(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
         if isinstance(claim, dict):
             alerts.append({
                 "source": "Grounding verifier (AI)",
+                "origin": "llm",
                 "severity": _severity(claim.get("severity")),
                 "category": "Unsupported claim",
                 "description": f"\"{claim.get('claim', '')}\" - {claim.get('issue', '')}".strip(" -"),
@@ -83,6 +116,8 @@ def collect_alerts(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
     for item in _as_list((consistency or {}).get("inconsistencies_found")):
         alerts.append({
             "source": "Consistency checker (AI)",
+            "origin": "llm",
+            "checked_on": initial_only,
             "severity": "HIGH" if (consistency or {}).get("consistency_status") == "SEVERE_CONTRADICTION" else "MEDIUM",
             "category": "Internal inconsistency",
             "description": _describe(item),
@@ -93,15 +128,20 @@ def collect_alerts(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
         if amendment:
             alerts.append({
                 "source": "Simulated attending review (AI, not a human)",
+                "origin": "llm",
+                "checked_on": initial_only,
                 "severity": "MEDIUM",
                 "category": "Requested amendment",
                 "description": str(amendment),
                 "action": "Consider before finalizing the plan.",
             })
+    alerts.extend(rule_alerts(raw))
     return sorted(alerts, key=lambda a: SEVERITY_RANK[a["severity"]])
 
 
 def _checks(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
+    again = (raw.get("recheck") or {}) if rechecked(raw) else {}
+    raw = final_outputs(raw)
     verifier, safety = _clean(raw.get("verifier")), _clean(raw.get("safety"))
     consistency, hitl = _clean(raw.get("consistency")), _clean(raw.get("hitl"))
 
@@ -112,13 +152,13 @@ def _checks(raw: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     return [
         {"name": "Grounding verifier", "covers": "claims not supported by the case text",
-         "ran": verifier is not None, "outcome": outcome(verifier, "verification_status")},
+         "ran": verifier is not None, "outcome": outcome(verifier, "verification_status"), "rechecked": "verifier" in again},
         {"name": "Safety validator", "covers": "contraindications, missed red flags, unsafe delays",
-         "ran": safety is not None, "outcome": outcome(safety, "safety_status")},
+         "ran": safety is not None, "outcome": outcome(safety, "safety_status"), "rechecked": "safety" in again},
         {"name": "Consistency checker", "covers": "diagnosis vs. findings contradictions",
-         "ran": consistency is not None, "outcome": outcome(consistency, "consistency_status")},
+         "ran": consistency is not None, "outcome": outcome(consistency, "consistency_status"), "rechecked": False},
         {"name": "Simulated attending review", "covers": "attending-style review of the plan (simulated by AI, not a human)",
-         "ran": hitl is not None, "outcome": outcome(hitl, "decision")},
+         "ran": hitl is not None, "outcome": outcome(hitl, "decision"), "rechecked": False},
     ]
 
 
@@ -126,8 +166,9 @@ def build_decision_support(result: PipelineRunResult, calibration: Optional[Dict
     raw = result.raw_outputs or {}
     diagnosis = _clean(raw.get("diagnosis")) or {}
     research = _clean(raw.get("research")) or {}
-    verifier = _clean(raw.get("verifier"))
+    verifier = _clean(final_outputs(raw).get("verifier"))
     hitl = _clean(raw.get("hitl"))
+    was_rechecked = rechecked(raw)
 
     differentials = []
     for d in _as_list(diagnosis.get("differential_diagnoses")):
@@ -150,15 +191,31 @@ def build_decision_support(result: PipelineRunResult, calibration: Optional[Dict
     if result.parse_failures:
         reasons.append(f"Unreadable output from: {', '.join(result.parse_failures)}.")
     serious = [a for a in alerts if a["severity"] in ("CRITICAL", "HIGH")]
+    serious_rules = [a for a in serious if a["origin"] == "rule"]
     if serious:
-        reasons.append(f"{len(serious)} high-severity alert(s) raised.")
+        reasons.append(f"{len(serious)} high-severity alert(s) raised"
+                       + (f", {len(serious_rules)} by deterministic rules." if serious_rules else "."))
     if verifier and verifier.get("hallucination_detected"):
-        reasons.append("The grounding verifier found claims not supported by the case text.")
+        reasons.append("The grounding verifier found claims not supported by the case text"
+                       + (" (still present after re-checking the revised diagnosis)." if was_rechecked else "."))
     if hitl and str(hitl.get("decision", "")).upper() in ("REQUEST_REVISION", "REJECTED"):
-        reasons.append(f"Simulated attending review returned {hitl.get('decision')}.")
+        reasons.append(f"Simulated attending review returned {hitl.get('decision')}"
+                       + (" on the initial diagnosis." if result.revision_applied else "."))
+    rerun = [c["name"] for c in checks if c["rechecked"]]
+    stale = [c["name"] for c in checks if c["ran"] and not c["rechecked"]]
+    remaining = [f"{a['category']}: {a['description']}" for a in serious
+                 if a["origin"] == "llm" and a.get("checked_on") is None] if was_rechecked else []
     if result.revision_applied and result.initial_primary_diagnosis.lower() != primary.lower():
-        reasons.append("The diagnosis changed after governance feedback. The checks below ran on the initial "
-                       f"diagnosis ({result.initial_primary_diagnosis}); the revised diagnosis was not re-checked.")
+        if was_rechecked:
+            reasons.append(
+                f"The diagnosis changed after governance feedback ({result.initial_primary_diagnosis} -> {primary}). "
+                f"{' and '.join(rerun)} re-checked the revised diagnosis"
+                + (f"; {len(remaining)} blocking issue(s) remain." if remaining else "; no blocking issues remain.")
+                + (f" {', '.join(stale)} ran on the initial diagnosis only." if stale else ""))
+        else:
+            reasons.append("The diagnosis changed after governance feedback. The checks below ran on the initial "
+                           f"diagnosis ({result.initial_primary_diagnosis}); this level has no check that could "
+                           "re-check the revised diagnosis.")
     if result.revision_triggers and not result.revision_applied:
         reasons.append("Checks raised serious concerns but the revision step failed; review the concerns yourself.")
     attention = "HIGH" if reasons else "STANDARD"
@@ -200,12 +257,23 @@ def build_decision_support(result: PipelineRunResult, calibration: Optional[Dict
         },
         "alerts": alerts,
         "checks": checks,
+        "rule_check": {
+            "ran": "rules" in raw,
+            "rules_evaluated": (raw.get("rules") or {}).get("rules_evaluated", 0),
+            "fired": sum(a["origin"] == "rule" for a in alerts),
+            "note": "Deterministic drug-condition and drug-drug rules; a rule not firing is not proof of safety.",
+        },
         "not_checked": not_checked,
         "revision": {
             "closed_loop": result.closed_loop,
             "applied": result.revision_applied,
             "failed": bool(result.revision_triggers) and not result.revision_applied,
-            "checks_ran_on": "initial diagnosis" if result.revision_applied else "final diagnosis",
+            "checks_ran_on": ("revised" if was_rechecked else "initial diagnosis") if result.revision_applied
+            else "final diagnosis",
+            "rechecked": rerun,
+            "not_rechecked": stale if was_rechecked else [],
+            "remaining_blocking": remaining,
+            "recheck_latency_ms": (raw.get("recheck") or {}).get("latency_ms") if was_rechecked else None,
             "initial_diagnosis": result.initial_primary_diagnosis or None,
             "final_diagnosis": primary or None,
             "triggers": result.revision_triggers,
@@ -230,7 +298,8 @@ def build_case_response(
     """API payload: decision_support plus the fields the legacy case-runner page reads."""
     support = build_decision_support(result, calibration)
     raw = result.raw_outputs or {}
-    verifier, safety, hitl = _clean(raw.get("verifier")), _clean(raw.get("safety")), _clean(raw.get("hitl"))
+    final = final_outputs(raw)
+    verifier, safety, hitl = _clean(final.get("verifier")), _clean(final.get("safety")), _clean(raw.get("hitl"))
     diag = support["diagnosis"]
     top = diag["differentials"][0]["model_likelihood"] if diag["differentials"] else None
     next_steps = support["next_steps"]

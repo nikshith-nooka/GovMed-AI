@@ -11,6 +11,7 @@ import {
   BookOpen,
   CheckCircle2
 } from 'lucide-react';
+import { apiFetch } from '../lib/api';
 
 export default function Reports() {
   const [latexCode, setLatexCode] = useState('');
@@ -20,13 +21,13 @@ export default function Reports() {
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
-    fetch('/api/reports/latex')
+    apiFetch('/api/reports/latex')
       .then(async (res) => {
         if (!res.ok) throw new Error(`LaTeX table unavailable (${res.status})`);
         setLatexCode(await res.text());
       })
       .catch((err) => setLoadError(err.message));
-    fetch('/api/research/findings')
+    apiFetch('/api/research/findings')
       .then((res) => (res.ok ? res.json() : null))
       .then(setSummary)
       .catch(() => {});
@@ -46,8 +47,20 @@ export default function Reports() {
 
   const alertsTotal = summary?.variants?.reduce((sum, v) => sum + (v.safety_alerts_total || 0), 0);
 
-  const handleDownloadCsv = () => {
-    window.location.href = '/api/reports/csv';
+  // Fetched (not navigated) so the optional API token header is sent when GOVBENCH_AUTH_ALL=1.
+  const handleDownloadCsv = async () => {
+    try {
+      const res = await apiFetch('/api/reports/csv');
+      if (!res.ok) throw new Error(`CSV export unavailable (${res.status})`);
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'govbench_benchmark_runs.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setLoadError(err.message);
+    }
   };
 
   return (

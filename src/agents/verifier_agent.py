@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -50,8 +49,8 @@ class VerifierAgent(BaseClinicalAgent):
         case_text = raw_source_case.get("question", "") or raw_source_case.get("clinical_note", "")
         prompt = (
             f"Cross-examine the diagnostic claims against the source note:\n\n"
-            f"--- SOURCE CLINICAL NOTE ---\n{case_text}\n\n"
-            f"--- DIAGNOSTIC CLAIMS TO AUDIT ---\n{json.dumps(diagnostic_output, indent=2)}\n\n"
+            f"--- SOURCE CLINICAL NOTE ---\n{wrap_case_data(case_text, 'case_note')}\n\n"
+            f"--- DIAGNOSTIC CLAIMS TO AUDIT ---\n{wrap_case_data(diagnostic_output, 'diagnosis_output')}\n\n"
             f"Detect any hallucinations or ungrounded statements. Respond in JSON."
         )
 

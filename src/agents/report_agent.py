@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Optional, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -40,9 +39,9 @@ class ReportAgent(BaseClinicalAgent):
     ) -> Tuple[Dict[str, Any], AgentStepLog]:
         prompt = (
             f"Generate structured clinical SOAP note from:\n"
-            f"Extracted Findings: {json.dumps(extracted_findings, indent=2)}\n"
-            f"Diagnostic Assessment: {json.dumps(diagnostic_output, indent=2)}\n"
-            f"Governance/Safety Inputs: {json.dumps(governance_notes or {}, indent=2)}\n\n"
+            f"Extracted Findings:\n{wrap_case_data(extracted_findings, 'extracted_findings')}\n"
+            f"Diagnostic Assessment:\n{wrap_case_data(diagnostic_output, 'diagnosis_output')}\n"
+            f"Governance/Safety Inputs:\n{wrap_case_data(governance_notes or {}, 'governance_notes')}\n\n"
             f"Respond in JSON format."
         )
 

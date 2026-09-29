@@ -11,18 +11,36 @@ from __future__ import annotations
 import json
 import sqlite3
 import time
+import hashlib
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 import numpy as np
 import pandas as pd
 from scipy import stats
 
 from src.agents.base import is_parse_failure, parse_llm_json
-from src.evaluation.scorer import ClinicalEvaluationScorer, is_valid_gold_label
+from src.evaluation.scorer import SCORING_FREE_TEXT, ClinicalEvaluationScorer, is_valid_gold_label
+from src.evaluation.statistics import (
+    cohens_h,
+    cohens_kappa_categorical,
+    fleiss_kappa,
+    holm_bonferroni,
+    mcnemar_exact,
+    mcnemar_mde,
+    mcnemar_power,
+    mcnemar_required_n,
+    paired_bootstrap,
+    rank_biserial,
+)
 
 MISDIAGNOSIS_THRESHOLD = 0.5
 CORRECT_THRESHOLD = 0.8
+ALPHA = 0.05
+TARGET_POWER = 0.8
+TARGET_DELTA = 0.05
+DISCORDANCE_GRID = (0.10, 0.20, 0.30)
+REVIEW_CATEGORIES = ("correct", "acceptable", "incorrect")
 BACKFILLED_COLUMNS = ("uncertainty_jru", "llm_judge_score", "rubric_quality_score",
                       "risk_adjusted_quality", "governance_efficiency_factor", "hitl_minutes")
 SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNSPECIFIED"]
@@ -96,15 +114,58 @@ def _r(x: Any, nd: int = 4) -> Any:
     return round(float(x), nd)
 
 
+def load_cases(cases_path: Union[str, Sequence[str]]) -> Dict[str, Dict[str, Any]]:
+    """Case lookup by id from one or more benchmark files (list, or comma-separated string).
+
+    With several paths, missing files are skipped so a default can name optional benchmarks.
+    """
+    paths = [p.strip() for p in cases_path.split(",")] if isinstance(cases_path, str) else list(cases_path)
+    paths = [p for p in paths if p]
+    existing = [p for p in paths if Path(p).exists()] if len(paths) > 1 else paths
+    if not existing:
+        raise FileNotFoundError(f"No benchmark case file found among {paths}")
+    cases: Dict[str, Dict[str, Any]] = {}
+    for p in existing:
+        data = json.loads(Path(p).read_text(encoding="utf-8"))
+        for c in (data["cases"] if isinstance(data, dict) else data):
+            cases[c.get("id") or c["case_id"]] = c
+    return cases
+
+
+def has_answer_key(case: Dict[str, Any]) -> bool:
+    options = case.get("options") or {}
+    key = str(case.get("answer_idx") or case.get("answer") or "").strip().upper()
+    return bool(options) and key in {str(k).upper() for k in options}
+
+
+def is_measured_jru(jru_source: Any, judge_model: Any, generator_model: Any) -> bool:
+    """JRU is a measurement only when an independent (different-model) judge produced it."""
+    judge = str(judge_model or "").strip().lower()
+    return (str(jru_source or "") == "judge_rubric" and bool(judge)
+            and judge != str(generator_model or "").strip().lower())
+
+
+def _power_block(n: int, discordance: float) -> Dict[str, Any]:
+    mde = mcnemar_mde(n, discordance, ALPHA, TARGET_POWER) if discordance > 0 else None
+    return {
+        "n_pairs": int(n), "discordance_rate": _r(discordance, 4),
+        "min_detectable_accuracy_diff": _r(mde, 4),
+        # A difference larger than the discordance rate is impossible, so its power is undefined.
+        "power_for_5pt_diff": _r(mcnemar_power(n, TARGET_DELTA, discordance, ALPHA), 3)
+        if discordance >= TARGET_DELTA else None,
+        "required_n_for_5pt_diff": mcnemar_required_n(TARGET_DELTA, discordance, ALPHA, TARGET_POWER),
+    }
+
+
 class RigorousAnalysis:
     """Re-scores stored runs from raw outputs and produces a publication-grade evidence report."""
 
     def __init__(self, db_path: str = "results/benchmark_results.db",
-                 cases_path: str = "benchmarks/curated_sample.json",
+                 cases_path: Union[str, Sequence[str]] = "benchmarks/curated_sample.json",
                  reference_db_path: Optional[str] = "results/benchmark_results.db.bak"):
         self.db_path = db_path
         self.reference_db_path = reference_db_path
-        self.cases = {c["id"]: c for c in json.loads(Path(cases_path).read_text(encoding="utf-8"))}
+        self.cases = load_cases(cases_path)
         self.scorer = ClinicalEvaluationScorer()
         with sqlite3.connect(db_path) as conn:
             self.raw_runs = pd.read_sql_query("SELECT * FROM runs", conn)
@@ -128,7 +189,8 @@ class RigorousAnalysis:
         diffs = diagnosis.get("differential_diagnoses", []) or []
         diffs = [d for d in diffs if isinstance(d, dict)]
         gold = case.get("gold_diagnosis", "")
-        acc = self.scorer.evaluate_diagnostic_match(primary, diffs, gold, case.get("answer"), case.get("options"))
+        scored = self.scorer.score_diagnosis(primary, diffs, case)
+        acc = scored["score"]
         comp = self.scorer.evaluate_completeness(diffs)
         w = self.scorer.rubrics
 
@@ -150,7 +212,15 @@ class RigorousAnalysis:
             "dataset": _dataset_of(row["case_id"]),
             "specialty": case.get("specialty", "Unknown"),
             "difficulty": case.get("difficulty", "Unknown"),
-            "gold_valid": is_valid_gold_label(gold),
+            "gold_valid": is_valid_gold_label(gold) or has_answer_key(case),
+            "scoring_mode": scored["scoring_mode"],
+            "option_parse_status": scored["parse_status"],
+            "option_unparsed": bool(scored["flagged"]),
+            "correct": bool(acc >= CORRECT_THRESHOLD),
+            "model": row.get("model"),
+            "jru_source": row.get("jru_source"),
+            "judge_model": row.get("judge_model"),
+            "uncertainty_jru": row.get("uncertainty_jru"),
             "primary_diagnosis": primary,
             "primary_norm": " ".join(primary.lower().split()),
             "diagnosis_parse_failed": "diagnosis" in parse_failed,
@@ -236,6 +306,11 @@ class RigorousAnalysis:
             "cases_total": int(df["case_id"].nunique()),
             "cases_with_valid_gold": int(df.loc[df["gold_valid"], "case_id"].nunique()),
             "templated_gold_by_dataset": df.loc[~df["gold_valid"]].groupby("dataset")["case_id"].nunique().to_dict(),
+            "cases_with_answer_key": int(df.loc[df["scoring_mode"] != SCORING_FREE_TEXT, "case_id"].nunique()),
+            "runs_by_scoring_mode": df["scoring_mode"].value_counts().to_dict(),
+            "option_parse_status_counts": df.loc[df["scoring_mode"] != SCORING_FREE_TEXT, "option_parse_status"]
+            .value_counts().to_dict(),
+            "runs_with_unparseable_option_answer": int(df["option_unparsed"].sum()),
             "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; "
                             "e2e_latency sums every agent step.",
         }
@@ -274,10 +349,90 @@ class RigorousAnalysis:
                 pair = wide[["V1", vid]].dropna()
                 diffs = (pair[vid] - pair["V1"]).to_numpy()
                 mean, lo, hi = paired_bootstrap_ci(diffs)
+                rb, rb_lo, rb_hi = paired_bootstrap(pair["V1"].to_numpy(), pair[vid].to_numpy(),
+                                                    lambda a, b: rank_biserial(b - a), n_boot=1000)
                 out.append({"metric": metric, "comparison": f"{vid} - V1", "n_pairs": int(len(pair)),
                             "mean_diff": _r(mean), "ci95_low": _r(lo), "ci95_high": _r(hi),
-                            "wilcoxon_p": _r(wilcoxon_p(diffs), 6)})
+                            "wilcoxon_p": _r(wilcoxon_p(diffs), 6),
+                            "rank_biserial": _r(rb, 3), "rank_biserial_ci95_low": _r(rb_lo, 3),
+                            "rank_biserial_ci95_high": _r(rb_hi, 3)})
         return out
+
+    def _paired_correct(self) -> Dict[str, pd.DataFrame]:
+        """Per comparison: V1 and variant binary correctness on the same scorable cases."""
+        df = self.runs[self.runs["gold_valid"]]
+        wide = df.pivot_table(index="case_id", columns="variant_id", values="correct", aggfunc="max")
+        if "V1" not in wide.columns:
+            return {}
+        return {vid: wide[["V1", vid]].dropna().astype(bool) for vid in wide.columns if vid != "V1"}
+
+    def accuracy_tests(self) -> List[Dict[str, Any]]:
+        """Exact McNemar on paired binary correctness vs V1, with accuracy-difference and Cohen's h CIs."""
+        out = []
+        for vid, pair in self._paired_correct().items():
+            a, b = pair["V1"].to_numpy(), pair[vid].to_numpy()
+            test = mcnemar_exact(a, b)
+            diff, d_lo, d_hi = paired_bootstrap(a, b, lambda x, y: float(y.mean() - x.mean()))
+            h, h_lo, h_hi = paired_bootstrap(a, b, lambda x, y: cohens_h(float(x.mean()), float(y.mean())))
+            out.append({"comparison": f"{vid} - V1", "n_pairs": test["n_pairs"],
+                        "accuracy_v1": _r(a.mean()), "accuracy_variant": _r(b.mean()),
+                        "only_v1_correct": test["only_a_correct"], "only_variant_correct": test["only_b_correct"],
+                        "discordance_rate": _r(test["n_discordant"] / max(1, test["n_pairs"])),
+                        "accuracy_diff": _r(diff), "accuracy_diff_ci95_low": _r(d_lo), "accuracy_diff_ci95_high": _r(d_hi),
+                        "cohens_h": _r(h, 3), "cohens_h_ci95_low": _r(h_lo, 3), "cohens_h_ci95_high": _r(h_hi, 3),
+                        "mcnemar_exact_p": _r(test["p_value"], 6)})
+        return out
+
+    @staticmethod
+    def apply_holm(paired: List[Dict[str, Any]], acc_tests: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Holm-Bonferroni over every paired comparison in the report (Wilcoxon rows + McNemar rows)."""
+        family = [(row, "wilcoxon_p") for row in paired] + [(row, "mcnemar_exact_p") for row in acc_tests]
+        adjusted = holm_bonferroni([row.get(key) for row, key in family])
+        for (row, key), adj in zip(family, adjusted, strict=True):
+            row[f"{key}_holm"] = _r(adj, 6)
+        n_sig_raw = sum(1 for row, key in family if row.get(key) is not None and row[key] < ALPHA)
+        n_sig_adj = sum(1 for adj in adjusted if adj is not None and adj < ALPHA)
+        return {"method": "holm-bonferroni", "alpha": ALPHA, "family_size": sum(a is not None for a in adjusted),
+                "family": "all paired Wilcoxon tests (every metric x variant vs V1) and exact McNemar accuracy tests",
+                "significant_raw": n_sig_raw, "significant_after_holm": n_sig_adj}
+
+    def power_analysis(self, acc_tests: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Paired-McNemar power (Connor, 1987) at alpha 0.05 / power 0.8 for the observed n and discordance."""
+        per = []
+        for t in acc_tests:
+            block = _power_block(t["n_pairs"], t["discordance_rate"] or 0.0)
+            per.append({"comparison": t["comparison"], **block})
+        pairs = self._paired_correct()
+        n_obs = int(max((len(p) for p in pairs.values()), default=0))
+        disc = [t["discordance_rate"] for t in acc_tests if t["discordance_rate"]]
+        pooled = float(np.mean(disc)) if disc else 0.0
+        return {
+            "method": "Connor (1987) normal approximation for the paired McNemar test",
+            "alpha": ALPHA, "target_power": TARGET_POWER, "target_accuracy_diff": TARGET_DELTA,
+            "per_comparison": per,
+            "pooled": _power_block(n_obs, pooled) if n_obs else None,
+            "min_detectable_diff_at_observed_n_by_assumed_discordance": {
+                f"{psi:.2f}": _r(mcnemar_mde(n_obs, psi, ALPHA, TARGET_POWER), 4) for psi in DISCORDANCE_GRID} if n_obs else {},
+            "required_n_for_5pt_diff_by_assumed_discordance": {
+                f"{psi:.2f}": mcnemar_required_n(TARGET_DELTA, psi, ALPHA, TARGET_POWER) for psi in DISCORDANCE_GRID},
+            "note": ("Discordance = share of cases where exactly one of V1 / variant is correct. With zero observed "
+                     "discordance the test cannot reject; the assumed-discordance grid gives planning sample sizes."),
+        }
+
+    def jru_measurement(self) -> Dict[str, Any]:
+        """JRU counts as measured only when a different-model judge produced it (jru_source == judge_rubric)."""
+        df = self.runs
+        measured = df.apply(lambda r: is_measured_jru(r["jru_source"], r["judge_model"], r["model"]), axis=1) \
+            if len(df) else pd.Series(dtype=bool)
+        sources = df["jru_source"].fillna("unrecorded").value_counts().to_dict()
+        by_variant = {vid: _r(g.loc[measured[g.index], "uncertainty_jru"].astype(float).mean())
+                      for vid, g in df.groupby("variant_id") if measured[g.index].any()}
+        n = int(measured.sum()) if len(measured) else 0
+        return {"n_runs_measured": n, "jru_source_counts": sources,
+                "judge_models": sorted({str(m) for m in df.loc[measured, "judge_model"].dropna()}) if n else [],
+                "mean_jru_by_variant": by_variant,
+                "status": "measured" if n else
+                "not measured: no run was scored by a judge model different from the generator"}
 
     def audit_paradox(self) -> List[Dict[str, Any]]:
         df, out = self.runs, []
@@ -387,20 +542,117 @@ class RigorousAnalysis:
                 "confident_wrong_ge_0_7": int((confident_wrong >= 0.7).sum()), "examples": examples}
 
     def clinician_validation(self) -> Dict[str, Any]:
+        """Inter-rater agreement (Fleiss for >= 3 raters per item, Cohen for 2) and clinician vs scorer."""
+        empty = {"n_reviews": 0, "n_reviewers": 0, "n_items": 0, "alert_precision_by_clinicians": None,
+                 "n_alerts_rated": 0, "auto_vs_clinician_agreement": None, "auto_vs_clinician_kappa": None,
+                 "inter_rater": {"status": "insufficient_data", "method": None, "kappa": None},
+                 "status": "insufficient_data: no clinician reviews yet. Collect them in the Clinician Review "
+                           "page using the fixed set in benchmarks/clinician_protocol_50.json."}
         if self.reviews.empty:
-            return {"n_reviews": 0, "status": "No clinician reviews yet. Collect them in the Clinician Review page."}
+            return empty
         rv = self.reviews.merge(self.runs[["run_id", "accuracy", "variant_id"]], on="run_id", how="left")
         alert_labels = [a for lst in rv["alert_ratings"].map(lambda s: json.loads(s or "[]")) for a in lst]
         valid = [a for a in alert_labels if a.get("verdict") in ("valid", "invalid")]
-        judged = rv[rv["diagnosis_verdict"].isin(["correct", "incorrect"]) & rv["accuracy"].notna()]
-        auto_correct = judged["accuracy"] >= CORRECT_THRESHOLD
-        human_correct = judged["diagnosis_verdict"] == "correct"
-        return {"n_reviews": int(len(rv)), "n_reviewers": int(rv["reviewer_id"].nunique()),
+        rated = rv[rv["diagnosis_verdict"].isin(REVIEW_CATEGORIES)]
+
+        # Clinician consensus per item (majority; ties dropped) against the automatic scorer.
+        agreement: Dict[str, Any] = {}
+        consensus = []
+        for _, g in rated.groupby("run_id"):
+            counts = g["diagnosis_verdict"].value_counts()
+            if len(counts) > 1 and counts.iloc[0] == counts.iloc[1]:
+                continue
+            acc = g["accuracy"].iloc[0]
+            if acc == acc:  # not NaN: the run is still in the analysed set
+                consensus.append((counts.index[0], bool(acc >= CORRECT_THRESHOLD)))
+        for label, positives in (("strict", {"correct"}), ("lenient", {"correct", "acceptable"})):
+            human = np.array([v in positives for v, _ in consensus], bool)
+            auto = np.array([a for _, a in consensus], bool)
+            agreement[label] = {"n_items": len(consensus),
+                                "agreement": _r((human == auto).mean(), 3) if consensus else None,
+                                "kappa": _r(cohen_kappa(auto, human), 3) if consensus else None}
+
+        inter = self._inter_rater(rated)
+        n_items = int(rated["run_id"].nunique())
+        status = ("ok" if inter["status"] == "ok" and consensus else
+                  "insufficient_data: " + "; ".join(r for r in (
+                      None if consensus else "no scorable consensus verdicts",
+                      None if inter["status"] == "ok" else inter["status"]) if r))
+        return {"n_reviews": int(len(rv)), "n_reviewers": int(rv["reviewer_id"].nunique()), "n_items": n_items,
+                "verdict_counts": rv["diagnosis_verdict"].value_counts().to_dict(),
                 "alert_precision_by_clinicians": _r(sum(a["verdict"] == "valid" for a in valid) / len(valid), 3) if valid else None,
                 "n_alerts_rated": len(valid),
-                "auto_vs_clinician_agreement": _r((auto_correct == human_correct).mean(), 3) if len(judged) else None,
-                "auto_vs_clinician_kappa": _r(cohen_kappa(auto_correct, human_correct), 3) if len(judged) else None,
-                "mean_quality_rating": _r(rv["quality_rating"].dropna().mean(), 2)}
+                "auto_vs_clinician_agreement": agreement["strict"]["agreement"],
+                "auto_vs_clinician_kappa": agreement["strict"]["kappa"],
+                "auto_vs_clinician": agreement,
+                "inter_rater": inter,
+                "mean_quality_rating": _r(rv["quality_rating"].dropna().mean(), 2),
+                "status": status}
+
+    @staticmethod
+    def _inter_rater(rated: pd.DataFrame) -> Dict[str, Any]:
+        """Fleiss' kappa over items sharing the most common rater count k >= 3; Cohen's kappa for 2 raters."""
+        per_item = rated.groupby("run_id")["reviewer_id"].nunique()
+        multi = per_item[per_item >= 2]
+        if multi.empty:
+            return {"status": "insufficient_data: no item has two or more clinician ratings",
+                    "method": None, "kappa": None, "n_items": 0, "n_raters": 0}
+        three_plus = multi[multi >= 3]
+        if len(three_plus) >= 2:
+            k = int(three_plus.value_counts().idxmax())
+            items = three_plus[three_plus == k].index
+            sub = rated[rated["run_id"].isin(items)].drop_duplicates(["run_id", "reviewer_id"])
+            table = [[int((g["diagnosis_verdict"] == c).sum()) for c in REVIEW_CATEGORIES]
+                     for _, g in sub.groupby("run_id")]
+            kappa = fleiss_kappa(table)
+            return {"status": "ok", "method": "fleiss", "kappa": _r(kappa, 3), "n_items": len(table),
+                    "n_raters": k, "categories": list(REVIEW_CATEGORIES)}
+        # Two raters: the reviewer pair with the most shared items.
+        wide = rated.pivot_table(index="run_id", columns="reviewer_id", values="diagnosis_verdict", aggfunc="first")
+        best = None
+        cols = list(wide.columns)
+        for i in range(len(cols)):
+            for j in range(i + 1, len(cols)):
+                shared = wide[[cols[i], cols[j]]].dropna()
+                if best is None or len(shared) > len(best):
+                    best = shared
+        if best is None or len(best) < 2:
+            return {"status": "insufficient_data: fewer than 2 items rated by the same two clinicians",
+                    "method": None, "kappa": None, "n_items": 0 if best is None else len(best), "n_raters": 2}
+        kappa = cohens_kappa_categorical(best.iloc[:, 0].tolist(), best.iloc[:, 1].tolist())
+        return {"status": "ok", "method": "cohen", "kappa": _r(kappa, 3), "n_items": int(len(best)), "n_raters": 2,
+                "categories": list(REVIEW_CATEGORIES)}
+
+    def clinician_protocol(self, n: int = 50, seed: int = 42) -> Dict[str, Any]:
+        """A fixed, blinded, stratified set of run_ids for the clinician-review protocol.
+
+        Strata are dataset x (V1 correct / wrong); within each stratum runs are ordered by a
+        seeded hash and allocated proportionally (largest remainder). Closed-loop rows are excluded.
+        The variant is omitted from the output so the file itself does not unblind reviewers.
+        """
+        df = self.runs[self.runs["gold_valid"] & ~self.runs["variant_id"].astype(str).str.endswith("-CL")].copy()
+        if df.empty:
+            return {"n": 0, "run_ids": [], "status": "insufficient_data: no scorable runs"}
+        df["stratum"] = df["dataset"].astype(str) + "|" + np.where(df["correct"], "correct", "wrong")
+        df["order"] = [hashlib.sha256(f"{seed}:{rid}".encode()).hexdigest() for rid in df["run_id"]]
+        sizes = df["stratum"].value_counts().sort_index()
+        n = min(n, len(df))
+        quota = sizes / sizes.sum() * n
+        alloc = np.floor(quota).astype(int)
+        for s in (quota - alloc).sort_values(ascending=False).index[: n - int(alloc.sum())]:
+            alloc[s] += 1
+        picked = []
+        for stratum, k in alloc.items():
+            g = df[df["stratum"] == stratum].sort_values("order")
+            # One run per case where possible so reviewers see distinct vignettes.
+            g = pd.concat([g.drop_duplicates("case_id"), g[g.duplicated("case_id")]])
+            picked.extend(g.head(int(k))[["run_id", "case_id", "stratum"]].to_dict("records"))
+        picked.sort(key=lambda r: hashlib.sha256(f"{seed}:order:{r['run_id']}".encode()).hexdigest())
+        return {"n": len(picked), "seed": seed, "db_path": self.db_path,
+                "strata": {s: int(k) for s, k in alloc.items()},
+                "blinding": "variant_id withheld; items listed in seeded random order",
+                # Strata are not listed per item: the correct/wrong label would unblind the reviewer.
+                "items": [{"run_id": int(r["run_id"]), "case_id": r["case_id"]} for r in picked]}
 
     # ------------------------------------------------------------------ report
     def headline_findings(self, rep: Dict[str, Any]) -> List[str]:
@@ -409,8 +661,8 @@ class RigorousAnalysis:
         f.append(f"Reported accuracy {m['reported_accuracy_mean']} is inflated by substring matching: "
                  f"{m['runs_with_unparsed_diagnosis']} runs with an unparsed (empty) diagnosis scored "
                  f"{m['reported_accuracy_on_unparsed_runs']}, and {m['runs_with_option_letter_diagnosis']} runs whose "
-                 f"'diagnosis' is a bare option letter (149/150 cases contain no options, so a letter is a "
-                 f"non-answer) scored "
+                 f"'diagnosis' is a bare option letter ({m['cases_total'] - m['cases_with_answer_key']}/{m['cases_total']} "
+                 f"cases contain no options, so a letter is a non-answer) scored "
                  f"{m['reported_accuracy_on_option_letter_runs']}. With recovered outputs and whole-word matching, "
                  f"accuracy is {m['corrected_accuracy_mean_all_cases']}.")
         f.append(f"Only {m['cases_with_valid_gold']} of {m['cases_total']} gold labels are real diagnoses; the rest are "
@@ -422,6 +674,14 @@ class RigorousAnalysis:
         acc_tests = [t for t in rep["paired_tests"] if t["metric"] == "accuracy"]
         if acc_tests and all(t["wilcoxon_p"] >= 0.05 for t in acc_tests):
             f.append("No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).")
+        mc = rep["accuracy_tests"]
+        if mc:
+            sig = [t for t in mc if (t.get("mcnemar_exact_p_holm") or 1.0) < ALPHA]
+            lo = min(t["mcnemar_exact_p"] for t in mc)
+            f.append(f"Exact McNemar on binary correctness vs V1: {len(sig)} of {len(mc)} comparisons significant after "
+                     f"Holm-Bonferroni over {rep['multiple_comparisons']['family_size']} paired tests (smallest raw p "
+                     f"{lo}); accuracy differences range {min(t['accuracy_diff'] for t in mc)} to "
+                     f"{max(t['accuracy_diff'] for t in mc)}.")
         shares = [a["share_of_drop_from_detector_penalties"] for a in rep["audit_paradox"]
                   if a["share_of_drop_from_detector_penalties"] is not None and a["reported_quality_drop"] > 0.01]
         if shares:
@@ -445,8 +705,21 @@ class RigorousAnalysis:
             f.append(f"Same validator, same cached diagnosis (V4 vs V5): identical alert counts in only "
                      f"{rp['identical_alert_count_pct']}% of cases (Spearman {rp['alert_count_spearman']}).")
         wrong_n = rep["failure_taxonomy"]["misdiagnosed_cases_v1"]
-        f.append(f"Statistical power is limited: {m['cases_with_valid_gold']} scorable cases and {wrong_n} baseline "
-                 "misdiagnoses. A larger benchmark with an objective answer key is required before publication.")
+        pw = (rep["power_analysis"] or {}).get("pooled") or {}
+        if pw.get("min_detectable_accuracy_diff") is not None:
+            f.append(f"Power: with {pw['n_pairs']} paired cases and {pw['discordance_rate']} mean discordance, the "
+                     f"smallest accuracy difference detectable at alpha 0.05 / power 0.8 is "
+                     f"{pw['min_detectable_accuracy_diff']}; a 5-point difference needs "
+                     f"{pw['required_n_for_5pt_diff'] or 'more'} pairs ({wrong_n} baseline misdiagnoses).")
+        else:
+            grid = (rep["power_analysis"] or {}).get("required_n_for_5pt_diff_by_assumed_discordance", {})
+            f.append(f"Statistical power is limited: {m['cases_with_valid_gold']} scorable cases and {wrong_n} baseline "
+                     f"misdiagnoses, and variants disagree with V1 on only {pw.get('discordance_rate')} of cases, so no "
+                     f"accuracy difference is detectable at alpha 0.05 / power 0.8. Detecting a 5-point difference needs "
+                     + ", ".join(f"{v} pairs at {k} discordance" for k, v in grid.items()) + ".")
+        if not rep["jru_measurement"]["n_runs_measured"]:
+            f.append("JRU is not reported as a measurement: no run was scored by a judge model different from the "
+                     "generator.")
         c = rep["calibration"]
         if c.get("n"):
             f.append(f"Model-reported diagnosis probability: ECE {c['ece']}, Brier {c['brier']} (n={c['n']}).")
@@ -468,6 +741,7 @@ class RigorousAnalysis:
             "measurement_validity": self.measurement_validity(),
             "variants": self.variant_summary(),
             "paired_tests": self.paired_tests(),
+            "accuracy_tests": self.accuracy_tests(),
             "audit_paradox": self.audit_paradox(),
             "alert_discrimination": self.alert_discrimination(),
             "alert_reproducibility": self.alert_reproducibility(),
@@ -477,6 +751,7 @@ class RigorousAnalysis:
             "strata": self.strata(),
             "failure_taxonomy": self.failure_taxonomy(),
             "clinician_validation": self.clinician_validation(),
+            "jru_measurement": self.jru_measurement(),
             "limitations": [
                 "Single model (one provider); results may not transfer to other LLMs.",
                 "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
@@ -484,5 +759,7 @@ class RigorousAnalysis:
                 "Governance outputs are not validated against clinicians until reviews are collected.",
             ],
         }
+        rep["multiple_comparisons"] = self.apply_holm(rep["paired_tests"], rep["accuracy_tests"])
+        rep["power_analysis"] = self.power_analysis(rep["accuracy_tests"])
         rep["headline_findings"] = self.headline_findings(rep)
         return rep

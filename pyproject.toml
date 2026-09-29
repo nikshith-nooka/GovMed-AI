@@ -51,13 +51,11 @@ dev = [
 
 [project.scripts]
 govbench = "scripts.run_full_benchmark:main"
-govbench-server = "src.api.server:app"
-govbench-charts = "scripts.generate_figures:main"
-govbench-analysis = "scripts.run_analysis:main"
+govbench-figures = "scripts.make_paper_figures:main"
 govbench-rigor = "scripts.run_rigor_analysis:main"
 
 [project.urls]
-Repository = "https://github.com/nookanikshith/govbench-clinical"
+Repository = "https://github.com/nikki-nooka/GovMed-AI"
 
 [build-system]
 requires = ["hatchling"]

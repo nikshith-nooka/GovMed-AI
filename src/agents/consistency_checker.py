@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -38,8 +37,8 @@ class ConsistencyCheckerAgent(BaseClinicalAgent):
     ) -> Tuple[Dict[str, Any], AgentStepLog]:
         prompt = (
             f"Audit internal diagnostic consistency:\n\n"
-            f"Findings: {json.dumps(extracted_findings, indent=2)}\n\n"
-            f"Diagnoses: {json.dumps(diagnostic_output, indent=2)}\n\n"
+            f"Findings:\n{wrap_case_data(extracted_findings, 'extracted_findings')}\n\n"
+            f"Diagnoses:\n{wrap_case_data(diagnostic_output, 'diagnosis_output')}\n\n"
             f"Check for internal contradictions. Respond in JSON."
         )
 

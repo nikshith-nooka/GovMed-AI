@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, ClipboardCheck, Loader2 } from 'lucide-react';
 import './clinical.css';
+import { apiFetch, errorFromBody, postJson } from '../lib/api';
 
 const ROLES = [
   ['physician', 'Physician'], ['resident', 'Resident'], ['nurse', 'Nurse'],
@@ -35,7 +36,7 @@ export default function ClinicianReview() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
-  const loadSummary = () => fetch('/api/reviews/summary').then((r) => r.json()).then(setSummary).catch(() => {});
+  const loadSummary = () => apiFetch('/api/reviews/summary').then((r) => r.json()).then(setSummary).catch(() => {});
   useEffect(() => { loadSummary(); }, []);
 
   const loadQueue = async () => {
@@ -45,9 +46,9 @@ export default function ClinicianReview() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch(`/api/reviews/queue?reviewer_id=${encodeURIComponent(reviewerId.trim())}&limit=10`);
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || 'Could not load cases');
+      const res = await apiFetch(`/api/reviews/queue?reviewer_id=${encodeURIComponent(reviewerId.trim())}&limit=10`);
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw errorFromBody(body, res.status);
       setQueue(body);
       setIndex(0);
       setForm({ verdict: '', quality: 0, alerts: {}, missed: '', comments: '' });
@@ -65,22 +66,18 @@ export default function ClinicianReview() {
     setBusy(true);
     setError(null);
     try {
-      const res = await fetch('/api/reviews', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          run_id: item.run_id,
-          case_id: item.case_id,
-          reviewer_id: reviewerId.trim(),
-          reviewer_role: role,
-          diagnosis_verdict: form.verdict,
-          quality_rating: form.quality,
-          alert_ratings: Object.entries(form.alerts).map(([i, verdict]) => ({ index: Number(i), verdict })),
-          missed_hazards: form.missed,
-          comments: form.comments,
-        }),
+      const res = await postJson('/api/reviews', {
+        run_id: item.run_id,
+        case_id: item.case_id,
+        reviewer_id: reviewerId.trim(),
+        reviewer_role: role,
+        diagnosis_verdict: form.verdict,
+        quality_rating: form.quality,
+        alert_ratings: Object.entries(form.alerts).map(([i, verdict]) => ({ index: Number(i), verdict })),
+        missed_hazards: form.missed,
+        comments: form.comments,
       });
-      if (!res.ok) throw new Error((await res.json()).detail || 'Save failed');
+      if (!res.ok) throw errorFromBody(await res.json().catch(() => ({})), res.status);
       setForm({ verdict: '', quality: 0, alerts: {}, missed: '', comments: '' });
       loadSummary();
       if (index + 1 < queue.items.length) setIndex(index + 1);
@@ -141,6 +138,13 @@ export default function ClinicianReview() {
             <>
               <div className="cw-card">
                 <h3>Case {index + 1} of {queue.items.length} · {queue.remaining} remaining overall</h3>
+                {queue.protocol_total > 0 && (
+                  <p className="cw-muted" style={{ marginBottom: 8 }}>
+                    {queue.protocol_remaining > 0
+                      ? `Study protocol: ${queue.protocol_total - queue.protocol_remaining} of ${queue.protocol_total} shared cases rated. Every reviewer sees these in the same order so agreement can be measured.`
+                      : `Study protocol complete (${queue.protocol_total} shared cases). Further cases are optional.`}
+                  </p>
+                )}
                 <div className="cw-case-text">{item.case_text}</div>
               </div>
               <div className="cw-card">

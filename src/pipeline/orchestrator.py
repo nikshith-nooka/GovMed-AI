@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from src.agents.base import is_parse_failure
+from src.clinical.rules import evaluate_rules
 from src.llm.client import UnifiedLLMClient
 from src.agents import (
     ResearchAgent,
@@ -107,6 +108,40 @@ class ClinicalGovernancePipeline:
         self.safety_validator = SafetyValidatorAgent(llm_client)
         self.hitl_simulator = HITLSimulatorAgent(llm_client)
         self.consistency_checker = ConsistencyCheckerAgent(llm_client)
+
+    def _recheck(self, variant_key: str, clinical_case: Dict[str, Any], revised: Dict[str, Any], timed,
+                 agent_steps: List[AgentStepLog]) -> Dict[str, Any]:
+        """Re-runs the variant's grounding verifier and safety validator on the revised diagnosis.
+
+        Consistency and the simulated attending are not re-run: they are the slowest checks and the
+        verifier/safety pair covers the hazards that most often change with a new diagnosis.
+        """
+        checks = []
+        if variant_key in ("verifier", "full_governance"):
+            checks.append(("verifier", "Verifier Agent (Re-check)", self.verifier_agent.execute))
+        if variant_key in ("safety", "full_governance"):
+            checks.append(("safety", "Safety Validator (Re-check)", self.safety_validator.execute))
+        if not checks:
+            return {"ran": False, "reason": "this level has no verifier or safety check to re-run"}
+        started = time.time()
+        with ThreadPoolExecutor(max_workers=len(checks)) as pool:
+            futures = {
+                key: (name, pool.submit(self._named, timed, name, fn, clinical_case, revised))
+                for key, name, fn in checks
+            }
+            outputs = {}
+            for key, (name, future) in futures.items():
+                output, step = future.result()
+                agent_steps.append(step)
+                outputs[key] = output
+        outputs.update(ran=True, latency_ms=round((time.time() - started) * 1000, 2))
+        return outputs
+
+    @staticmethod
+    def _named(timed, name: str, fn, *args):
+        output, step = timed(name, fn, *args)
+        step.agent_name = name
+        return output, step
 
     def run(
         self,
@@ -245,6 +280,14 @@ class ClinicalGovernancePipeline:
                     raw_outputs["diagnosis"] = revised
                     revision_applied = True
                     all_flags.append(f"Closed-loop revision: {initial_primary} -> {revised.get('primary_diagnosis')}")
+                    raw_outputs["recheck"] = self._recheck(variant_key, clinical_case, revised, timed, agent_steps)
+
+        # Deterministic contraindication rules: every variant, on the final diagnosis, no LLM call.
+        rules_start = time.time()
+        rule_output = evaluate_rules(clinical_case, diagnosis_output)
+        rule_output["latency_ms"] = round((time.time() - rules_start) * 1000, 2)
+        raw_outputs["rules"] = rule_output
+        all_flags.extend(f"Rule [{a['severity']}]: {a['title']}" for a in rule_output["alerts"])
 
         # --- FINAL STEP: Report Agent (Synthesizes clinical note + governance inputs) ---
         report_output: Dict[str, Any] = {}
@@ -273,6 +316,8 @@ class ClinicalGovernancePipeline:
         hitl_decision = hitl_output.get("decision", "APPROVED") if hitl_output else "N/A"
 
         parse_failures = [name for name, output in raw_outputs.items() if is_parse_failure(output)]
+        parse_failures += [f"recheck_{name}" for name, output in (raw_outputs.get("recheck") or {}).items()
+                           if is_parse_failure(output)]
         if revision_triggers and not revision_applied:
             parse_failures.append("revision")
 

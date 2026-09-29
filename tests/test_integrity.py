@@ -278,6 +278,8 @@ def api(tmp_path, monkeypatch):
     run_id = db.log_run(ClinicalEvaluationScorer().score_run(result, case))
     monkeypatch.setattr(server, "DB_PATH", db_path)
     monkeypatch.setattr(server, "RIGOR_REPORT_PATH", tmp_path / "missing.json")
+    monkeypatch.setattr(server, "JOBS_DB_PATH", tmp_path / "jobs.db")
+    monkeypatch.delenv("GOVBENCH_API_TOKEN", raising=False)
     return TestClient(server.app), run_id, case["id"]
 
 
@@ -355,9 +357,11 @@ def test_api_experiment_run_scores_and_persists(api, tmp_path, monkeypatch):
 
     client, _, case_id = api
     monkeypatch.setattr(server, "EXPERIMENT_DB_PATH", tmp_path / "exp.db")
-    resp = client.post("/api/experiments/run-case", json={"case_id": case_id, "governance_level": "G1", "provider": "simulation"})
+    # Experiments refuse the offline demo, so a scripted stand-in plays the live provider.
+    monkeypatch.setattr(server, "UnifiedLLMClient", lambda **kw: ScriptedLLM())
+    resp = client.post("/api/experiments/run-case", json={"case_id": case_id, "governance_level": "G1", "provider": "groq"})
     body = resp.json()
-    assert resp.status_code == 200 and body["mode"] == "SIMULATION" and body["variant_id"] == "V2-CL"
+    assert resp.status_code == 200 and body["mode"] == "LIVE_LLM" and body["variant_id"] == "V2-CL"
     assert (body["accuracy"] is None) == (not body["gold_valid"])
     assert client.get("/api/experiments/runs").json()["total"] == 1
     assert client.post("/api/experiments/run-case", json={"case_id": "nope"}).status_code == 404

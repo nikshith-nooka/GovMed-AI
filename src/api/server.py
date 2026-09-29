@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import logging
 import os
@@ -11,27 +12,76 @@ import threading
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, PlainTextResponse
+from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field, field_validator
 
 from src.agents.base import is_parse_failure, parse_llm_json
 from src.clinical.decision_support import build_case_response, collect_alerts
+from src.clinical.phi import detect_phi
 from src.evaluation.scorer import ClinicalEvaluationScorer, is_valid_gold_label
-from src.llm.client import LiveInferenceUnavailable, UnifiedLLMClient
+from src.llm.client import DEMO_PROVIDER_LABEL, DEMO_PROVIDERS, LiveInferenceUnavailable, UnifiedLLMClient
 from src.pipeline.orchestrator import ClinicalGovernancePipeline
 from src.telemetry.db import BenchmarkDB
+from src.telemetry.jobs import JobStore
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title="GovBench-Clinical API", version="1.1.0")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    interrupted = job_store().mark_interrupted()
+    if interrupted:
+        logger.warning("Marked %d job(s) left running by a previous server process as failed", interrupted)
+    stop = threading.Event()
+    threading.Thread(target=_retention_loop, args=(stop,), name="retention", daemon=True).start()
+    yield
+    stop.set()
+
+
+app = FastAPI(title="GovBench-Clinical API", version="1.1.0", lifespan=lifespan)
+
+
+# ---------------------------------------------------------------- optional bearer-token auth
+# Registered before CORS so CORS stays the outermost layer and 401s still carry CORS headers.
+PROTECTED_GET_PREFIXES = ("/api/jobs", "/api/experiments", "/api/reviews/queue")
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def api_token() -> str:
+    return os.getenv("GOVBENCH_API_TOKEN", "").strip()
+
+
+def requires_auth(method: str, path: str) -> bool:
+    """POST/run, job, experiment and review endpoints; every /api GET too when GOVBENCH_AUTH_ALL=1."""
+    if not path.startswith("/api/") or path == "/api/health" or method == "OPTIONS":
+        return False
+    if method not in ("GET", "HEAD"):
+        return True
+    return _env_flag("GOVBENCH_AUTH_ALL") or path.startswith(PROTECTED_GET_PREFIXES)
+
+
+@app.middleware("http")
+async def require_api_token(request: Request, call_next):
+    token = api_token()
+    if token and requires_auth(request.method, request.url.path):
+        scheme, _, supplied = request.headers.get("authorization", "").partition(" ")
+        if scheme.lower() != "bearer" or not hmac.compare_digest(supplied.strip().encode(), token.encode()):
+            return JSONResponse(status_code=401, headers={"WWW-Authenticate": "Bearer"},
+                                content={"detail": "API token required: send 'Authorization: Bearer <token>'."})
+    return await call_next(request)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,8 +104,9 @@ GOVERNANCE_LEVELS = {
     "G4": ("full_governance", "G4 (All checks)"),
 }
 DEMO_NOTICE = (
-    "DEMO MODE: output comes from a deterministic demo generator that recognizes a few specialties by keyword. "
-    "It is NOT an analysis of this patient. Use a live model for real cases."
+    f"DEMO MODE - {DEMO_PROVIDER_LABEL}: output comes from a deterministic generator that recognizes a few "
+    "specialties by keyword. No AI model read this case and it is NOT an analysis of this patient. "
+    "Only the rule-based contraindication checks are real. Use a live model for real cases."
 )
 
 
@@ -88,7 +139,9 @@ def load_rigor_report() -> Optional[Dict[str, Any]]:
 @app.get("/api/health")
 def health_check():
     return {"status": "healthy", "time": time.time(), "db_exists": DB_PATH.exists(),
-            "rigor_report_exists": RIGOR_REPORT_PATH.exists()}
+            "rigor_report_exists": RIGOR_REPORT_PATH.exists(), "auth_required": bool(api_token()),
+            "auth_all": bool(api_token()) and _env_flag("GOVBENCH_AUTH_ALL"),
+            "retention_days": retention_days()}
 
 
 PROVIDER_ENV = {
@@ -99,13 +152,20 @@ PROVIDER_ENV = {
 }
 
 
+PROVIDER_LABELS = {"groq": "Groq", "nvidia": "NVIDIA NIM", "gemini": "Google Gemini", "openrouter": "OpenRouter"}
+
+
 @app.get("/api/providers")
 def get_providers():
-    """Which live engines have a key configured (never returns key values)."""
-    return {
-        name: {"available": any(os.getenv(var, "").strip() for var in env_vars), "default_model": DEFAULT_MODELS.get(name)}
+    """Which live engines have a key configured (never returns key values), plus the offline demo."""
+    providers = {
+        name: {"available": any(os.getenv(var, "").strip() for var in env_vars), "default_model": DEFAULT_MODELS.get(name),
+               "label": PROVIDER_LABELS[name], "demo": False}
         for name, env_vars in PROVIDER_ENV.items()
     }
+    providers["simulation"] = {"available": True, "default_model": None, "label": DEMO_PROVIDER_LABEL, "demo": True,
+                               "allowed_for_experiments": False}
+    return providers
 
 
 @app.get("/api/stats")
@@ -203,7 +263,8 @@ def measured_run(row: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
         "primary_diagnosis": primary,
         "gold_diagnosis": gold,
         "gold_valid": gold_valid,
-        "measured_accuracy": _scorer.evaluate_diagnostic_match(primary, diffs, gold) if gold_valid else None,
+        # Same routing as benchmark scoring: exact option scoring when the case has an answer key.
+        "measured_accuracy": _scorer.score_diagnosis(primary, diffs, case)["score"] if gold_valid else None,
         "safety_alerts": len((raw.get("safety") or {}).get("safety_flags", []) or []) if "safety" in raw else None,
         "hallucination_flagged": bool((raw.get("verifier") or {}).get("hallucination_detected")) if "verifier" in raw else None,
     })
@@ -233,6 +294,8 @@ class CustomCaseInput(BaseModel):
     model: Optional[str] = Field(None, max_length=120)
     use_live_llm: bool = False
     closed_loop: bool = True
+    # The user confirmed that flagged identifiers are false positives or approved for this deployment.
+    phi_acknowledged: bool = False
 
     @field_validator("chief_complaint", "hpi")
     @classmethod
@@ -264,8 +327,29 @@ def compose_case(case: CustomCaseInput) -> Dict[str, Any]:
         ("Labs/Findings", case.labs),
     ]
     text = "\n\n".join(f"{title}: {body}" for title, body in sections if body)
+    structured = {k: getattr(case, k) or "" for k in ("age", "sex", "pmh", "medications", "allergies", "vitals", "labs")}
     return {"id": f"CASE-LIVE-{int(time.time() * 1000) % 10_000_000:07d}", "question": text,
-            "chief_complaint": case.chief_complaint}
+            "chief_complaint": case.chief_complaint, "structured": structured}
+
+
+PHI_FIELDS = ("chief_complaint", "hpi", "age", "sex", "pmh", "medications", "allergies", "vitals", "labs")
+
+
+def enforce_phi_policy(case: CustomCaseInput) -> List[str]:
+    """422 when identifiers are detected and not acknowledged. Logs identifier types only, never values."""
+    found = detect_phi(getattr(case, field) or "" for field in PHI_FIELDS)
+    types = [item["type"] for item in found]
+    if found and not case.phi_acknowledged:
+        logger.info("Rejected interactive case: possible identifiers of type %s", types)
+        raise HTTPException(status_code=422, detail={
+            "code": "phi_detected",
+            "message": "The case appears to contain patient identifiers. Remove them, or confirm they are false "
+                       "positives by setting phi_acknowledged.",
+            "types": found,
+        })
+    if found:
+        logger.warning("PHI warning overridden by user; identifier types %s", types)
+    return types
 
 
 DEFAULT_MODELS = {"nvidia": "meta/llama-3.2-11b-vision-instruct", "groq": "openai/gpt-oss-120b"}
@@ -275,18 +359,23 @@ INTERACTIVE_REASONING_EFFORT = os.getenv("GOVBENCH_REASONING_EFFORT", "low")
 
 
 def execute_pipeline(clinical_case: Dict[str, Any], variant_key: str, provider_choice: str, live: bool,
-                     closed_loop: bool, model: Optional[str] = None, include_report: bool = True, on_step=None):
-    """Runs the pipeline; returns (result, mode, provider_label, model_label). Live failures raise HTTP 502."""
+                     closed_loop: bool, model: Optional[str] = None, include_report: bool = True, on_step=None,
+                     on_event=None):
+    """Runs the pipeline; returns (result, mode, provider_label, model_label). Live failures raise HTTP 502.
+
+    on_event receives provider events such as {"type": "rate_limit", "wait_s": ...} while the run waits.
+    """
     options = dict(variant_key=variant_key, closed_loop=closed_loop, include_report=include_report, on_step=on_step)
-    if not live or provider_choice in ("simulation", "mock", "offline"):
+    if not live or provider_choice in DEMO_PROVIDERS:
         client = UnifiedLLMClient(provider="mock", force_mock=True)
         result = ClinicalGovernancePipeline(client).run(clinical_case, **options)
-        return result, "SIMULATION", "DEMO", "Deterministic demo generator"
+        return result, "SIMULATION", "OFFLINE DEMO", DEMO_PROVIDER_LABEL
     provider = "nvidia" if provider_choice in ("nvidia", "nim") else provider_choice
     try:
         client = UnifiedLLMClient(provider=provider, model=model or DEFAULT_MODELS.get(provider),
                                   timeout_seconds=45.0, allow_mock_fallback=False,
                                   reasoning_effort=None if include_report else INTERACTIVE_REASONING_EFFORT)
+        client.rate_limit_listener = on_event
         result = ClinicalGovernancePipeline(client).run(clinical_case, **options)
     except LiveInferenceUnavailable as exc:
         raise HTTPException(status_code=502, detail=f"Live model unavailable: {exc}. No result was generated.")
@@ -299,54 +388,95 @@ def execute_pipeline(clinical_case: Dict[str, Any], variant_key: str, provider_c
 @app.post("/api/run-custom-case")
 def run_custom_case(case_data: CustomCaseInput):
     """Runs the real multi-agent pipeline. Demo mode uses the deterministic mock LLM, clearly labelled."""
-    return run_interactive_case(case_data)
+    phi_types = enforce_phi_policy(case_data)
+    return run_interactive_case(case_data, phi_types=phi_types)
 
 
-def run_interactive_case(case_data: CustomCaseInput, on_step=None) -> Dict[str, Any]:
-    """Interactive runs skip the SOAP report (not shown in the UI) and use low reasoning effort for speed."""
+def run_interactive_case(case_data: CustomCaseInput, on_step=None, on_event=None,
+                         phi_types: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Interactive runs skip the SOAP report (not shown in the UI) and use low reasoning effort for speed.
+
+    The composed case text is not written to any database. The result can echo parts of it (the model's
+    justification and extracted findings); background jobs store that result, except when identifiers were
+    detected and overridden, in which case it is kept in memory only (see start_case_job).
+    """
     code, variant_key, label = resolve_governance(case_data.governance_level)
     result, mode, provider_label, model_label = execute_pipeline(
         compose_case(case_data), variant_key, case_data.provider.lower(), case_data.use_live_llm,
-        case_data.closed_loop, case_data.model, include_report=False, on_step=on_step)
+        case_data.closed_loop, case_data.model, include_report=False, on_step=on_step, on_event=on_event)
     calibration = (load_rigor_report() or {}).get("calibration")
     response = build_case_response(result, code, mode, provider_label, model_label, calibration)
+    response["demo"] = mode == "SIMULATION"
     response["notice"] = DEMO_NOTICE if mode == "SIMULATION" else None
     response["governance_label"] = label
+    response["phi_acknowledged_types"] = phi_types or []
     return response
 
 
 # ---------------------------------------------------------------- background jobs with live progress
+# Running jobs live in memory for cheap progress updates; every change is written through to SQLite
+# so finished jobs survive a restart and GET falls back to the database.
 _jobs: Dict[str, Dict[str, Any]] = {}
 _jobs_lock = threading.Lock()
 MAX_JOBS = 200
+MAX_JOB_EVENTS = 50
 # Bounded so a burst of requests queues instead of spawning unlimited live-API threads.
 _job_pool = ThreadPoolExecutor(max_workers=int(os.getenv("GOVBENCH_JOB_WORKERS", "4")))
+JOBS_DB_PATH = Path(os.getenv("GOVBENCH_JOBS_DB", BASE_DIR / "results" / "jobs.db"))
+_job_stores: Dict[str, JobStore] = {}
+
+
+def job_store() -> JobStore:
+    key = str(JOBS_DB_PATH)
+    if key not in _job_stores:
+        _job_stores[key] = JobStore(key)
+    return _job_stores[key]
+
+
+def _persist(job: Dict[str, Any], keep_result: bool = True) -> None:
+    """Writes the job through to SQLite. keep_result=False stores status and progress but not the result."""
+    try:
+        job_store().save(job if keep_result else {**job, "result": None, "result_withheld": True})
+    except sqlite3.Error:  # persistence is best-effort; the in-memory job still serves live polling
+        logger.exception("Could not persist job %s", job["id"])
 
 
 @app.post("/api/jobs/run-case")
 def start_case_job(case_data: CustomCaseInput):
     """Starts an interactive run in the background; poll GET /api/jobs/{id} for per-agent progress."""
+    phi_types = enforce_phi_policy(case_data)
     code, variant_key, _ = resolve_governance(case_data.governance_level)
     planned = [layer + (" Agent" if layer in ("Research", "Diagnosis", "Verifier") else "")
                for layer in ClinicalGovernancePipeline.AVAILABLE_VARIANTS[variant_key]["layers"] if layer != "Report"]
     job_id = uuid.uuid4().hex
     job = {"id": job_id, "status": "running", "started": time.time(), "finished": None,
-           "planned": planned, "steps": {}, "result": None, "error": None}
+           "planned": planned, "steps": {}, "events": [], "result": None, "error": None}
     with _jobs_lock:
         _jobs[job_id] = job
         finished = sorted((k for k, j in _jobs.items() if j["status"] != "running"), key=lambda k: _jobs[k]["started"])
         for old in finished[: max(0, len(_jobs) - MAX_JOBS)]:
             _jobs.pop(old, None)
+    _persist(job)
+
+    # When the user overrode an identifier warning, the result may echo identifiers: it is served from memory
+    # while the server runs but never written to disk.
+    keep_result = not phi_types
 
     def on_step(event: str, agent: str, step) -> None:
         with _jobs_lock:
             entry = job["steps"].setdefault(agent, {"agent": agent, "status": "running", "started": time.time()})
             if event == "done":
                 entry.update(status="done", latency_s=round(step.latency_ms / 1000.0, 1), tokens=step.total_tokens)
+        _persist(job, keep_result)
+
+    def on_event(event: Dict[str, Any]) -> None:
+        with _jobs_lock:
+            job["events"] = (job["events"] + [event])[-MAX_JOB_EVENTS:]
+        _persist(job, keep_result)
 
     def work() -> None:
         try:
-            result = run_interactive_case(case_data, on_step=on_step)
+            result = run_interactive_case(case_data, on_step=on_step, on_event=on_event, phi_types=phi_types)
             with _jobs_lock:
                 job.update(status="done", result=result, finished=time.time())
         except HTTPException as exc:
@@ -356,21 +486,81 @@ def start_case_job(case_data: CustomCaseInput):
             logger.exception("Job %s failed", job_id)
             with _jobs_lock:
                 job.update(status="error", error=f"Unexpected error: {exc}", finished=time.time())
+        _persist(job, keep_result)
 
     _job_pool.submit(work)
     return {"job_id": job_id, "planned": planned}
+
+
+def _active_rate_limit(events: List[Dict[str, Any]], running: bool) -> Optional[Dict[str, Any]]:
+    """The latest rate-limit wait if it is still in progress (drives the live 'waiting' message)."""
+    waits = [e for e in events if e.get("type") == "rate_limit"]
+    if not running or not waits:
+        return None
+    latest = waits[-1]
+    remaining = latest.get("at", 0) + latest.get("wait_s", 0) - time.time()
+    return {**latest, "remaining_s": round(remaining, 1)} if remaining > 0 else None
 
 
 @app.get("/api/jobs/{job_id}")
 def get_case_job(job_id: str):
     with _jobs_lock:
         job = _jobs.get(job_id)
-        if job is None:
-            raise HTTPException(status_code=404, detail="Unknown or expired job")
-        end = job["finished"] or time.time()
-        return {"id": job_id, "status": job["status"], "elapsed_s": round(end - job["started"], 1),
-                "planned": job["planned"], "steps": list(job["steps"].values()),
-                "result": job["result"], "error": job["error"]}
+        if job is not None:
+            end = job["finished"] or time.time()
+            return {"id": job_id, "status": job["status"], "elapsed_s": round(end - job["started"], 1),
+                    "planned": job["planned"], "steps": list(job["steps"].values()), "events": list(job["events"]),
+                    "rate_limit": _active_rate_limit(job["events"], job["status"] == "running"),
+                    "result": job["result"], "error": job["error"], "persisted": False}
+    stored = job_store().get(job_id)
+    if stored is None:
+        raise HTTPException(status_code=404, detail="Unknown or expired job")
+    end = stored["finished_at"] or stored["updated_at"]
+    status, error = stored["status"], stored["error"]
+    if status == "done" and stored["result"] is None:
+        # Results of cases with acknowledged identifiers are never written to disk.
+        status, error = "error", "This result was not stored because the case contained possible identifiers. Run it again."
+    return {"id": job_id, "status": status, "elapsed_s": round(end - stored["created_at"], 1),
+            "planned": stored["planned"], "steps": stored["steps"], "events": stored["events"], "rate_limit": None,
+            "result": stored["result"], "error": error, "persisted": True}
+
+
+# ---------------------------------------------------------------- retention
+def retention_days() -> float:
+    try:
+        return max(0.0, float(os.getenv("GOVBENCH_RETENTION_DAYS", "30")))
+    except ValueError:
+        return 30.0
+
+
+def purge_expired(now: Optional[float] = None) -> Dict[str, int]:
+    """Deletes interactive job results and strips experiment case text older than the retention window."""
+    cutoff = (now or time.time()) - retention_days() * 86400
+    purged = {"jobs": 0, "memory_jobs": 0, "experiment_runs": 0}
+    with _jobs_lock:
+        for key in [k for k, j in _jobs.items() if j["status"] != "running" and j["started"] < cutoff]:
+            _jobs.pop(key, None)
+            purged["memory_jobs"] += 1
+    try:
+        purged["jobs"] = job_store().purge_older_than(cutoff)
+        if EXPERIMENT_DB_PATH.exists():
+            with sqlite3.connect(str(EXPERIMENT_DB_PATH), timeout=30.0) as conn:
+                old = "SELECT id FROM runs WHERE timestamp < ? AND raw_outputs_json IS NOT NULL"
+                conn.execute("UPDATE agent_steps SET output_preview = NULL WHERE run_id IN (" + old + ")", (cutoff,))
+                purged["experiment_runs"] = conn.execute(
+                    "UPDATE runs SET raw_outputs_json = NULL WHERE id IN (" + old + ")", (cutoff,)).rowcount
+    except sqlite3.Error:
+        logger.exception("Retention purge failed")
+    if any(purged.values()):
+        logger.info("Retention purge (%s days): %s", retention_days(), purged)
+    return purged
+
+
+def _retention_loop(stop: threading.Event) -> None:
+    while True:
+        purge_expired()
+        if stop.wait(3600):
+            return
 
 
 # ---------------------------------------------------------------- experiments on benchmark cases
@@ -381,7 +571,8 @@ _scorer = ClinicalEvaluationScorer()
 class ExperimentCaseInput(BaseModel):
     case_id: str = Field(..., max_length=120)
     governance_level: str = "G4"
-    provider: Literal["groq", "nvidia", "nim", "gemini", "openrouter", "simulation", "mock", "offline"] = "simulation"
+    # Demo names are accepted by the schema only so the endpoint can refuse them with a clear 400.
+    provider: Literal["groq", "nvidia", "nim", "gemini", "openrouter", "simulation", "mock", "offline"] = "groq"
     closed_loop: bool = True
 
 
@@ -393,8 +584,11 @@ def run_experiment_case(inp: ExperimentCaseInput):
         raise HTTPException(status_code=404, detail=f"Unknown case {inp.case_id}")
     code, variant_key, label = resolve_governance(inp.governance_level)
     choice = inp.provider.lower()
-    result, mode, provider_label, model_label = execute_pipeline(
-        case, variant_key, choice, choice not in ("simulation", "mock", "offline"), inp.closed_loop)
+    if choice in DEMO_PROVIDERS:
+        raise HTTPException(status_code=400, detail=(
+            f"The {DEMO_PROVIDER_LABEL} generator cannot be used for experiments: it is not a model and its output "
+            "would contaminate the results. Choose a live provider."))
+    result, mode, provider_label, model_label = execute_pipeline(case, variant_key, choice, True, inp.closed_loop)
     scored = _scorer.score_run(result, case)
     run_id = BenchmarkDB(str(EXPERIMENT_DB_PATH)).log_run(scored)
     support = build_case_response(scored, code, mode, provider_label, model_label)["decision_support"]
@@ -439,6 +633,18 @@ def list_experiment_runs(limit: int = 200):
 
 
 # ---------------------------------------------------------------- clinician review
+PROTOCOL_PATH = BASE_DIR / "benchmarks" / "clinician_protocol_50.json"
+
+
+def _protocol_run_ids() -> Dict[int, int]:
+    """run_id -> position in the fixed clinician protocol (empty when no protocol file exists)."""
+    try:
+        items = json.loads(PROTOCOL_PATH.read_text(encoding="utf-8")).get("items", [])
+    except (OSError, ValueError):
+        return {}
+    return {int(it["run_id"]): i for i, it in enumerate(items) if "run_id" in it}
+
+
 def _recovered(raw: Dict[str, Any]) -> Dict[str, Any]:
     return {k: (parse_llm_json(v.get("raw_text", "")) if is_parse_failure(v) else v) for k, v in raw.items()}
 
@@ -456,7 +662,12 @@ def get_review_queue(reviewer_id: str, limit: int = 5):
         # Closed-loop rows are excluded: their alerts refer to the pre-revision diagnosis.
         rows = conn.execute("SELECT id, case_id, raw_outputs_json FROM runs WHERE variant_id NOT LIKE '%-CL'").fetchall()
     pending = [r for r in rows if r[0] not in done and r[1] in cases]
-    pending.sort(key=lambda r: hashlib.sha256(f"{reviewer_id}:{r[0]}".encode()).hexdigest())
+    # The fixed 50-item protocol comes first, in the same order for every reviewer, so that
+    # inter-rater agreement (Fleiss' kappa) can be computed; other outputs follow in a per-reviewer order.
+    protocol = _protocol_run_ids()
+    pending.sort(key=lambda r: (0, protocol[r[0]]) if r[0] in protocol
+                 else (1, hashlib.sha256(f"{reviewer_id}:{r[0]}".encode()).hexdigest()))
+    protocol_remaining = sum(1 for r in pending if r[0] in protocol)
     items = []
     for run_id, case_id, raw_json in pending[: max(1, min(limit, 20))]:
         raw = _recovered(json.loads(raw_json or "{}"))
@@ -475,7 +686,8 @@ def get_review_queue(reviewer_id: str, limit: int = 5):
             "alerts": [{"index": i, "severity": a["severity"], "category": a["category"], "description": a["description"]}
                        for i, a in enumerate(collect_alerts(raw))],
         })
-    return {"reviewer_id": reviewer_id, "remaining": len(pending), "items": items}
+    return {"reviewer_id": reviewer_id, "remaining": len(pending), "protocol_total": len(protocol),
+            "protocol_remaining": protocol_remaining, "items": items}
 
 
 class AlertRating(BaseModel):
@@ -528,8 +740,6 @@ def review_summary():
 @app.get("/api/reports/latex")
 def get_latex_report():
     tex_path = BASE_DIR / "paper" / "tables" / "rigor_variants.tex"
-    if not tex_path.exists():
-        tex_path = BASE_DIR / "paper" / "tables" / "variant_summary.tex"
     if tex_path.exists():
         return PlainTextResponse(tex_path.read_text(encoding="utf-8"), media_type="text/plain")
     return PlainTextResponse("% LaTeX table not generated yet", media_type="text/plain")
@@ -542,6 +752,8 @@ def get_csv_report():
     conn = get_db_connection()
     df = pd.read_sql_query("SELECT * FROM runs", conn)
     conn.close()
+    # Columns written by a post-hoc script were never measured; they are not exported.
+    df = df.drop(columns=[c for c in SYNTHETIC_COLUMNS if c in df.columns])
     return PlainTextResponse(df.to_csv(index=False), media_type="text/csv",
                              headers={"Content-Disposition": "attachment; filename=govbench_benchmark_runs.csv"})
 

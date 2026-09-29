@@ -24,6 +24,18 @@ class BenchmarkDB:
         "revision_applied": "INTEGER",
         "initial_primary_diagnosis": "TEXT",
         "revision_triggers": "TEXT",
+        "scoring_mode": "TEXT",
+        "option_choice": "TEXT",
+        "option_parse_status": "TEXT",
+        "temperature_config": "TEXT",
+        "seed": "INTEGER",
+        "provider_seed_applied": "INTEGER",
+        "judge_provider": "TEXT",
+        "judge_model": "TEXT",
+    }
+    STEP_COLUMNS = {
+        "model": "TEXT",
+        "temperature": "REAL",
     }
 
     def __init__(self, db_path: str = "results/benchmark_results.db"):
@@ -132,6 +144,8 @@ class BenchmarkDB:
                 )
                 """
             )
+            for column, definition in self.STEP_COLUMNS.items():
+                self._ensure_column(cursor, "agent_steps", column, definition)
             conn.commit()
 
     def log_run(self, result: PipelineRunResult) -> int:
@@ -207,6 +221,25 @@ class BenchmarkDB:
                     run_id,
                 ),
             )
+            cursor.execute(
+                """
+                UPDATE runs SET scoring_mode = ?, option_choice = ?, option_parse_status = ?,
+                    temperature_config = ?, seed = ?, provider_seed_applied = ?,
+                    judge_provider = ?, judge_model = ?
+                WHERE id = ?
+                """,
+                (
+                    getattr(result, "scoring_mode", "free_text"),
+                    getattr(result, "option_choice", ""),
+                    getattr(result, "option_parse_status", ""),
+                    json.dumps(getattr(result, "temperature_config", {}) or {}),
+                    getattr(result, "seed", None),
+                    int(bool(getattr(result, "provider_seed_applied", False))),
+                    getattr(result, "judge_provider", ""),
+                    getattr(result, "judge_model", ""),
+                    run_id,
+                ),
+            )
 
             for step in result.agent_steps:
                 cursor.execute(
@@ -214,8 +247,9 @@ class BenchmarkDB:
                     INSERT INTO agent_steps (
                         run_id, case_id, variant_id, agent_name, role,
                         prompt_tokens, completion_tokens, total_tokens,
-                        latency_ms, cost_usd, output_preview, flags
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        latency_ms, cost_usd, output_preview, flags,
+                        model, temperature
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         run_id,
@@ -230,6 +264,8 @@ class BenchmarkDB:
                         step.cost_usd,
                         step.output_preview,
                         json.dumps(step.flags),
+                        getattr(step, "model", "") or None,
+                        getattr(step, "temperature", None),
                     ),
                 )
             conn.commit()

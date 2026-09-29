@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -39,7 +39,10 @@ class ResearchAgent(BaseClinicalAgent):
             {"role": "system", "content": self.system_prompt},
             {
                 "role": "user",
-                "content": f"Extract structured clinical findings from this case vignette:\n\n{case_text}\n\nRespond in JSON format.",
+                "content": (
+                    "Extract structured clinical findings from this case vignette:\n\n"
+                    f"{wrap_case_data(case_text, 'case_note')}\n\nRespond in JSON format."
+                ),
             },
         ]
         resp = self.llm_client.generate(messages, temperature=0.1)

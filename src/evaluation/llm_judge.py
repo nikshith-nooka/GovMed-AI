@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 from src.agents.base import BaseClinicalAgent
 from src.llm.client import UnifiedLLMClient
@@ -78,16 +78,63 @@ evidence grounding, safety awareness) and provide an overall judge score.
 Respond in JSON."""
 
 
-class LLMJudgeAgent(BaseClinicalAgent):
-    """Evaluates clinical AI outputs using an LLM acting as a clinical peer reviewer."""
+class SameModelJudgeError(ValueError):
+    """Raised when the judge would grade output produced by its own model."""
 
-    def __init__(self, llm_client: UnifiedLLMClient):
+
+def _model_key(model: Optional[str]) -> str:
+    return str(model or "").strip().lower()
+
+
+def is_same_model(judge_model: Optional[str], generator_model: Optional[str]) -> bool:
+    return bool(_model_key(judge_model)) and _model_key(judge_model) == _model_key(generator_model)
+
+
+class LLMJudgeAgent(BaseClinicalAgent):
+    """Evaluates clinical AI outputs using an LLM acting as a clinical peer reviewer.
+
+    For measurement use the judge must be a different model from the generator
+    (self-grading is not an independent rater). Pass ``generator_model`` to enforce it:
+    a same-model judge raises SameModelJudgeError unless ``allow_same_model=True``, in which
+    case every verdict is marked ``cross_model: False`` and the scorer excludes it from JRU.
+    """
+
+    def __init__(
+        self,
+        llm_client: UnifiedLLMClient,
+        generator_model: Optional[str] = None,
+        allow_same_model: bool = False,
+    ):
         super().__init__(
             name="LLM Judge Agent",
             role="Clinical Peer Review & Quality Auditor",
             llm_client=llm_client,
             system_prompt=JUDGE_SYSTEM_PROMPT,
         )
+        self.judge_provider = str(getattr(llm_client, "provider", "") or "")
+        self.judge_model = str(getattr(llm_client, "default_model", "") or "")
+        self.generator_model = generator_model
+        same = generator_model is not None and is_same_model(self.judge_model, generator_model)
+        if same and not allow_same_model:
+            raise SameModelJudgeError(
+                f"Judge model '{self.judge_model}' is the generator model; configure a different "
+                "judge (e.g. --judge-provider/--judge-model) or pass allow_same_model=True to flag it."
+            )
+        # None = generator unknown (not checked); the scorer then compares against the run's model.
+        self.cross_model: Optional[bool] = None if generator_model is None else not same
+
+    @classmethod
+    def from_config(
+        cls,
+        provider: str,
+        model: Optional[str],
+        generator_model: str,
+        allow_same_model: bool = False,
+        **client_kwargs: Any,
+    ) -> "LLMJudgeAgent":
+        """Builds a judge on its own client so it can use another provider/model than the generator."""
+        client = UnifiedLLMClient(provider=provider, model=model, **client_kwargs)
+        return cls(client, generator_model=generator_model, allow_same_model=allow_same_model)
 
     def execute(
         self,
@@ -161,6 +208,13 @@ class LLMJudgeAgent(BaseClinicalAgent):
         for dim in expected_dims:
             if data[dim]["score"] < 0.3:
                 flags.append(f"Judge Flag: {dim} critically low ({data[dim]['score']:.2f})")
+
+        data["judge_provider"] = self.judge_provider
+        data["judge_model"] = str(getattr(resp, "model", "") or self.judge_model)
+        data["generator_model"] = self.generator_model
+        data["cross_model"] = self.cross_model
+        if self.cross_model is False:
+            flags.append("Judge Flag: same model as generator (self-evaluation, excluded from JRU)")
 
         step_log = self.build_step_log(resp, preview, flags=flags)
         return data, step_log

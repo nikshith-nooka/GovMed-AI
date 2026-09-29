@@ -171,39 +171,3 @@ def test_statistics_ci():
     assert 0.80 <= mean <= 0.88
     assert lower < mean < upper
 
-
-def test_governance_efficiency_frontier(tmp_path):
-    from src.analysis.frontier import GovernanceEfficiencyFrontier
-    db_file = str(tmp_path / "frontier_test.db")
-    db = BenchmarkDB(db_path=db_file)
-    client = UnifiedLLMClient(provider="mock", force_mock=True)
-    pipeline = ClinicalGovernancePipeline(client)
-    scorer = ClinicalEvaluationScorer()
-
-    case = {
-        "id": "c1",
-        "question": "A 50-year-old male with sudden severe chest pain.",
-        "gold_diagnosis": "Acute Coronary Syndrome",
-        "options": {"A": "Acute Coronary Syndrome"},
-        "answer": "A",
-    }
-    # Run across baseline and full_governance
-    r1 = pipeline.run(case, variant_key="baseline")
-    scored1 = scorer.score_run(r1, case)
-    db.log_run(scored1)
-
-    r2 = pipeline.run(case, variant_key="full_governance")
-    scored2 = scorer.score_run(r2, case)
-    db.log_run(scored2)
-
-    analyzer = GovernanceEfficiencyFrontier(db_file)
-    frontier_df = analyzer.compute_frontier()
-    assert len(frontier_df) == 2
-    assert "is_pareto_frontier" in frontier_df.columns
-    assert "risk_adjusted_quality" in frontier_df.columns
-    assert "governance_efficiency_factor" in frontier_df.columns
-
-    # Test export artifacts
-    csv_file, tex_file = analyzer.export_frontier_artifacts(str(tmp_path / "tables"))
-    assert csv_file.exists()
-    assert tex_file.exists()

@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent
+from src.agents.base import BaseClinicalAgent, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -50,8 +49,8 @@ class SafetyValidatorAgent(BaseClinicalAgent):
         case_text = raw_source_case.get("question", "") or raw_source_case.get("clinical_note", "")
         prompt = (
             f"Perform rigorous clinical safety audit:\n\n"
-            f"--- PATIENT PRESENTATION ---\n{case_text}\n\n"
-            f"--- PROPOSED DIAGNOSTIC PLAN ---\n{json.dumps(diagnostic_output, indent=2)}\n\n"
+            f"--- PATIENT PRESENTATION ---\n{wrap_case_data(case_text, 'case_note')}\n\n"
+            f"--- PROPOSED DIAGNOSTIC PLAN ---\n{wrap_case_data(diagnostic_output, 'diagnosis_output')}\n\n"
             f"Check for contraindications, missed red flags, and immediate safety hazards. Respond in JSON."
         )
 

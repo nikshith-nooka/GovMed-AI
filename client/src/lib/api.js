@@ -1,41 +1,95 @@
 import { useEffect, useState } from 'react';
 
+// ---------------------------------------------------------------- API token (optional server auth)
+const TOKEN_KEY = 'govbench.apiToken';
+export const AUTH_EVENT = 'govbench:auth-required';
+export const TOKEN_CHANGED_EVENT = 'govbench:token-changed';
+
+export function getApiToken() {
+  try { return window.localStorage.getItem(TOKEN_KEY) || ''; } catch { return ''; }
+}
+
+export function setApiToken(token) {
+  try {
+    if (token) window.localStorage.setItem(TOKEN_KEY, token);
+    else window.localStorage.removeItem(TOKEN_KEY);
+  } catch { /* storage blocked: token lasts for this page only */ }
+}
+
+/** fetch() with the stored bearer token; a 401 asks the app to show the token dialog. */
+export async function apiFetch(path, options = {}) {
+  const token = getApiToken();
+  const headers = new Headers(options.headers || {});
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  const res = await fetch(path, { ...options, headers });
+  if (res.status === 401) window.dispatchEvent(new CustomEvent(AUTH_EVENT, { detail: { path, hadToken: !!token } }));
+  return res;
+}
+
+export function postJson(path, body, options = {}) {
+  return apiFetch(path, { ...options, method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+}
+
+/** Error raised when the server finds possible patient identifiers (HTTP 422, code phi_detected). */
+export class PhiDetectedError extends Error {
+  constructor(detail) {
+    super(detail.message || 'Possible patient identifiers detected.');
+    this.name = 'PhiDetectedError';
+    this.types = detail.types || [];
+  }
+}
+
+export function errorFromBody(body, status) {
+  const detail = body?.detail;
+  if (detail && typeof detail === 'object' && !Array.isArray(detail) && detail.code === 'phi_detected') return new PhiDetectedError(detail);
+  if (Array.isArray(detail)) return new Error(detail.map((d) => `${d.loc?.slice(-1)[0]}: ${d.msg}`).join('; '));
+  if (status === 401) return new Error('This server requires an API token. Add it from the key icon in the top bar.');
+  return new Error((typeof detail === 'string' && detail) || `Request failed (${status})`);
+}
+
+/** Re-renders when the API token changes, so data hooks refetch with the new credentials. */
+export function useTokenVersion() {
+  const [version, setVersion] = useState(0);
+  useEffect(() => {
+    const bump = () => setVersion((v) => v + 1);
+    window.addEventListener(TOKEN_CHANGED_EVENT, bump);
+    return () => window.removeEventListener(TOKEN_CHANGED_EVENT, bump);
+  }, []);
+  return version;
+}
+
 export function useApi(path) {
   const [state, setState] = useState({ data: null, error: null, loading: true });
+  const tokenVersion = useTokenVersion();
   useEffect(() => {
     let alive = true;
-    fetch(path)
+    apiFetch(path)
       .then(async (res) => {
         const body = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(body.detail || `${path} failed (${res.status})`);
+        if (!res.ok) throw errorFromBody(body, res.status);
         if (alive) setState({ data: body, error: null, loading: false });
       })
       .catch((error) => alive && setState({ data: null, error: error.message, loading: false }));
     return () => { alive = false; };
-  }, [path]);
+  }, [path, tokenVersion]);
   return state;
 }
 
 export async function runCaseWithProgress(body, onProgress, { signal, pollMs = 700, timeoutMs = 10 * 60 * 1000 } = {}) {
-  const start = await fetch('/api/jobs/run-case', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
-  });
-  const started = await start.json();
-  if (!start.ok) {
-    const detail = Array.isArray(started.detail) ? started.detail.map((d) => `${d.loc?.slice(-1)[0]}: ${d.msg}`).join('; ') : started.detail;
-    throw new Error(detail || `Request failed (${start.status})`);
-  }
+  const start = await postJson('/api/jobs/run-case', body);
+  const started = await start.json().catch(() => ({}));
+  if (!start.ok) throw errorFromBody(started, start.status);
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     await new Promise((r) => setTimeout(r, pollMs));
     if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
     if (Date.now() > deadline) throw new Error('The run took longer than 10 minutes and was abandoned.');
-    const res = await fetch(`/api/jobs/${started.job_id}`);
-    const job = await res.json();
-    if (!res.ok) throw new Error(job.detail || 'Lost track of the running job');
+    const res = await apiFetch(`/api/jobs/${started.job_id}`);
+    const job = await res.json().catch(() => ({}));
+    if (!res.ok) throw res.status === 404 ? new Error('Lost track of the running job') : errorFromBody(job, res.status);
     onProgress?.(job);
     if (job.status === 'done') return job.result;
-    if (job.status === 'error') throw new Error(job.error);
+    if (job.status === 'error') throw new Error(typeof job.error === 'string' ? job.error : JSON.stringify(job.error));
   }
 }
 

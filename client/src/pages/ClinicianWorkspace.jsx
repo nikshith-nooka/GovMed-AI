@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, ClipboardCopy, Info, Loader2, ShieldAlert, Stethoscope, Users } from 'lucide-react';
+import { AlertTriangle, ClipboardCopy, EyeOff, Info, Loader2, ShieldAlert, Stethoscope, Users } from 'lucide-react';
 import './clinical.css';
-import { EXAMPLE_CASES, runCaseWithProgress } from '../lib/api';
+import { EXAMPLE_CASES, PhiDetectedError, apiFetch, runCaseWithProgress } from '../lib/api';
 import AgentProgress from '../components/AgentProgress';
 
 const LEVELS = [
@@ -15,7 +15,7 @@ const ENGINES = [
   { id: 'groq', label: 'Groq · GPT-OSS-120B (live)', live: true },
   { id: 'nvidia', label: 'NVIDIA NIM · Llama-3.2-11B (live)', live: true },
   { id: 'gemini', label: 'Google Gemini Flash (live)', live: true },
-  { id: 'simulation', label: 'Demo generator (no API, not a real analysis)', live: false },
+  { id: 'simulation', label: 'Offline demo (not AI)', live: false },
 ];
 
 const EMPTY_FORM = { age: '', sex: '', chief_complaint: '', hpi: '', pmh: '', medications: '', allergies: '', vitals: '', labs: '' };
@@ -30,25 +30,51 @@ function Alerts({ alerts }) {
     <div key={i} className={`cw-alert sev-${a.severity}`}>
       <div className="top">
         <span className={`cw-pill pill-${a.severity}`}>{a.severity}</span>
+        {a.origin === 'rule'
+          ? <span className="cw-pill pill-rule" title="Deterministic rule, independent of the AI">Rule-based</span>
+          : <span className="cw-pill pill-ai" title="Raised by an AI check">AI</span>}
         <strong>{a.category}</strong>
         <span className="cw-muted">· {a.source}</span>
+        {a.checked_on && <span className="cw-muted">· raised on the {a.checked_on}</span>}
       </div>
       <div>{a.description}</div>
       {a.action && <div className="act">Suggested action: {a.action}</div>}
+      {a.reference && <div className="cw-ref">Source: {a.reference}</div>}
     </div>
   ));
 }
 
-function Checks({ checks, notChecked }) {
+function PhiNotice() {
+  return (
+    <div className="cw-banner phi" role="note">
+      <EyeOff size={18} />
+      <div>
+        <strong>Do not enter patient identifiers</strong>
+        Leave out names, record numbers, dates of birth, phone numbers, emails and addresses. Live engines send
+        the case text to an external model provider. Cases that look like they contain identifiers are blocked.
+      </div>
+    </div>
+  );
+}
+
+function Checks({ checks, notChecked, ruleCheck }) {
   return (
     <>
       <div className="cw-checks">
         {checks.map((c) => (
           <div key={c.name}>
-            <span>{c.name}</span>
+            <span>{c.name}{c.rechecked && <span className="cw-muted"> · re-checked</span>}</span>
             <span className={`cw-pill ${c.ran ? 'pill-ran' : 'pill-off'}`}>{c.ran ? c.outcome || 'RAN' : 'NOT RUN'}</span>
           </div>
         ))}
+        {ruleCheck?.ran && (
+          <div>
+            <span>Contraindication rules <span className="cw-pill pill-rule">Rule-based</span></span>
+            <span className={`cw-pill ${ruleCheck.fired ? 'pill-HIGH' : 'pill-ran'}`}>
+              {ruleCheck.fired ? `${ruleCheck.fired} FIRED` : `${ruleCheck.rules_evaluated} CLEAR`}
+            </span>
+          </div>
+        )}
       </div>
       {notChecked.length > 0 && (
         <ul className="cw-list" style={{ marginTop: 10 }}>
@@ -90,13 +116,38 @@ function PhysicianView({ support }) {
               Reconsidered <strong>{revision.initial_diagnosis}</strong>; result: <strong>{revision.final_diagnosis}</strong>
               {revision.initial_diagnosis === revision.final_diagnosis && ' (kept after review)'}.
               {revision.rationale && <><br /><span className="cw-muted">{revision.rationale}</span></>}
-              <br /><span className="cw-muted">The alerts below were produced on the initial diagnosis; the revised diagnosis was not re-checked.</span>
+              <br />
+              {revision.checks_ran_on === 'revised' ? (
+                <span className="cw-muted">
+                  {revision.rechecked.join(' and ')} re-checked the revised diagnosis
+                  {revision.recheck_latency_ms != null && ` (${(revision.recheck_latency_ms / 1000).toFixed(1)}s)`}.
+                  {revision.not_rechecked.length > 0 && ` ${revision.not_rechecked.join(' and ')} ran on the initial diagnosis only.`}
+                </span>
+              ) : (
+                <span className="cw-muted">This level has no verifier or safety check, so the revised diagnosis was not re-checked.</span>
+              )}
             </p>
           ) : (
             <p className="cw-muted" style={{ margin: 0 }}>No serious concern was raised, so the diagnosis was not sent back for revision.</p>
           )}
+          {revision.checks_ran_on === 'revised' && (
+            revision.remaining_blocking.length > 0 ? (
+              <div className="cw-banner high" style={{ marginTop: 10 }}>
+                <ShieldAlert size={16} />
+                <div>
+                  <strong>Still blocking after re-check ({revision.remaining_blocking.length})</strong>
+                  <ul>{revision.remaining_blocking.map((r) => <li key={r}>{r}</li>)}</ul>
+                </div>
+              </div>
+            ) : (
+              <p className="cw-muted" style={{ marginTop: 8, marginBottom: 0 }}>Re-check found no remaining blocking issues from the AI checks.</p>
+            )
+          )}
           {revision.triggers.length > 0 && (
-            <ul className="cw-list" style={{ marginTop: 8 }}>{revision.triggers.map((t) => <li key={t}>{t}</li>)}</ul>
+            <>
+              <div className="cw-label" style={{ marginTop: 10 }}>Concerns that triggered the revision</div>
+              <ul className="cw-list">{revision.triggers.map((t) => <li key={t}>{t}</li>)}</ul>
+            </>
           )}
         </div>
       )}
@@ -114,7 +165,7 @@ function PhysicianView({ support }) {
         </div>
         <div className="cw-card" style={{ marginTop: 0 }}>
           <h3>What was checked</h3>
-          <Checks checks={support.checks} notChecked={support.not_checked} />
+          <Checks checks={support.checks} notChecked={support.not_checked} ruleCheck={support.rule_check} />
         </div>
       </div>
 
@@ -207,13 +258,15 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState(null);
+  const [phi, setPhi] = useState(null); // identifier types the server detected in the last attempt
+  const [phiAck, setPhiAck] = useState(false);
   const [result, setResult] = useState(null);
   const [latency, setLatency] = useState({});
   const timer = useRef(null);
   const abortRef = useRef(null);
 
   useEffect(() => {
-    fetch('/api/providers')
+    apiFetch('/api/providers')
       .then((r) => (r.ok ? r.json() : {}))
       .then((p) => {
         setProviders(p);
@@ -221,7 +274,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
         if (firstLive) setEngine(firstLive.id);
       })
       .catch(() => {});
-    fetch('/api/research/findings')
+    apiFetch('/api/research/findings')
       .then((r) => (r.ok ? r.json() : null))
       .then((rep) => {
         if (!rep) return;
@@ -241,7 +294,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
   }, [prefill]);
 
   const examples = useMemo(() => cases.filter((c) => c.question), [cases]);
-  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const set = (key) => (e) => { setForm((f) => ({ ...f, [key]: e.target.value })); setPhiAck(false); };
   const canRun = form.chief_complaint.trim().length >= 2 && form.hpi.trim().length >= 5 && !loading;
 
   const loadExample = (id) => {
@@ -257,6 +310,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
     setError(null);
     setResult(null);
     setJob(null);
+    if (!phiAck) setPhi(null);
     setElapsed(0);
     const started = Date.now();
     timer.current = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
@@ -269,10 +323,18 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
         closed_loop: closedLoop,
         provider: engine,
         use_live_llm: engine !== 'simulation',
+        phi_acknowledged: phiAck,
       }, setJob, { signal: abortRef.current.signal });
       setResult(body);
+      setPhi(null);
+      setPhiAck(false);
     } catch (e) {
       if (e.name === 'AbortError') return;
+      if (e instanceof PhiDetectedError) {
+        setPhi(e.types);
+        setPhiAck(false);
+        return;
+      }
       setError(e.message);
     } finally {
       clearInterval(timer.current);
@@ -296,7 +358,9 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
         </div>
       </div>
 
-      <div className="cw-grid">
+      <PhiNotice />
+
+      <div className="cw-grid" style={{ marginTop: 14 }}>
         <fieldset disabled={loading} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <div className="cw-card">
             <h3>Patient</h3>
@@ -334,6 +398,19 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
             </div>
           </div>
 
+          {phi && (
+            <div className="cw-card cw-phi-error" role="alert">
+              <h3><AlertTriangle size={13} /> Possible patient identifiers</h3>
+              <p style={{ fontSize: '0.84rem', margin: '0 0 8px' }}>The server did not run this case. It looks like it contains:</p>
+              <ul className="cw-list">{phi.map((t) => <li key={t.type}>{t.label}{t.count > 1 ? ` (${t.count})` : ''}</li>)}</ul>
+              <p className="cw-muted" style={{ margin: '8px 0 0' }}>Remove them and run again. Only the identifier types are logged, never the values.</p>
+              <label className="cw-check">
+                <input type="checkbox" checked={phiAck} onChange={(e) => setPhiAck(e.target.checked)} />
+                <span>These are not real patient identifiers (false positive, or synthetic data). Run anyway.</span>
+              </label>
+            </div>
+          )}
+
           <div className="cw-card">
             <h3>How much checking</h3>
             <div className="cw-level" role="radiogroup" aria-label="Check level">
@@ -360,6 +437,9 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
             <button className="cw-btn full" disabled={!canRun} onClick={run}>
               {loading ? <><Loader2 size={16} className="spin" /> Running… {elapsed}s</> : 'Analyze case'}
             </button>
+            {engine === 'simulation' && !loading && (
+              <p className="cw-muted" style={{ marginTop: 8 }}>The offline demo is a keyword template, not an AI model. Results are labelled as demo output.</p>
+            )}
             {loading && engine !== 'simulation' && (
               <p className="cw-muted" style={{ marginTop: 8 }}>Live runs call several agents in sequence{expected && engine === 'nvidia' ? `; this level typically takes about ${Math.round(expected)}s` : ''}.</p>
             )}
@@ -372,7 +452,12 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
           {!result && !error && !loading && (
             <div className="cw-card cw-empty">Enter a chief complaint and history, choose how much checking you want, then analyze.</div>
           )}
-          {result?.notice && <div className="cw-banner demo"><Info size={18} /><div><strong>Demo output</strong>{result.notice}</div></div>}
+          {result?.demo && (
+            <div className="cw-banner demo" role="alert">
+              <AlertTriangle size={18} />
+              <div><strong>Offline demo (not AI): not an analysis of this patient</strong>{result.notice}</div>
+            </div>
+          )}
           {support && (
             <div className={`cw-banner ${support.attention === 'HIGH' ? 'high' : 'standard'}`}>
               {support.attention === 'HIGH' ? <ShieldAlert size={18} /> : <Info size={18} />}

@@ -11,6 +11,89 @@ from src.config.governance_economics import HUMAN_REVIEW_RATE_USD_PER_MIN, RISK_
 TEMPLATED_GOLD_PREFIXES = ("clinical diagnostic note",)
 OPTION_LETTER = re.compile(r"[a-e]")
 MIN_MATCH_CHARS = 4
+YES_NO_MAYBE = frozenset({"yes", "no", "maybe"})
+# "B", "(B)", "B.", "B) text", "Option B", "Answer: B - text"; a bare capital followed by a space
+# ("A 45-year-old...") is not a letter choice.
+LETTER_CHOICE = re.compile(
+    r"^\s*(?:(?:the\s+)?(?:correct\s+)?(?:option|answer|choice)\s*(?:is)?\s*[:\-]?\s*)?"
+    r"[\(\[]?([A-Ea-e])(?:[\)\]\.:\-]|\s*$)\s*(.*)$",
+    re.IGNORECASE | re.DOTALL,
+)
+KEYWORD_LETTER = re.compile(r"^\s*(?:option|answer|choice)\s*(?:is)?\s*[:\-]?\s*\(?([A-Ea-e])\)?\b\s*(.*)$",
+                            re.IGNORECASE | re.DOTALL)
+
+SCORING_OPTION_EXACT = "option_exact"
+SCORING_YES_NO_MAYBE = "yesno_exact"
+SCORING_FREE_TEXT = "free_text"
+
+
+def _norm(text: str) -> str:
+    text = re.sub(r"[^\w\s]", " ", str(text or "").lower())
+    return " ".join(text.split())
+
+
+def parse_option_choice(predicted: str, options: Dict[str, str]) -> Dict[str, Any]:
+    """Maps a model answer to exactly one option key, or reports why it cannot.
+
+    Returns {"choice": letter|None, "parse_status": ...} where parse_status is one of
+    "letter", "text_exact", "text_contained", "ambiguous", "unparseable", "empty".
+    """
+    keys = {str(k).upper(): str(v) for k, v in (options or {}).items()}
+    raw = str(predicted or "").strip()
+    if not _norm(raw):
+        return {"choice": None, "parse_status": "empty"}
+    norm_opts = {k: _norm(v) for k, v in keys.items()}
+
+    pred = _norm(raw)
+    # Full option text first, so an option that itself starts like a letter ("C. difficile
+    # colitis") is not read as choice C.
+    exact = [k for k, v in norm_opts.items() if v and v == pred]
+    if len(exact) == 1:
+        return {"choice": exact[0], "parse_status": "text_exact"}
+    if len(exact) > 1:
+        return {"choice": None, "parse_status": "ambiguous"}
+
+    match = KEYWORD_LETTER.match(raw) or LETTER_CHOICE.match(raw)
+    if match and match.group(1).upper() in keys:
+        letter, rest = match.group(1).upper(), _norm(match.group(2))
+        own = norm_opts[letter]
+        if not rest or (own and (f" {own} " in f" {rest} " or f" {rest} " in f" {own} ")):
+            return {"choice": letter, "parse_status": "letter"}
+        # A letter followed by text that is not that option ("B. <text of C>") contradicts itself.
+        return {"choice": None, "parse_status": "ambiguous"}
+
+    # Option text quoted inside a longer answer ("Diagnosis: <option text>"). Keep only
+    # maximal matches so "aspiration pneumonia" does not also count "pneumonia".
+    contained = [k for k, v in norm_opts.items()
+                 if len(v) >= MIN_MATCH_CHARS and f" {v} " in f" {pred} "]
+    maximal = [k for k in contained
+               if not any(o != k and f" {norm_opts[k]} " in f" {norm_opts[o]} " for o in contained)]
+    if len(maximal) == 1:
+        return {"choice": maximal[0], "parse_status": "text_contained"}
+    if len(maximal) > 1:
+        return {"choice": None, "parse_status": "ambiguous"}
+    return {"choice": None, "parse_status": "unparseable"}
+
+
+def parse_yes_no_maybe(predicted: str) -> Dict[str, Any]:
+    """PubMedQA answers: exactly one of yes / no / maybe must be asserted."""
+    pred = _norm(predicted)
+    if not pred:
+        return {"choice": None, "parse_status": "empty"}
+    words = pred.split()
+    lead = words[1] if words[0] in ("conclusion", "answer", "decision") and len(words) > 1 else words[0]
+    found = {w for w in words if w in YES_NO_MAYBE}
+    if len(found) > 1:
+        return {"choice": None, "parse_status": "ambiguous"}
+    if lead in YES_NO_MAYBE:
+        return {"choice": lead, "parse_status": "letter"}
+    if found:
+        return {"choice": found.pop(), "parse_status": "text_contained"}
+    return {"choice": None, "parse_status": "unparseable"}
+
+
+def is_yes_no_maybe(options: Optional[Dict[str, str]]) -> bool:
+    return bool(options) and {_norm(v) for v in options.values()} == YES_NO_MAYBE
 
 
 def is_valid_gold_label(gold: Optional[str]) -> bool:
@@ -108,6 +191,42 @@ class ClinicalEvaluationScorer:
 
         return 0.0
 
+    def score_diagnosis(
+        self,
+        predicted_primary: str,
+        differential_list: List[Dict[str, Any]],
+        clinical_case: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """Routes to exact option scoring when the case has an answer key, else free-text matching.
+
+        Option cases (MedQA/MedMCQA, and PubMedQA yes/no/maybe) score 1.0 iff the chosen option
+        equals the key: no partial credit, no differential credit; an answer that cannot be
+        mapped to exactly one option scores 0.0 and is flagged via parse_status.
+        """
+        options = clinical_case.get("options") or {}
+        key = str(clinical_case.get("answer_idx") or clinical_case.get("answer") or "").strip().upper()
+        if options and key in {str(k).upper() for k in options}:
+            if is_yes_no_maybe(options):
+                parsed = parse_yes_no_maybe(predicted_primary)
+                gold = _norm(options.get(key, options.get(key.lower(), "")))
+                correct = parsed["choice"] is not None and parsed["choice"] == gold
+                choice = next((k for k, v in options.items() if _norm(v) == parsed["choice"]), None)
+                mode = SCORING_YES_NO_MAYBE
+            else:
+                parsed = parse_option_choice(predicted_primary, options)
+                choice = parsed["choice"]
+                correct = choice is not None and choice == key
+                mode = SCORING_OPTION_EXACT
+            return {"score": 1.0 if correct else 0.0, "scoring_mode": mode, "choice": choice,
+                    "parse_status": parsed["parse_status"],
+                    "flagged": parsed["choice"] is None}
+        score = self.evaluate_diagnostic_match(
+            predicted_primary, differential_list, clinical_case.get("gold_diagnosis", ""),
+            clinical_case.get("answer"), options,
+        )
+        return {"score": score, "scoring_mode": SCORING_FREE_TEXT, "choice": None,
+                "parse_status": "empty" if not _norm(predicted_primary) else "free_text", "flagged": False}
+
     def evaluate_completeness(self, differential_list: List[Dict[str, Any]]) -> float:
         """Evaluates whether at least 3-4 plausible conditions are explored."""
         count = sum(isinstance(item, dict) for item in differential_list or [])
@@ -138,14 +257,12 @@ class ClinicalEvaluationScorer:
         gold_ans = clinical_case.get("answer", "")
         options = clinical_case.get("options", {})
 
-        # 1. Diagnostic accuracy
-        acc_score = self.evaluate_diagnostic_match(
-            predicted_primary=result.primary_diagnosis,
-            differential_list=result.differential_diagnoses,
-            gold_diagnosis=gold_dx,
-            gold_answer_option=gold_ans,
-            options=options,
-        )
+        # 1. Diagnostic accuracy (exact option scoring when the case has an answer key)
+        diag = self.score_diagnosis(result.primary_diagnosis, result.differential_diagnoses, clinical_case)
+        acc_score = diag["score"]
+        result.scoring_mode = diag["scoring_mode"]
+        result.option_choice = diag["choice"] or ""
+        result.option_parse_status = diag["parse_status"]
 
         # 2. Differential completeness
         comp_score = self.evaluate_completeness(result.differential_diagnoses)
@@ -195,7 +312,15 @@ class ClinicalEvaluationScorer:
             result.overall_quality_score = round(blended_overall, 4)
             result.llm_judge_scores = judge_scores
             result.uncertainty_jru = round(min(1.0, abs(rubric_quality - llm_judge_score)), 4)
-            result.jru_source = "judge_rubric"
+            result.judge_provider = str(judge_scores.get("judge_provider", "") or "")
+            result.judge_model = str(judge_scores.get("judge_model", "") or "")
+            # A judge sharing the generator's weights grades its own output: its disagreement
+            # with the rubric is not an independent uncertainty measurement.
+            same_model = bool(result.judge_model) and result.judge_model.strip().lower() == str(result.model).strip().lower()
+            if judge_scores.get("cross_model") is False or same_model:
+                result.jru_source = "same_model_judge"
+            else:
+                result.jru_source = "judge_rubric"
             # The judge evaluates the report's reasoning, grounding, and safety
             # communication separately from diagnostic correctness.
             report_dimensions = (

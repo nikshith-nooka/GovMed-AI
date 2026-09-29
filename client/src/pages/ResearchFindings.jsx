@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AlertTriangle, FlaskConical, Loader2 } from 'lucide-react';
 import './clinical.css';
+import { apiFetch } from '../lib/api';
 
 const fmt = (v, d = 3) => (v == null ? '—' : typeof v === 'number' ? v.toFixed(d) : String(v));
 
@@ -40,7 +41,7 @@ export default function ResearchFindings() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    fetch('/api/research/findings')
+    apiFetch('/api/research/findings')
       .then(async (r) => {
         const body = await r.json();
         if (!r.ok) throw new Error(body.detail || 'Report unavailable');

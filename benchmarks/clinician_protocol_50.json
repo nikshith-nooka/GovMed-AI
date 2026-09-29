@@ -1,0 +1,216 @@
+{
+  "n": 50,
+  "seed": 42,
+  "db_path": "results/benchmark_results.db",
+  "strata": {
+    "meddialog|correct": 11,
+    "meddialog|wrong": 5,
+    "medqa|correct": 4,
+    "medqa|wrong": 7,
+    "pubmedqa|correct": 5,
+    "pubmedqa|wrong": 18
+  },
+  "blinding": "variant_id withheld; items listed in seeded random order",
+  "items": [
+    {
+      "run_id": 2079,
+      "case_id": "medqa_hf_001"
+    },
+    {
+      "run_id": 1364,
+      "case_id": "pubmedqa_16418930"
+    },
+    {
+      "run_id": 1429,
+      "case_id": "pubmedqa_26037986"
+    },
+    {
+      "run_id": 1661,
+      "case_id": "pubmedqa_11481599"
+    },
+    {
+      "run_id": 1341,
+      "case_id": "meddialog_001"
+    },
+    {
+      "run_id": 1487,
+      "case_id": "meddialog_011"
+    },
+    {
+      "run_id": 1344,
+      "case_id": "medqa_hf_003"
+    },
+    {
+      "run_id": 1377,
+      "case_id": "meddialog_003"
+    },
+    {
+      "run_id": 1821,
+      "case_id": "medqa_hf_034"
+    },
+    {
+      "run_id": 1789,
+      "case_id": "meddialog_031"
+    },
+    {
+      "run_id": 1699,
+      "case_id": "meddialog_025"
+    },
+    {
+      "run_id": 1872,
+      "case_id": "pubmedqa_8847047"
+    },
+    {
+      "run_id": 2053,
+      "case_id": "medqa_hf_049"
+    },
+    {
+      "run_id": 1624,
+      "case_id": "pubmedqa_19394934"
+    },
+    {
+      "run_id": 1943,
+      "case_id": "medqa_hf_042"
+    },
+    {
+      "run_id": 1337,
+      "case_id": "pubmedqa_21645374"
+    },
+    {
+      "run_id": 1862,
+      "case_id": "pubmedqa_18534072"
+    },
+    {
+      "run_id": 1940,
+      "case_id": "pubmedqa_18269157"
+    },
+    {
+      "run_id": 1646,
+      "case_id": "meddialog_022"
+    },
+    {
+      "run_id": 1516,
+      "case_id": "pubmedqa_25957366"
+    },
+    {
+      "run_id": 1550,
+      "case_id": "pubmedqa_24866606"
+    },
+    {
+      "run_id": 1422,
+      "case_id": "medqa_hf_007"
+    },
+    {
+      "run_id": 1754,
+      "case_id": "pubmedqa_20537205"
+    },
+    {
+      "run_id": 1444,
+      "case_id": "meddialog_007"
+    },
+    {
+      "run_id": 1468,
+      "case_id": "medqa_hf_009"
+    },
+    {
+      "run_id": 1825,
+      "case_id": "meddialog_033"
+    },
+    {
+      "run_id": 2066,
+      "case_id": "pubmedqa_21402341"
+    },
+    {
+      "run_id": 1731,
+      "case_id": "meddialog_027"
+    },
+    {
+      "run_id": 1663,
+      "case_id": "meddialog_023"
+    },
+    {
+      "run_id": 1770,
+      "case_id": "medqa_hf_030"
+    },
+    {
+      "run_id": 2046,
+      "case_id": "pubmedqa_20571467"
+    },
+    {
+      "run_id": 1772,
+      "case_id": "pubmedqa_28707539"
+    },
+    {
+      "run_id": 1512,
+      "case_id": "pubmedqa_18239988"
+    },
+    {
+      "run_id": 1829,
+      "case_id": "pubmedqa_26298839"
+    },
+    {
+      "run_id": 1440,
+      "case_id": "medqa_hf_008"
+    },
+    {
+      "run_id": 1683,
+      "case_id": "meddialog_024"
+    },
+    {
+      "run_id": 1361,
+      "case_id": "pubmedqa_9488747"
+    },
+    {
+      "run_id": 1476,
+      "case_id": "meddialog_010"
+    },
+    {
+      "run_id": 1788,
+      "case_id": "pubmedqa_7482275"
+    },
+    {
+      "run_id": 1568,
+      "case_id": "meddialog_017"
+    },
+    {
+      "run_id": 1554,
+      "case_id": "meddialog_015"
+    },
+    {
+      "run_id": 1803,
+      "case_id": "pubmedqa_24183388"
+    },
+    {
+      "run_id": 1727,
+      "case_id": "pubmedqa_23690198"
+    },
+    {
+      "run_id": 2022,
+      "case_id": "medqa_hf_046"
+    },
+    {
+      "run_id": 1343,
+      "case_id": "medqa_hf_002"
+    },
+    {
+      "run_id": 1836,
+      "case_id": "meddialog_034"
+    },
+    {
+      "run_id": 1614,
+      "case_id": "pubmedqa_22990761"
+    },
+    {
+      "run_id": 1964,
+      "case_id": "meddialog_042"
+    },
+    {
+      "run_id": 1480,
+      "case_id": "pubmedqa_25432938"
+    },
+    {
+      "run_id": 1915,
+      "case_id": "pubmedqa_20084845"
+    }
+  ]
+}

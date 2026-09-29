@@ -18,6 +18,9 @@ class AgentStepLog:
     cost_usd: float = 0.0
     output_preview: str = ""
     flags: List[str] = field(default_factory=list)
+    # Generation provenance per call (filled by the benchmark runner's recorder)
+    model: str = ""
+    temperature: Optional[float] = None
 
 
 @dataclass
@@ -85,6 +88,18 @@ class PipelineRunResult:
     revision_applied: bool = False
     initial_primary_diagnosis: str = ""
     revision_triggers: List[str] = field(default_factory=list)
+
+    # Scoring provenance: "option_exact" / "yesno_exact" (answer key) or "free_text"
+    scoring_mode: str = "free_text"
+    option_choice: str = ""
+    option_parse_status: str = ""
+
+    # Generation provenance (filled by the benchmark runner)
+    temperature_config: Dict[str, Any] = field(default_factory=dict)
+    seed: Optional[int] = None
+    provider_seed_applied: bool = False
+    judge_provider: str = ""
+    judge_model: str = ""
 
     # Detailed agent traces
     agent_steps: List[AgentStepLog] = field(default_factory=list)

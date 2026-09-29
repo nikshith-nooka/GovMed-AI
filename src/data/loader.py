@@ -10,6 +10,61 @@ from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
 
+MEDQA_4OPT_DATASET = "GBaker/MedQA-USMLE-4-options"
+MEDQA_SOURCE = "MedQA-USMLE (Jin et al., 2021)"
+OPTION_KEYS = ("A", "B", "C", "D")
+
+
+def format_medqa_row(row: Dict[str, Any], index: int, split: str = "test") -> Dict[str, Any]:
+    """Converts one MedQA-USMLE 4-option row into the pipeline case schema.
+
+    The pipeline reads ``id``, ``question``, ``options`` and ``answer`` (the key letter);
+    the scorer uses ``options`` + ``answer`` for exact option scoring. ``index`` is the row's
+    position in the original split so every case traces back to the source file.
+    """
+    raw_opts = row.get("options") or {}
+    if isinstance(raw_opts, list):
+        raw_opts = {
+            (item.get("key") if isinstance(item, dict) else chr(65 + i)):
+            (item.get("value", "") if isinstance(item, dict) else str(item))
+            for i, item in enumerate(raw_opts)
+        }
+    options = {k: str(raw_opts[k]).strip() for k in sorted(raw_opts) if str(raw_opts.get(k, "")).strip()}
+    answer_idx = str(row.get("answer_idx") or "").strip().upper()
+    if answer_idx not in options:
+        raise ValueError(f"MedQA row {index}: answer_idx {answer_idx!r} not among options {sorted(options)}")
+    answer_text = options[answer_idx]
+    stated = str(row.get("answer") or "").strip()
+    if stated and " ".join(stated.lower().split()) != " ".join(answer_text.lower().split()):
+        raise ValueError(f"MedQA row {index}: answer text disagrees with options[{answer_idx}]")
+    case_id = f"medqa_{split}_{index:04d}"
+    step = str(row.get("meta_info") or "").strip()
+    return {
+        "id": case_id,
+        "case_id": case_id,
+        "dataset": "MedQA-USMLE",
+        "source": MEDQA_SOURCE,
+        "split": split,
+        "source_index": index,
+        "specialty": "USMLE " + step.replace("step", "Step ").replace("&", " & ").strip() if step else "USMLE",
+        "difficulty": step or "USMLE-Standard",
+        "question": str(row.get("question") or "").strip(),
+        "options": options,
+        "answer": answer_idx,
+        "answer_idx": answer_idx,
+        "answer_text": answer_text,
+        "gold_diagnosis": answer_text,
+    }
+
+
+def seeded_sample_indices(population: int, n: int, seed: int = 42) -> List[int]:
+    """Deterministic sample of row indices (sorted), independent of numpy/hash seeds."""
+    import random
+
+    if n > population:
+        raise ValueError(f"Cannot sample {n} cases from a split of {population}")
+    return sorted(random.Random(seed).sample(range(population), n))
+
 
 class ClinicalDatasetLoader:
     """Loads and formats clinical test cases from HuggingFace and local benchmarks.
@@ -37,6 +92,28 @@ class ClinicalDatasetLoader:
         if limit:
             return data[:limit]
         return data
+
+    @staticmethod
+    def load_benchmark_file(path: str, limit: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Loads a frozen benchmark JSON (e.g. benchmarks/medqa_300.json) in the pipeline case schema."""
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        cases = data["cases"] if isinstance(data, dict) else data
+        for case in cases:
+            case.setdefault("id", case.get("case_id"))
+        return cases[:limit] if limit else cases
+
+    def load_medqa_usmle4(self, split: str = "test") -> List[Dict[str, Any]]:
+        """Loads the full original MedQA-USMLE 4-option split (Jin et al., 2021), in source order.
+
+        Unlike load_medqa this never falls back to other data: a benchmark built from it must
+        contain only MedQA items, so a failure raises.
+        """
+        from datasets import load_dataset
+
+        logger.info(f"Fetching {MEDQA_4OPT_DATASET} [{split}] from HuggingFace...")
+        ds = load_dataset(MEDQA_4OPT_DATASET, split=split, cache_dir=self.cache_dir)
+        return [format_medqa_row(row, i, split) for i, row in enumerate(ds)]
 
     def load_medqa(self, split: str = "test", limit: int = 50) -> List[Dict[str, Any]]:
         """Loads MedQA clinical questions from HuggingFace."""

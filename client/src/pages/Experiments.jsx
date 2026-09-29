@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, Download, Loader2, Play, Square } from 'lucide-react';
-import { fmt, useApi } from '../lib/api';
+import { errorFromBody, fmt, postJson, useApi } from '../lib/api';
 import './clinical.css';
 
 const LEVELS = [['G0', 'No checks'], ['G1', 'Grounding verifier'], ['G2', 'Simulated attending'], ['G3', 'Safety validator'], ['G4', 'All checks']];
-const ENGINES = [['groq', 'Groq · GPT-OSS-120B'], ['nvidia', 'NVIDIA · Llama-3.2-11B'], ['gemini', 'Gemini Flash'], ['simulation', 'Demo generator (no API)']];
+// The offline demo is deliberately absent: the server refuses it for experiments (its output is not a model's).
+const ENGINES = [['groq', 'Groq · GPT-OSS-120B'], ['nvidia', 'NVIDIA · Llama-3.2-11B'], ['gemini', 'Gemini Flash']];
 const PAGE = 25;
 
 function toCsv(rows) {
@@ -30,7 +31,7 @@ export default function Experiments({ cases = [] }) {
   const [scorableOnly, setScorableOnly] = useState(true);
   const [count, setCount] = useState(5);
   const [levels, setLevels] = useState(['G0', 'G4']);
-  const [engine, setEngine] = useState('simulation');
+  const [engine, setEngine] = useState('');
   const [closedLoop, setClosedLoop] = useState(true);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
@@ -41,7 +42,7 @@ export default function Experiments({ cases = [] }) {
   useEffect(() => {
     const p = providers.data;
     if (!p) return;
-    const live = ENGINES.find(([id]) => id !== 'simulation' && p[id]?.available);
+    const live = ENGINES.find(([id]) => p[id]?.available);
     if (live) setEngine(live[0]);
   }, [providers.data]);
 
@@ -49,7 +50,7 @@ export default function Experiments({ cases = [] }) {
     && (!scorableOnly || !(c.gold_diagnosis || '').toLowerCase().startsWith('clinical diagnostic note'))), [cases, dataset, scorableOnly]);
   const selected = pool.slice(0, Math.max(1, Math.min(count, pool.length)));
   const totalRuns = selected.length * levels.length;
-  const live = engine !== 'simulation';
+  const noEngine = providers.data && !ENGINES.some(([id]) => providers.data[id]?.available);
 
   const toggleLevel = (code) => setLevels((ls) => (ls.includes(code) ? ls.filter((l) => l !== code) : [...ls, code]));
 
@@ -64,13 +65,9 @@ export default function Experiments({ cases = [] }) {
       for (const level of levels) {
         if (stopRef.current) break;
         try {
-          const res = await fetch('/api/experiments/run-case', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ case_id: c.id, governance_level: level, provider: engine, closed_loop: closedLoop }),
-          });
-          const body = await res.json();
-          if (!res.ok) throw new Error(body.detail || `Failed (${res.status})`);
+          const res = await postJson('/api/experiments/run-case', { case_id: c.id, governance_level: level, provider: engine, closed_loop: closedLoop });
+          const body = await res.json().catch(() => ({}));
+          if (!res.ok) throw errorFromBody(body, res.status);
           setResults((rs) => [...rs, body]);
         } catch (e) {
           setRunError(`${c.id} ${level}: ${e.message}`);
@@ -134,19 +131,26 @@ export default function Experiments({ cases = [] }) {
           <div className="cw-field" style={{ marginTop: 10 }}>
             <label className="cw-label" htmlFor="ex-engine">Engine</label>
             <select id="ex-engine" className="cw-select" value={engine} onChange={(e) => setEngine(e.target.value)}>
+              {!engine && <option value="" disabled>Choose a live engine…</option>}
               {ENGINES.map(([id, label]) => {
-                const off = id !== 'simulation' && !providers.data?.[id]?.available;
+                const off = !providers.data?.[id]?.available;
                 return <option key={id} value={id} disabled={off}>{label}{off ? ' — no API key' : ''}</option>;
               })}
             </select>
           </div>
           <p className="cw-muted" style={{ marginTop: 8 }}>
-            {totalRuns} pipeline run(s){live ? `, each 4-8 live model calls. Uses your ${engine} API credits.` : '. Demo output is not a real analysis.'}
+            {totalRuns} pipeline run(s), each 4-8 live model calls{engine ? `. Uses your ${engine} API credits.` : '.'}
           </p>
+          {noEngine && (
+            <div className="cw-banner demo" style={{ marginTop: 8 }}>
+              <AlertTriangle size={16} />
+              <div><strong>No live engine configured</strong>Experiments need a real model. Add a provider API key to .env; the offline demo (not AI) is not allowed here.</div>
+            </div>
+          )}
           {running ? (
             <button className="cw-btn full ghost" onClick={() => { stopRef.current = true; }}><Square size={14} /> Stop after current case</button>
           ) : (
-            <button className="cw-btn full" disabled={!levels.length || !selected.length} onClick={run}><Play size={14} /> Run {totalRuns} case run(s)</button>
+            <button className="cw-btn full" disabled={!levels.length || !selected.length || !engine} onClick={run}><Play size={14} /> Run {totalRuns} case run(s)</button>
           )}
         </div>
 

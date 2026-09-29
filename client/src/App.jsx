@@ -10,6 +10,7 @@ import Reports from './pages/Reports';
 import ClinicianWorkspace from './pages/ClinicianWorkspace';
 import ClinicianReview from './pages/ClinicianReview';
 import ResearchFindings from './pages/ResearchFindings';
+import { apiFetch, useTokenVersion } from './lib/api';
 
 const PAGE_TO_PATH = {
   dashboard: '/',
@@ -81,6 +82,7 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [prefill, setPrefill] = useState(null);
   const [caseQuery, setCaseQuery] = useState('');
+  const tokenVersion = useTokenVersion();
 
   const setCurrentPage = (pageKey) => {
     setCurrentPageState(pageKey);
@@ -103,21 +105,23 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => setCurrentPageState(pageFromLocation());
     window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
-    fetch('/api/stats')
+  useEffect(() => {
+    apiFetch('/api/stats')
       .then((res) => (res.ok ? res.json() : null))
       .then(setStats)
       .catch(() => setStats(null));
 
-    fetch('/api/cases')
+    apiFetch('/api/cases')
       .then(async (res) => {
         if (!res.ok) throw new Error(`Could not load cases (${res.status})`);
         setCases(await res.json());
+        setCasesError(null);
       })
       .catch((err) => setCasesError(err.message));
-
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [tokenVersion]);
 
   const renderCurrentPage = () => {
     switch (currentPage) {

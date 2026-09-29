@@ -1,5 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Search, Sun, Moon, Bell, Menu, X } from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Search, Sun, Moon, Bell, Menu, X, KeyRound } from 'lucide-react';
+import ApiTokenDialog from './ApiTokenDialog';
+import { apiFetch, AUTH_EVENT, getApiToken, useTokenVersion } from '../lib/api';
 
 function readStorage(key) {
   try { return window.localStorage.getItem(key); } catch { return null; }
@@ -18,6 +20,22 @@ export default function TopNavbar({ onToggleSidebar, isSidebarOpen, onSearch, on
   const [pending, setPending] = useState(null);
   const reviewer = readStorage('govbench.reviewer') || '';
   const searchRef = useRef(null);
+  const [authRequired, setAuthRequired] = useState(false);
+  const [tokenDialog, setTokenDialog] = useState(null); // null | 'manual' | 'unauthorized'
+  const tokenVersion = useTokenVersion();
+  const hasToken = !!getApiToken();
+  const closeTokenDialog = useCallback(() => setTokenDialog(null), []);
+
+  useEffect(() => {
+    apiFetch('/api/health')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((h) => h && setAuthRequired(!!h.auth_required))
+      .catch(() => {});
+    // The first 401 opens the dialog; later ones while it is open are ignored.
+    const onUnauthorized = () => setTokenDialog((d) => d || 'unauthorized');
+    window.addEventListener(AUTH_EVENT, onUnauthorized);
+    return () => window.removeEventListener(AUTH_EVENT, onUnauthorized);
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
@@ -38,11 +56,11 @@ export default function TopNavbar({ onToggleSidebar, isSidebarOpen, onSearch, on
 
   useEffect(() => {
     if (!reviewer) return;
-    fetch(`/api/reviews/queue?reviewer_id=${encodeURIComponent(reviewer)}&limit=1`)
+    apiFetch(`/api/reviews/queue?reviewer_id=${encodeURIComponent(reviewer)}&limit=1`)
       .then((r) => (r.ok ? r.json() : null))
       .then((body) => body && setPending(body.remaining))
       .catch(() => {});
-  }, [reviewer]);
+  }, [reviewer, tokenVersion]);
 
   const submit = (e) => {
     e.preventDefault();
@@ -82,6 +100,15 @@ export default function TopNavbar({ onToggleSidebar, isSidebarOpen, onSearch, on
         >
           {darkMode ? <Sun size={18} className="theme-icon sun" /> : <Moon size={18} className="theme-icon moon" />}
         </button>
+        <button
+          className="icon-btn notification-btn"
+          onClick={() => setTokenDialog('manual')}
+          title={authRequired ? (hasToken ? 'API token set' : 'This server requires an API token') : 'API token (optional)'}
+          aria-label="API token settings"
+        >
+          <KeyRound size={18} />
+          {authRequired && !hasToken && <span className="notification-badge"></span>}
+        </button>
         <button className="icon-btn notification-btn" title={bellTitle} aria-label={bellTitle} onClick={onOpenReviews}>
           <Bell size={18} />
           {pending > 0 && <span className="notification-badge"></span>}
@@ -94,6 +121,7 @@ export default function TopNavbar({ onToggleSidebar, isSidebarOpen, onSearch, on
           </div>
         </div>
       </div>
+      {tokenDialog && <ApiTokenDialog reason={tokenDialog} authRequired={authRequired} onClose={closeTokenDialog} />}
     </header>
   );
 }
