@@ -84,7 +84,9 @@ def expected_calibration_error(prob: np.ndarray, correct: np.ndarray, n_bins: in
         ece += mask.mean() * abs(conf - acc)
         bins.append({"bin": f"{lo:.1f}-{hi:.1f}", "n": int(mask.sum()), "mean_confidence": round(conf, 3),
                      "observed_accuracy": round(acc, 3)})
-    brier = float(np.mean((prob - correct) ** 2)) if len(prob) else float("nan")
+    if not len(prob):
+        return {"ece": None, "brier": None, "n": 0, "bins": []}
+    brier = float(np.mean((prob - correct) ** 2))
     return {"ece": round(float(ece), 4), "brier": round(brier, 4), "n": int(len(prob)), "bins": bins}
 
 

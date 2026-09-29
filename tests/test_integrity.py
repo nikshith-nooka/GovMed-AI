@@ -100,6 +100,27 @@ def test_substring_match_requires_whole_words():
     assert scorer.evaluate_diagnostic_match("Acute Gouty Arthritis", [], "Gouty Arthritis") == 1.0
 
 
+def test_scorer_tolerates_malformed_differentials():
+    scorer = ClinicalEvaluationScorer()
+    diffs = [{"condition": "Gout", "rank": None}, {"condition": "Aortic Dissection", "rank": "1"}, "junk"]
+    assert scorer.evaluate_diagnostic_match("x", diffs, "Aortic Dissection") == 0.85
+    assert scorer.evaluate_completeness(diffs) == 0.75
+
+
+def test_failed_revision_is_reported_not_hidden():
+    class RevisionBreaks(ScriptedLLM):
+        def generate(self, messages, **kw):
+            if "REVIEWER CONCERNS" in messages[-1]["content"]:
+                return LLMResponse(content="not json", prompt_tokens=1, completion_tokens=1, total_tokens=2,
+                                   latency_ms=1.0, estimated_cost_usd=0.0, model="s", provider="s")
+            return super().generate(messages, **kw)
+
+    result = ClinicalGovernancePipeline(RevisionBreaks()).run(CASE, "full_governance", closed_loop=True)
+    support = build_decision_support(result)
+    assert not result.revision_applied and "revision" in result.parse_failures
+    assert support["revision"]["failed"] and any("revision step failed" in r for r in support["reasons"])
+
+
 def test_templated_gold_labels_are_not_scorable():
     assert not is_valid_gold_label("Clinical Diagnostic Note for Diarrhea in Infant")
     assert not is_valid_gold_label("")
@@ -183,7 +204,7 @@ def test_decision_support_lists_unrun_checks_and_never_claims_they_passed():
 
 def test_decision_support_escalates_high_severity_and_labels_simulated_reviewer():
     result = ClinicalGovernancePipeline(ScriptedLLM()).run(CASE, "full_governance", closed_loop=True)
-    support = build_decision_support(result, calibration={"ece": 0.36})
+    support = build_decision_support(result, calibration={"ece": 0.36, "n": 71})
     assert support["attention"] == "HIGH"
     assert support["alerts"][0]["severity"] in ("CRITICAL", "HIGH")
     assert support["escalate_now"]
@@ -293,6 +314,7 @@ def test_api_review_roundtrip_is_blinded(api):
     queue = client.get("/api/reviews/queue", params={"reviewer_id": "dr_a"}).json()
     item = queue["items"][0]
     assert "variant_id" not in item and item["run_id"] == run_id and item["alerts"]
+    assert all("source" not in a for a in item["alerts"])
     resp = client.post("/api/reviews", json={
         "run_id": run_id, "case_id": case_id, "reviewer_id": "dr_a", "diagnosis_verdict": "incorrect",
         "quality_rating": 2, "alert_ratings": [{"index": 0, "verdict": "valid"}]})

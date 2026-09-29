@@ -158,7 +158,7 @@ export default function ClinicianReview() {
                 {item.alerts.length === 0 && <p className="cw-muted">This output raised no alerts.</p>}
                 {item.alerts.map((a) => (
                   <div key={a.index} className={`cw-alert sev-${a.severity}`}>
-                    <div className="top"><span className={`cw-pill pill-${a.severity}`}>{a.severity}</span><strong>{a.category}</strong><span className="cw-muted">· {a.source}</span></div>
+                    <div className="top"><span className={`cw-pill pill-${a.severity}`}>{a.severity}</span><strong>{a.category}</strong></div>
                     <div>{a.description}</div>
                     <RateButtons options={[['valid', 'Real concern'], ['invalid', 'Not a real concern'], ['unsure', 'Unsure']]}
                       value={form.alerts[a.index]} onChange={(v) => setForm((f) => ({ ...f, alerts: { ...f.alerts, [a.index]: v } }))} />

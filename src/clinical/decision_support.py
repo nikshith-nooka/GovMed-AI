@@ -157,13 +157,16 @@ def build_decision_support(result: PipelineRunResult, calibration: Optional[Dict
     if hitl and str(hitl.get("decision", "")).upper() in ("REQUEST_REVISION", "REJECTED"):
         reasons.append(f"Simulated attending review returned {hitl.get('decision')}.")
     if result.revision_applied and result.initial_primary_diagnosis.lower() != primary.lower():
-        reasons.append("The diagnosis changed after governance feedback.")
+        reasons.append("The diagnosis changed after governance feedback. The checks below ran on the initial "
+                       f"diagnosis ({result.initial_primary_diagnosis}); the revised diagnosis was not re-checked.")
+    if result.revision_triggers and not result.revision_applied:
+        reasons.append("Checks raised serious concerns but the revision step failed; review the concerns yourself.")
     attention = "HIGH" if reasons else "STANDARD"
     if not reasons:
         reasons.append("No issues were raised by the checks that ran. This is not a confirmation of correctness.")
 
     calibration_note = "Likelihoods are the model's own estimates; treat them as a ranking, not a probability."
-    if calibration and calibration.get("ece") is not None:
+    if calibration and (calibration.get("n") or 0) >= 20 and (calibration.get("ece") or 0) >= 0.1:
         calibration_note = (
             f"Likelihoods are the model's own estimates and were poorly calibrated on the benchmark "
             f"(expected calibration error {calibration['ece']}). Treat them as a ranking, not a probability."
@@ -201,6 +204,8 @@ def build_decision_support(result: PipelineRunResult, calibration: Optional[Dict
         "revision": {
             "closed_loop": result.closed_loop,
             "applied": result.revision_applied,
+            "failed": bool(result.revision_triggers) and not result.revision_applied,
+            "checks_ran_on": "initial diagnosis" if result.revision_applied else "final diagnosis",
             "initial_diagnosis": result.initial_primary_diagnosis or None,
             "final_diagnosis": primary or None,
             "triggers": result.revision_triggers,

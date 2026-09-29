@@ -149,12 +149,13 @@ class UnifiedLLMClient:
         start_time = time.time()
         # Round-robin across pooled keys; the cursor is process-wide so separate requests
         # (each with a fresh client) spread load instead of all starting on key 0.
+        key_idx = 0
         if self.provider == "groq" and self.groq_keys:
-            self.current_key_idx = next(UnifiedLLMClient._key_cursor) % len(self.groq_keys)
-            active_key = self.groq_keys[self.current_key_idx]
+            key_idx = next(UnifiedLLMClient._key_cursor) % len(self.groq_keys)
+            active_key = self.groq_keys[key_idx]
         elif self.provider in ("nvidia", "nim") and getattr(self, "nvidia_keys", None):
-            self.current_key_idx = next(UnifiedLLMClient._key_cursor) % len(self.nvidia_keys)
-            active_key = self.nvidia_keys[self.current_key_idx]
+            key_idx = next(UnifiedLLMClient._key_cursor) % len(self.nvidia_keys)
+            active_key = self.nvidia_keys[key_idx]
         else:
             active_key = self.api_key
         headers = {
@@ -189,11 +190,9 @@ class UnifiedLLMClient:
                         # Rotate once through pooled Groq keys, then wait for the quota window.
                         pool = len(self.groq_keys) if self.provider == "groq" else 0
                         if pool > 1 and (attempt + 1) % pool != 0:
-                            self.current_key_idx = (self.current_key_idx + 1) % len(self.groq_keys)
-                            next_key = self.groq_keys[self.current_key_idx]
-                            headers["Authorization"] = f"Bearer {next_key}"
-                            
-                            logger.info(f"Groq limit on key: Swapping to pooled API Key #{self.current_key_idx + 1}/{len(self.groq_keys)}...")
+                            key_idx = (key_idx + 1) % pool
+                            headers["Authorization"] = f"Bearer {self.groq_keys[key_idx]}"
+                            logger.info(f"Groq limit on key: swapping to pooled API key #{key_idx + 1}/{pool}...")
                             time.sleep(1)
                             continue
                         
@@ -203,16 +202,21 @@ class UnifiedLLMClient:
 
                     if resp.status_code != 200:
                         logger.warning(f"HTTP {resp.status_code} from {self.provider}: {resp.text[:300]}")
+                    if 400 <= resp.status_code < 500:
+                        last_exception = RuntimeError(f"HTTP {resp.status_code} from {self.provider}: {resp.text[:200]}")
+                        break
                     resp.raise_for_status()
                     data = resp.json()
 
                 latency_ms = round((time.time() - start_time) * 1000, 2)
                 choice = data["choices"][0]
-                content = choice["message"]["content"]
-                usage = data.get("usage", {})
-                p_tokens = usage.get("prompt_tokens", int(len(str(messages)) / 4))
-                c_tokens = usage.get("completion_tokens", int(len(content) / 4))
-                t_tokens = usage.get("total_tokens", p_tokens + c_tokens)
+                content = choice["message"].get("content") or ""
+                if not content.strip():
+                    raise RuntimeError(f"empty completion (finish_reason={choice.get('finish_reason')})")
+                usage = data.get("usage") or {}
+                p_tokens = usage.get("prompt_tokens") or int(len(str(messages)) / 4)
+                c_tokens = usage.get("completion_tokens") or int(len(content) / 4)
+                t_tokens = usage.get("total_tokens") or p_tokens + c_tokens
                 cost = self.calculate_cost(target_model, p_tokens, c_tokens)
 
                 return LLMResponse(

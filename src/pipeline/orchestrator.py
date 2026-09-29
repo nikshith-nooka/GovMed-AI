@@ -273,6 +273,8 @@ class ClinicalGovernancePipeline:
         hitl_decision = hitl_output.get("decision", "APPROVED") if hitl_output else "N/A"
 
         parse_failures = [name for name, output in raw_outputs.items() if is_parse_failure(output)]
+        if revision_triggers and not revision_applied:
+            parse_failures.append("revision")
 
         return PipelineRunResult(
             case_id=case_id,

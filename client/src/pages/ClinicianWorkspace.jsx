@@ -83,11 +83,14 @@ function PhysicianView({ support }) {
       {revision.closed_loop && (
         <div className="cw-card">
           <h3>What the checks changed</h3>
-          {revision.applied ? (
+          {revision.failed ? (
+            <p style={{ fontSize: '0.86rem', margin: 0 }}><strong>The revision step failed.</strong> The checks raised the concerns below, but the diagnosis could not be reconsidered. Review them yourself.</p>
+          ) : revision.applied ? (
             <p style={{ fontSize: '0.86rem', margin: 0 }}>
               Reconsidered <strong>{revision.initial_diagnosis}</strong>; result: <strong>{revision.final_diagnosis}</strong>
               {revision.initial_diagnosis === revision.final_diagnosis && ' (kept after review)'}.
               {revision.rationale && <><br /><span className="cw-muted">{revision.rationale}</span></>}
+              <br /><span className="cw-muted">The alerts below were produced on the initial diagnosis; the revised diagnosis was not re-checked.</span>
             </p>
           ) : (
             <p className="cw-muted" style={{ margin: 0 }}>No serious concern was raised, so the diagnosis was not sent back for revision.</p>
@@ -207,6 +210,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
   const [result, setResult] = useState(null);
   const [latency, setLatency] = useState({});
   const timer = useRef(null);
+  const abortRef = useRef(null);
 
   useEffect(() => {
     fetch('/api/providers')
@@ -226,7 +230,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
         setLatency(map);
       })
       .catch(() => {});
-    return () => clearInterval(timer.current);
+    return () => { clearInterval(timer.current); abortRef.current?.abort(); };
   }, []);
 
   useEffect(() => {
@@ -257,15 +261,18 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
     const started = Date.now();
     timer.current = setInterval(() => setElapsed(Math.round((Date.now() - started) / 1000)), 1000);
     try {
+      abortRef.current?.abort();
+      abortRef.current = new AbortController();
       const body = await runCaseWithProgress({
         ...form,
         governance_level: level,
         closed_loop: closedLoop,
         provider: engine,
         use_live_llm: engine !== 'simulation',
-      }, setJob);
+      }, setJob, { signal: abortRef.current.signal });
       setResult(body);
     } catch (e) {
+      if (e.name === 'AbortError') return;
       setError(e.message);
     } finally {
       clearInterval(timer.current);
@@ -290,7 +297,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
       </div>
 
       <div className="cw-grid">
-        <div>
+        <fieldset disabled={loading} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <div className="cw-card">
             <h3>Patient</h3>
             <div className="cw-rate" style={{ marginTop: 0, marginBottom: 10 }} aria-label="Example patients">
@@ -357,7 +364,7 @@ export default function ClinicianWorkspace({ cases = [], prefill = null }) {
               <p className="cw-muted" style={{ marginTop: 8 }}>Live runs call several agents in sequence{expected && engine === 'nvidia' ? `; this level typically takes about ${Math.round(expected)}s` : ''}.</p>
             )}
           </div>
-        </div>
+        </fieldset>
 
         <div className="cw-stack" aria-live="polite">
           {error && <div className="cw-banner error"><AlertTriangle size={18} /><div><strong>No result</strong>{error}</div></div>}

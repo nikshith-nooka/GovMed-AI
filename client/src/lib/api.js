@@ -16,7 +16,7 @@ export function useApi(path) {
   return state;
 }
 
-export async function runCaseWithProgress(body, onProgress, pollMs = 700) {
+export async function runCaseWithProgress(body, onProgress, { signal, pollMs = 700, timeoutMs = 10 * 60 * 1000 } = {}) {
   const start = await fetch('/api/jobs/run-case', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
   });
@@ -25,8 +25,11 @@ export async function runCaseWithProgress(body, onProgress, pollMs = 700) {
     const detail = Array.isArray(started.detail) ? started.detail.map((d) => `${d.loc?.slice(-1)[0]}: ${d.msg}`).join('; ') : started.detail;
     throw new Error(detail || `Request failed (${start.status})`);
   }
+  const deadline = Date.now() + timeoutMs;
   for (;;) {
     await new Promise((r) => setTimeout(r, pollMs));
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError');
+    if (Date.now() > deadline) throw new Error('The run took longer than 10 minutes and was abandoned.');
     const res = await fetch(`/api/jobs/${started.job_id}`);
     const job = await res.json();
     if (!res.ok) throw new Error(job.detail || 'Lost track of the running job');

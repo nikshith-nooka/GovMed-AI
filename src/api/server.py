@@ -10,6 +10,7 @@ import sqlite3
 import threading
 import time
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional
 
@@ -174,8 +175,8 @@ def get_historical_runs(limit: int = 100, offset: int = 0, variant: Optional[str
     cursor = conn.cursor()
     where, params = " WHERE 1=1", []
     if variant and variant != "All":
-        where += " AND (variant_name = ? OR variant_id = ?)"
-        params.extend([variant, variant])
+        where += " AND (variant_name = ? OR variant_id = ? OR variant_id = ?)"
+        params.extend([variant, variant, f"{variant}-CL"])
     total = cursor.execute("SELECT COUNT(*) FROM runs" + where, params).fetchone()[0]
     rows = cursor.execute("SELECT * FROM runs" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
                           params + [limit, max(0, offset)]).fetchall()
@@ -318,6 +319,8 @@ def run_interactive_case(case_data: CustomCaseInput, on_step=None) -> Dict[str, 
 _jobs: Dict[str, Dict[str, Any]] = {}
 _jobs_lock = threading.Lock()
 MAX_JOBS = 200
+# Bounded so a burst of requests queues instead of spawning unlimited live-API threads.
+_job_pool = ThreadPoolExecutor(max_workers=int(os.getenv("GOVBENCH_JOB_WORKERS", "4")))
 
 
 @app.post("/api/jobs/run-case")
@@ -331,7 +334,8 @@ def start_case_job(case_data: CustomCaseInput):
            "planned": planned, "steps": {}, "result": None, "error": None}
     with _jobs_lock:
         _jobs[job_id] = job
-        for old in sorted(_jobs, key=lambda k: _jobs[k]["started"])[:-MAX_JOBS]:
+        finished = sorted((k for k, j in _jobs.items() if j["status"] != "running"), key=lambda k: _jobs[k]["started"])
+        for old in finished[: max(0, len(_jobs) - MAX_JOBS)]:
             _jobs.pop(old, None)
 
     def on_step(event: str, agent: str, step) -> None:
@@ -353,7 +357,7 @@ def start_case_job(case_data: CustomCaseInput):
             with _jobs_lock:
                 job.update(status="error", error=f"Unexpected error: {exc}", finished=time.time())
 
-    threading.Thread(target=work, daemon=True).start()
+    _job_pool.submit(work)
     return {"job_id": job_id, "planned": planned}
 
 
@@ -449,7 +453,8 @@ def get_review_queue(reviewer_id: str, limit: int = 5):
     cases = {c["id"]: c for c in _load_cases()}
     with sqlite3.connect(str(DB_PATH)) as conn:
         done = {r[0] for r in conn.execute("SELECT run_id FROM clinician_reviews WHERE reviewer_id = ?", (reviewer_id,))}
-        rows = conn.execute("SELECT id, case_id, raw_outputs_json FROM runs").fetchall()
+        # Closed-loop rows are excluded: their alerts refer to the pre-revision diagnosis.
+        rows = conn.execute("SELECT id, case_id, raw_outputs_json FROM runs WHERE variant_id NOT LIKE '%-CL'").fetchall()
     pending = [r for r in rows if r[0] not in done and r[1] in cases]
     pending.sort(key=lambda r: hashlib.sha256(f"{reviewer_id}:{r[0]}".encode()).hexdigest())
     items = []
@@ -466,7 +471,9 @@ def get_review_queue(reviewer_id: str, limit: int = 5):
                 for d in diagnosis.get("differential_diagnoses", []) or [] if isinstance(d, dict)
             ],
             "next_steps": diagnosis.get("recommended_next_steps", []) or [],
-            "alerts": [{"index": i, **a} for i, a in enumerate(collect_alerts(raw))],
+            # Source is omitted: it would reveal which governance variant produced the output.
+            "alerts": [{"index": i, "severity": a["severity"], "category": a["category"], "description": a["description"]}
+                       for i, a in enumerate(collect_alerts(raw))],
         })
     return {"reviewer_id": reviewer_id, "remaining": len(pending), "items": items}
 

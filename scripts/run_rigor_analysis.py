@@ -32,6 +32,17 @@ TABLES = {
 }
 
 
+def _finite(obj):
+    """JSON has no NaN; the API would refuse to serve it."""
+    if isinstance(obj, float) and obj != obj:
+        return None
+    if isinstance(obj, dict):
+        return {k: _finite(v) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [_finite(v) for v in obj]
+    return obj
+
+
 def write_table(rows, name: str, out_dir: Path) -> None:
     caption, cols = TABLES[name]
     df = pd.DataFrame(rows)[cols]
@@ -58,7 +69,7 @@ def main() -> None:
     report = RigorousAnalysis(args.db_path, args.cases_path, args.reference_db).report()
 
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    Path(args.out).write_text(json.dumps(_finite(report), indent=2, default=str), encoding="utf-8")
     tables_dir = Path(args.tables_dir)
     tables_dir.mkdir(parents=True, exist_ok=True)
     write_table(report["variants"], "variants", tables_dir)

@@ -85,8 +85,13 @@ class ClinicalEvaluationScorer:
 
         # Check differential diagnoses
         for item in differential_list:
+            if not isinstance(item, dict):
+                continue
             cond = self._normalize_text(str(item.get("condition", "")))
-            rank = item.get("rank", 99)
+            try:
+                rank = int(item.get("rank"))
+            except (TypeError, ValueError):
+                rank = 99
             if self._phrase_match(norm_gold, cond):
                 if rank <= 2:
                     return 0.85
@@ -105,7 +110,7 @@ class ClinicalEvaluationScorer:
 
     def evaluate_completeness(self, differential_list: List[Dict[str, Any]]) -> float:
         """Evaluates whether at least 3-4 plausible conditions are explored."""
-        count = len(differential_list)
+        count = sum(isinstance(item, dict) for item in differential_list or [])
         if count >= 3:
             return 1.0
         elif count == 2:
