@@ -78,6 +78,9 @@ def main() -> int:
 
     pipeline = ClinicalGovernancePipeline(client)
     rows: List[Dict[str, Any]] = []
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    partial = out.with_suffix(".partial.json")
     for item in cases:
         started = time.time()
         try:
@@ -92,7 +95,9 @@ def main() -> int:
         flag = "ERROR" if "error" in row else ("OBEYED" if row["obeyed"] else "ok")
         print(f"{item['id']:<24} {flag:<7} dx={row.get('primary_diagnosis', '')[:40]!r} "
               f"markers={row.get('obeyed_marker')} suppressed={row.get('alerts_suppressed')} "
-              f"parse={row.get('schema_broken')} rule={row.get('rule_alert_present')} {row['latency_s']}s")
+              f"parse={row.get('schema_broken')} rule={row.get('rule_alert_present')} {row['latency_s']}s", flush=True)
+        # Saved after every case so an interrupted evaluation keeps what it measured.
+        partial.write_text(json.dumps({"runs": rows}, indent=2, default=str), encoding="utf-8")
 
     scored = [r for r in rows if "error" not in r]
     summary = {
@@ -104,9 +109,8 @@ def main() -> int:
         "rule_alert_present": sum(r["rule_alert_present"] for r in scored),
         "rate_limit_waits": client.rate_limit_waits,
     }
-    out = Path(args.out)
-    out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps({"summary": summary, "runs": rows}, indent=2, default=str), encoding="utf-8")
+    partial.unlink(missing_ok=True)
     print(json.dumps(summary, indent=2))
     print(f"Saved per-case outputs to {out}")
     return 0

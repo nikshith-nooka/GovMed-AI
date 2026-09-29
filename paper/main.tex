@@ -7,6 +7,8 @@
 
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \usepackage{graphicx}
 \usepackage{textcomp}
 \usepackage{xcolor}
@@ -134,25 +136,50 @@ instructions, agent pipelines are also exposed to prompt injection~\cite{greshak
 % ============================================================
 Fig.~\ref{fig:arch} shows the pipeline. The research agent extracts structured findings from the case text; it
 does not retrieve literature. The diagnosis agent proposes a ranked differential with stated probabilities and next
-steps. Four checks then read the case and the diagnosis: a grounding verifier flags claims not supported by the case,
-a safety validator lists safety concerns with a severity, a simulated attending reviewer (a language model, not a
-clinician) approves, rejects or requests revision, and a consistency checker compares the agents' outputs. The safety
+steps. Three checks then read the case and the diagnosis in parallel: a grounding verifier flags claims not supported
+by the case, a safety validator lists safety concerns with a severity, and a consistency checker compares the
+extracted findings with the diagnosis. A simulated attending reviewer (a language model, not a clinician) then reads
+the diagnosis together with the safety findings and approves, rejects or requests revision. The safety
 validator is a prompted language model; the benchmarked version consults no drug database. A report agent writes a
 SOAP note. The seven agents share one model.
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=0.86\linewidth]{figures/architecture.pdf}
-\caption{GovBench-Clinical pipeline. The checks read only the case and the diagnosis, so they run in parallel. In
-the open-loop configuration benchmarked here, their findings are appended to the output. In the closed-loop
-configuration, a blocking finding sends the diagnosis back for one bounded revision.}
+\caption{GovBench-Clinical pipeline. The verifier, safety validator and consistency checker read only the case and
+the diagnosis and run in parallel; the attending simulator follows and also reads the safety findings. In the
+open-loop configuration benchmarked here, findings are appended to the output. In the closed-loop configuration, a
+blocking finding sends the diagnosis back for one bounded revision, after which the enabled checks run again.}
 \label{fig:arch}
 \end{figure*}
 
 Table~\ref{tab:levels} lists the five governance levels. In the \emph{open-loop} form used for the reported
 experiments, check findings are attached to the output but never fed back. In the \emph{closed-loop} form, a
 hallucinated claim, a HIGH or CRITICAL safety concern, a severe inconsistency, or a reviewer request triggers one
-revision of the diagnosis, after which the enabled checks run again on the revised diagnosis.
+revision of the diagnosis, after which the enabled checks run again on the revised diagnosis. Algorithm~\ref{alg:pipeline}
+summarises one run.
+
+\begin{algorithm}[t]
+\caption{One governed run at level $G_k$}
+\label{alg:pipeline}
+\begin{algorithmic}[1]
+\REQUIRE case text $x$; level $G_k$ with enabled checks $\mathcal{K}_k$; flag \textsc{closed}
+\STATE $F \leftarrow \textsc{Research}(x)$ \COMMENT{structured findings}
+\STATE $D \leftarrow \textsc{Diagnose}(F)$ \COMMENT{primary, ranked differential, next steps}
+\STATE run $\{\textsc{Verify}, \textsc{Safety}, \textsc{Consistency}\} \cap \mathcal{K}_k$ on $(x, D)$ in parallel
+\IF{$\textsc{Attending} \in \mathcal{K}_k$}
+  \STATE $h \leftarrow \textsc{Attending}(x, D, \text{safety findings})$
+\ENDIF
+\STATE $T \leftarrow$ blocking findings: ungrounded claims, HIGH/CRITICAL safety flags, severe contradictions,
+  requests to revise or reject
+\IF{\textsc{closed} \AND $T \neq \emptyset$}
+  \STATE $D' \leftarrow \textsc{Revise}(F, D, T)$ \COMMENT{at most once}
+  \IF{$D'$ is valid} \STATE $D \leftarrow D'$; re-run enabled \textsc{Verify} and \textsc{Safety} on $(x, D)$ \ENDIF
+\ENDIF
+\STATE $R \leftarrow \textsc{Rules}(x, D)$ \COMMENT{deterministic; added after the benchmarked runs}
+\RETURN $D$, all findings, $R$, and the list of checks that did not run
+\end{algorithmic}
+\end{algorithm}
 
 \begin{table}[htbp]
 \centering

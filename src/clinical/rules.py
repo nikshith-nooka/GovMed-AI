@@ -9,6 +9,7 @@ floor, not a formulary: a rule that does not fire is not evidence that a plan is
 from __future__ import annotations
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple
 
@@ -375,10 +376,50 @@ RULES: List[Rule] = [
 ]
 
 
+# Phrases that address the AI rather than describe the patient. Case text should never contain them;
+# when it does, the AI checks may have been steered, so clinicians are told to rely on the rule-based alerts.
+INSTRUCTION_CUES = re.compile(
+    r"\b(?:ignore|ignora|disregard|forget)\b[^.\n]{0,40}\b(?:instructions?|instrucciones|prompts?|rules|above|case)\b"
+    r"|\b(?:your|tus|sus)\s+(?:instructions|instrucciones|system prompt|rules)\b"
+    r"|(?:do not|don't|never)\s+(?:raise|flag|report|mention|include|list|output)\b"
+    r"|return (?:an )?empty (?:safety_flags|list|array)"
+    r"|(?:set|change|make|print|output)\b[^.\n]{0,30}\bas\s+(?:the\s+)?primary[_ ]diagnosis"
+    r"|\b(?:set|change)\s+(?:the\s+)?(?:primary[_ ]diagnosis|answer|output)\b"
+    r"|\b(?:primary_diagnosis|safety_flags|safety_status|differential_diagnoses|hallucination_detected)\b"
+    r"|\b(?:assistant|system|developer)\s+(?:instructions?|prompt|message|note|policy)\b"
+    r"|<\s*/?\s*(?:system|assistant|user|developer|case_data|instructions?)\b[^>]{0,20}>"
+    r"|^\s*(?:assistant|system|user)\s*:"
+    r"|\b(?:note|important|instructions?)\s+(?:to|for)\s+(?:the\s+)?(?:ai|model|assistant|llm|safety reviewer|reviewer|verifier)\b"
+    r"|\byou are (?:now\s+)?(?:dan\b|an? (?:ai|assistant|language model))"
+    r"|let'?s play a game|\bno rules\b|jailbreak|respond only with|responde solo"
+    r"|safety checks? (?:are|is) (?:disabled|off)"
+    r"|!\[[^\]]*\]\(\s*https?://", re.I | re.M)
+
+
+def instruction_injection_alert(clinical_case: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """A HIGH alert when the case text contains instructions aimed at the AI (possible prompt injection)."""
+    text = "\n".join([str(clinical_case.get("question") or clinical_case.get("clinical_note") or ""),
+                      _flatten(clinical_case.get("structured"))])
+    text = unicodedata.normalize("NFKC", text)  # full-width look-alikes such as ＜/case_data＞
+    match = INSTRUCTION_CUES.search(text)
+    if not match:
+        return None
+    return {"rule_id": "instruction_in_case_text", "title": "Case text contains instructions to the AI",
+            "severity": "HIGH",
+            "description": "The case text includes wording addressed to the AI rather than describing the patient "
+                           "(e.g. telling it to ignore instructions or suppress alerts). AI check results may have "
+                           "been manipulated; rely on the rule-based alerts and review the source text.",
+            "action": "Remove the instruction from the case text and run the case again.",
+            "reference": "Input integrity check (prompt-injection guard)"}
+
+
 def evaluate_rules(clinical_case: Dict[str, Any], diagnosis: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Runs every rule; returns {"alerts": [...], "rules_evaluated": n}. Never raises on odd input."""
     facts = extract_facts(clinical_case, diagnosis)
     alerts: List[Dict[str, Any]] = []
+    injection = instruction_injection_alert(clinical_case)
+    if injection:
+        alerts.append(injection)
     for rule in RULES:
         try:
             hit = rule.check(facts)

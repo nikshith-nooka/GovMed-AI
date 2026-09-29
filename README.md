@@ -51,8 +51,9 @@ should be presented: what was checked, what was **not** checked, and what still 
 - **Deterministic safety rules** — 14 contraindication rules (e.g. NSAIDs in renal impairment, metformin at low eGFR,
   sildenafil with nitrates) run on every case, independent of the model, each with its guideline source.
 - **Re-checked revisions** — after a closed-loop revision the enabled checks run again on the revised diagnosis.
-- **Safe by default** — identifiable patient data is blocked before it reaches a model provider, case text is fenced
-  against prompt injection, run endpoints can require an API token, and stored case text expires after a retention period.
+- **Safe by default** — identifiable patient data is blocked before it reaches a model provider; case text is fenced
+  as data, agent outputs are restricted to their schema, and case text that addresses the AI raises a HIGH alert
+  (prompt-injection guard); run endpoints can require an API token; stored case text expires after a retention period.
 - **Honest failure handling** — a failed live model call returns an error; it never falls back to simulated output. The
   offline demo generator is labelled "not AI" on every result and cannot be used for experiments.
 - **Multiple providers** — Groq, NVIDIA NIM, Google Gemini and OpenRouter, with pooled-key rotation and rate-limit backoff.

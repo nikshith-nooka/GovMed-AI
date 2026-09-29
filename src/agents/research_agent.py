@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent, wrap_case_data
+from src.agents.base import BaseClinicalAgent, is_parse_failure, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 
@@ -22,6 +22,11 @@ Output valid JSON with the following structure:
   "risk_factors": ["<risk 1>", "<risk 2>"]
 }
 """
+
+# Only these keys are passed downstream: a field the model adds because the case text told it to
+# (e.g. an injected "primary_diagnosis") is dropped before any other agent sees it.
+RESEARCH_KEYS = ("chief_complaint", "demographics", "history_present_illness", "pertinent_positives",
+                 "pertinent_negatives", "vitals_and_labs", "risk_factors")
 
 
 class ResearchAgent(BaseClinicalAgent):
@@ -47,6 +52,8 @@ class ResearchAgent(BaseClinicalAgent):
         ]
         resp = self.llm_client.generate(messages, temperature=0.1)
         data = self.parse_json_response(resp.content)
+        if isinstance(data, dict) and not is_parse_failure(data):
+            data = {k: v for k, v in data.items() if k in RESEARCH_KEYS}
         preview = f"CC: {data.get('chief_complaint', 'Extracted')} | Positives: {len(data.get('pertinent_positives', []))}"
         step_log = self.build_step_log(resp, preview)
         return data, step_log

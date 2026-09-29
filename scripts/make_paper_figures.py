@@ -35,9 +35,9 @@ def _save(fig, name):
 
 
 def architecture():
-    fig, ax = plt.subplots(figsize=(7.0, 2.0))
-    ax.set_xlim(0, 10.3)
-    ax.set_ylim(0, 5.6)
+    fig, ax = plt.subplots(figsize=(7.0, 2.3))
+    ax.set_xlim(0, 12.6)
+    ax.set_ylim(0, 6.6)
     ax.axis("off")
 
     def box(x, y, w, h, text, color):
@@ -45,27 +45,32 @@ def architecture():
                                     fc=color, ec="#374151", lw=0.6))
         ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=7)
 
-    def arrow(x1, y1, x2, y2):
+    def arrow(x1, y1, x2, y2, color="#374151", ls="-"):
         ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                    arrowprops=dict(arrowstyle="-|>", lw=0.6, color="#374151"))
+                    arrowprops=dict(arrowstyle="-|>", lw=0.6, color=color, linestyle=ls))
 
     box(0.0, 2.3, 1.4, 0.9, "Case\ntext", "#f3f4f6")
     box(1.8, 2.3, 1.5, 0.9, "Research\n(extract)", "#dbeafe")
     box(3.7, 2.3, 1.5, 0.9, "Diagnosis\n(differential)", "#dbeafe")
-    checks = [(4.5, "Grounding verifier"), (3.4, "Attending simulator"),
-              (2.3, "Safety validator"), (1.2, "Consistency checker")]
-    for y, label in checks:
-        box(5.9, y + 0.05, 2.3, 0.7, label, "#fef3c7")
-        arrow(5.2, 2.75, 5.9, y + 0.4)
-    box(8.6, 2.2, 1.6, 1.1, "Report /\ndecision\nsupport", "#dcfce7")
-    for y, _ in checks:
-        arrow(8.2, y + 0.4, 8.6, 2.75)
     arrow(1.4, 2.75, 1.8, 2.75)
     arrow(3.3, 2.75, 3.7, 2.75)
-    ax.annotate("", xy=(4.45, 2.3), xytext=(7.05, 1.25),
-                arrowprops=dict(arrowstyle="-|>", lw=0.6, color=ORANGE, linestyle="--",
-                                connectionstyle="arc3,rad=-0.35"))
-    ax.text(3.0, 0.45, "closed loop only: blocking finding → one bounded revision",
+    # Parallel checks: each reads only the case and the diagnosis.
+    parallel = [(4.3, "Grounding verifier"), (2.4, "Safety validator"), (0.5, "Consistency checker")]
+    for y, label in parallel:
+        box(5.9, y, 2.3, 0.7, label, "#fef3c7")
+        arrow(5.2, 2.75, 5.9, y + 0.35)
+    ax.text(7.05, 0.05, "parallel checks", ha="center", fontsize=6.3, color="#6b7280")
+    # The simulated attending runs after them and also reads the safety findings.
+    box(8.55, 2.25, 1.9, 1.0, "Attending\nsimulator", "#fde68a")
+    arrow(8.2, 2.75, 8.55, 2.75)
+    box(10.9, 2.15, 1.7, 1.2, "Rules +\ndecision\nsupport", "#dcfce7")
+    arrow(10.45, 2.75, 10.9, 2.75)
+    for y, _ in (parallel[0], parallel[2]):
+        arrow(8.2, y + 0.35, 10.9, 2.75)
+    # Closed-loop feedback, drawn above the checks.
+    ax.plot([9.5, 9.5, 4.45], [3.25, 6.0, 6.0], color=ORANGE, lw=0.6, ls="--")
+    arrow(4.45, 6.0, 4.45, 3.2, color=ORANGE, ls="--")
+    ax.text(4.6, 6.15, "closed loop only: any blocking finding \u2192 one bounded revision, then re-check",
             fontsize=5.8, color=ORANGE)
     _save(fig, "architecture")
 

@@ -173,6 +173,10 @@ class RigorousAnalysis:
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             self.reviews = (pd.read_sql_query("SELECT * FROM clinician_reviews", conn)
                             if "clinician_reviews" in tables else pd.DataFrame())
+        # Older run databases predate some columns; treat them as unmeasured rather than failing.
+        for col in BACKFILLED_COLUMNS:
+            if col not in self.raw_runs.columns:
+                self.raw_runs[col] = np.nan
         self.runs = self._rescore()
 
     # ------------------------------------------------------------------ rescoring
