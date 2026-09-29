@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 from src.agents.base import BaseClinicalAgent
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
@@ -24,6 +24,9 @@ Before producing your final answer, you MUST perform the following reasoning ste
 - Your primary_diagnosis field MUST contain the exact text of the correct option.
 - Do NOT paraphrase, rephrase, or generate a free-text diagnosis when options are available.
 - Match your differential diagnoses to the provided options where applicable.
+
+**WHEN NO OPTIONS ARE PROVIDED:**
+- primary_diagnosis MUST be a named clinical diagnosis (e.g. "Acute Gouty Arthritis"), never a letter such as "A".
 
 Evaluate acute life threats first, then probabilistic etiologies. Provide clear pathophysiological mechanisms.
 
@@ -94,4 +97,47 @@ class DiagnosisAgent(BaseClinicalAgent):
         data = self.parse_json_response(resp.content)
         primary = data.get("primary_diagnosis", "Diagnostic Formulation")
         step_log = self.build_step_log(resp, f"Primary: {primary}")
+        return data, step_log
+
+    def revise(
+        self,
+        extracted_findings: Dict[str, Any],
+        prior_diagnosis: Dict[str, Any],
+        governance_feedback: List[str],
+        case_options: Dict[str, str] = None,
+    ) -> Tuple[Dict[str, Any], AgentStepLog]:
+        """Reconsider the diagnosis in light of governance concerns (one bounded round)."""
+        options_text = (
+            f"\nYou MUST still select primary_diagnosis from these options:\n{json.dumps(case_options, indent=2)}\n"
+            if case_options
+            else ""
+        )
+        feedback_text = "\n".join(f"- {item}" for item in governance_feedback)
+        compact_prior = {
+            "primary_diagnosis": prior_diagnosis.get("primary_diagnosis"),
+            "differential_diagnoses": [
+                {"condition": d.get("condition"), "probability": d.get("probability")}
+                for d in prior_diagnosis.get("differential_diagnoses", []) or [] if isinstance(d, dict)
+            ],
+            "recommended_next_steps": prior_diagnosis.get("recommended_next_steps", []),
+        }
+        prompt = (
+            "Independent governance reviewers raised concerns about your prior assessment.\n"
+            f"--- PATIENT FINDINGS ---\n{json.dumps(extracted_findings)}\n\n"
+            f"--- YOUR PRIOR ASSESSMENT ---\n{json.dumps(compact_prior)}\n\n"
+            f"--- REVIEWER CONCERNS ---\n{feedback_text}\n{options_text}\n"
+            "Address each concern against the findings. Keep your primary diagnosis if the concerns do not "
+            "change what is most likely; change it only if the evidence supports a different diagnosis. "
+            "Remove claims not supported by the findings. Respond in the same JSON format, adding "
+            '"revision_rationale": "<what changed and why, or why nothing changed>". Be concise: reasoning_steps and '
+            "revision_rationale under 60 words each, at most 6 next steps of one sentence each."
+        )
+        messages = [
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": prompt},
+        ]
+        resp = self.llm_client.generate(messages, temperature=0.2)
+        data = self.parse_json_response(resp.content)
+        step_log = self.build_step_log(resp, f"Revised primary: {data.get('primary_diagnosis', '')}")
+        step_log.agent_name = "Diagnosis Agent (Revision)"
         return data, step_log

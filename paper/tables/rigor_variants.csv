@@ -1,0 +1,6 @@
+variant_id,accuracy_valid_gold,detector_neutral_quality,reported_quality,tokens_mean,e2e_latency_p50_s,e2e_latency_p95_s,diagnosis_changed_vs_v1_pct
+V1,0.3894,0.5232,0.8463,3104.4,45.1,112.4,0.0
+V2,0.3852,0.5219,0.8086,4989.2,78.2,221.0,1.3
+V3,0.3852,0.5219,0.8454,4687.7,64.2,137.9,2.0
+V4,0.3711,0.5169,0.7155,4848.5,70.7,165.2,2.7
+V5,0.3711,0.5137,0.6739,8411.8,111.3,256.2,2.7

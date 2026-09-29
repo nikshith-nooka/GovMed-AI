@@ -8,6 +8,34 @@ from typing import Any, Dict, Optional
 from src.llm.client import UnifiedLLMClient, LLMResponse
 from src.telemetry.metrics import AgentStepLog
 
+PARSE_ERROR = "Failed to parse structured JSON response"
+
+
+def parse_llm_json(text: str) -> Dict[str, Any]:
+    """Extract the first JSON object from LLM output.
+
+    strict=False matters: models routinely emit literal newlines inside string
+    values, which strict JSON rejects (29% of stored diagnosis outputs failed on this).
+    """
+    text = (text or "").strip()
+    decoder = json.JSONDecoder(strict=False)
+    fenced = re.search(r"```(?:json)?\s*(\{.*\})\s*```", text, re.DOTALL)
+    candidates = [fenced.group(1)] if fenced else []
+    candidates.append(text)
+    for candidate in candidates:
+        for match in re.finditer(r"\{", candidate):
+            try:
+                obj, _ = decoder.raw_decode(candidate[match.start():])
+            except json.JSONDecodeError:
+                continue
+            if isinstance(obj, dict):
+                return obj
+    return {"raw_text": text, "error": PARSE_ERROR}
+
+
+def is_parse_failure(output: Any) -> bool:
+    return isinstance(output, dict) and output.get("error") == PARSE_ERROR
+
 
 class BaseClinicalAgent:
     """Base class for all clinical agents and governance modules."""
@@ -25,26 +53,7 @@ class BaseClinicalAgent:
         self.system_prompt = system_prompt
 
     def parse_json_response(self, text: str) -> Dict[str, Any]:
-        """Safely parses JSON from LLM text output, handling markdown blocks."""
-        text = text.strip()
-        # Remove ```json ... ``` wrappers
-        if "```" in text:
-            match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-            if match:
-                text = match.group(1)
-            else:
-                match2 = re.search(r"(\{.*\})", text, re.DOTALL)
-                if match2:
-                    text = match2.group(1)
-
-        try:
-            return json.loads(text)
-        except json.JSONDecodeError:
-            # Simple heuristic salvage
-            return {
-                "raw_text": text,
-                "error": "Failed to parse structured JSON response",
-            }
+        return parse_llm_json(text)
 
     def build_step_log(self, response: LLMResponse, output_preview: str, flags: Optional[list] = None) -> AgentStepLog:
         return AgentStepLog(

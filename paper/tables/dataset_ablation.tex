@@ -1,0 +1,25 @@
+\begin{table*}
+\caption{Dataset-Stratified Ablation: Clinical Quality and Safety Interception across MedQA-USMLE, PubMedQA, and MedDialog Paradigms.}
+\label{tab:dataset_ablation}
+\begin{tabular}{llccccc}
+\toprule
+Dataset & Variant & Quality ($Q$) & Tokens & Latency (s) & Safety Flags & Halluc. Flags \\
+\midrule
+MedDialog & V1 & 0.736 & 2,880 & 32.5 & 0 & 0 \\
+MedDialog & V2 & 0.695 & 4,709 & 54.4 & 0 & 28 \\
+MedDialog & V3 & 0.740 & 4,412 & 39.9 & 0 & 0 \\
+MedDialog & V4 & 0.620 & 4,558 & 39.2 & 86 & 0 \\
+MedDialog & V5 & 0.567 & 7,979 & 89.3 & 89 & 31 \\
+MedQA-USMLE & V1 & 0.855 & 3,268 & 45.0 & 0 & 0 \\
+MedQA-USMLE & V2 & 0.804 & 5,274 & 68.5 & 0 & 30 \\
+MedQA-USMLE & V3 & 0.848 & 4,855 & 37.8 & 0 & 0 \\
+MedQA-USMLE & V4 & 0.721 & 5,013 & 49.9 & 92 & 0 \\
+MedQA-USMLE & V5 & 0.683 & 8,774 & 106.5 & 86 & 29 \\
+PubMedQA & V1 & 0.948 & 3,159 & 37.9 & 0 & 0 \\
+PubMedQA & V2 & 0.927 & 4,984 & 55.9 & 0 & 13 \\
+PubMedQA & V3 & 0.948 & 4,796 & 39.4 & 0 & 0 \\
+PubMedQA & V4 & 0.805 & 4,974 & 47.3 & 105 & 0 \\
+PubMedQA & V5 & 0.772 & 8,482 & 90.6 & 110 & 17 \\
+\bottomrule
+\end{tabular}
+\end{table*}

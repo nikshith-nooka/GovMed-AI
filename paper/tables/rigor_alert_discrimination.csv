@@ -1,0 +1,9 @@
+signal,variant_id,n,fire_rate,sensitivity,false_positive_rate,precision,auroc
+hallucination_flag,V2,71,0.437,0.381,0.517,0.516,0.432
+hallucination_flag,V5,71,0.465,0.442,0.5,0.576,0.471
+safety_alerts,V4,71,1.0,1.0,1.0,0.606,0.541
+safety_alerts,V5,71,1.0,1.0,1.0,0.606,0.564
+safety_alerts_high,V4,71,0.352,0.279,0.464,0.48,0.407
+safety_alerts_high,V5,71,0.366,0.302,0.464,0.5,0.419
+hitl_decision,V3,71,0.352,0.31,0.414,0.52,0.448
+hitl_decision,V5,71,0.775,0.698,0.893,0.545,0.402

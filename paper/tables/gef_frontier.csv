@@ -1,0 +1,6 @@
+variant_id,variant_name,n_runs,raw_quality,risk_adjusted_quality,jru_uncertainty,avg_tokens,avg_latency_ms,avg_llm_cost_usd,avg_hitl_minutes,avg_hitl_cost_usd,total_governance_cost_usd,governance_efficiency_factor,is_pareto_frontier,dominated_by
+V1,Baseline (Ungoverned),151,0.8463,0.7955,0.12,3103.3,38537.7,0.000411,0.0,0.0,0.000411,0.3,True,None (Frontier)
+V2,Verifier Governance,150,0.8086,0.7414,0.1822,4989.2,59603.8,0.000658,0.0,0.0,0.000658,0.2,False,"V1, V3"
+V3,HITL Simulator Governance,150,0.8454,0.8454,0.0,4687.7,39054.4,0.00061,2.5,6.25,6.25061,0.2,True,None (Frontier)
+V4,Safety Validator Governance,150,0.7155,0.7155,0.0,4848.5,45445.0,0.000637,0.0,0.0,0.000637,0.1,False,"V1, V3"
+V5,Full Governance (Defense-in-Depth),150,0.6739,0.6441,0.0988,8411.8,95460.1,0.001065,2.95,7.375,7.376065,0.1,False,"V1, V2, V3, V4"

@@ -14,7 +14,7 @@ Use this skill to run or monitor the full 750-case ablation benchmark across the
   ```
 - **Single-Case Live Diagnostics**:
   ```bash
-  .venv/bin/python run_benchmark.py --provider nvidia --cases 1 --variant full_governance
+  .venv/bin/python -m scripts.run_full_benchmark --provider nvidia --total-cases 1
   ```
 - **Inspect Live Progress**:
   ```bash

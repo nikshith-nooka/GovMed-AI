@@ -15,6 +15,8 @@ import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from dotenv import load_dotenv
+import random
+import numpy as np
 
 # Ensure root is in python path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -23,6 +25,7 @@ from src.llm.client import UnifiedLLMClient
 from src.pipeline.orchestrator import ClinicalGovernancePipeline
 from src.data.loader import ClinicalDatasetLoader
 from src.evaluation.scorer import ClinicalEvaluationScorer
+from src.evaluation.llm_judge import LLMJudgeAgent
 from src.telemetry.db import BenchmarkDB
 
 load_dotenv()
@@ -54,10 +57,15 @@ def is_already_completed(db_path: str, case_id: str, variant_id: str) -> bool:
         return False
 
 
-def run_single_variant(v_key, case, case_id, c_idx, total_cases, cached_res, cached_diag, pipeline, scorer, db, args, lock, counter_obj):
+def variant_run_id(v_key: str, args) -> str:
+    base = ClinicalGovernancePipeline.AVAILABLE_VARIANTS[v_key]["id"]
+    return base + "-CL" if getattr(args, "closed_loop", False) and v_key != "baseline" else base
+
+
+def run_single_variant(v_key, case, case_id, c_idx, total_cases, cached_res, cached_diag, pipeline, scorer, judge, db, args, lock, counter_obj):
     """Executes a single governance variant for a case using pre-computed diagnosis/research cache."""
     v_info = ClinicalGovernancePipeline.AVAILABLE_VARIANTS[v_key]
-    v_id = v_info["id"]
+    v_id = variant_run_id(v_key, args)
 
     if is_already_completed(args.db_path, case_id, v_id):
         with lock:
@@ -72,8 +80,12 @@ def run_single_variant(v_key, case, case_id, c_idx, total_cases, cached_res, cac
             f"Running '{case_id}' on {v_info['name']}..."
         )
 
-        result = pipeline.run(case, variant_key=v_key, cached_research=cached_res, cached_diagnosis=cached_diag)
-        scored = scorer.score_run(result, case)
+        result = pipeline.run(case, variant_key=v_key, cached_research=cached_res, cached_diagnosis=cached_diag,
+                              closed_loop=args.closed_loop)
+        judge_scores, judge_step = judge.execute(result.raw_outputs, case)
+        result.agent_steps.append(judge_step)
+        result.raw_outputs["llm_judge"] = judge_scores
+        scored = scorer.score_run(result, case, judge_scores=judge_scores)
 
         with lock:
             db.log_run(scored)
@@ -89,14 +101,14 @@ def run_single_variant(v_key, case, case_id, c_idx, total_cases, cached_res, cac
         logger.error(f"Error executing Case '{case_id}' on {v_key}: {e}. Skipping run.")
 
 
-def process_case(case, c_idx, total_cases, variants, pipeline, scorer, db, args, lock, counter_obj):
+def process_case(case, c_idx, total_cases, variants, pipeline, scorer, judge, db, args, lock, counter_obj):
     """Processes all 5 governance variants for a single clinical case concurrently."""
     case_id = str(case.get("id", f"case_{c_idx:04d}"))
 
     # Determine which variants are pending for this case
     pending_variants = [
         v_key for v_key in variants
-        if not is_already_completed(args.db_path, case_id, ClinicalGovernancePipeline.AVAILABLE_VARIANTS[v_key]["id"])
+        if not is_already_completed(args.db_path, case_id, variant_run_id(v_key, args))
     ]
 
     if not pending_variants:
@@ -116,13 +128,13 @@ def process_case(case, c_idx, total_cases, variants, pipeline, scorer, db, args,
         return
 
     # Execute all pending governance variants concurrently for this case
-    with ThreadPoolExecutor(max_workers=min(len(pending_variants), 5)) as variant_executor:
+    with ThreadPoolExecutor(max_workers=min(len(pending_variants), args.variant_workers)) as variant_executor:
         v_futures = [
             variant_executor.submit(
                 run_single_variant,
                 v_key, case, case_id, c_idx, total_cases,
                 cached_res, cached_diag,
-                pipeline, scorer, db, args, lock, counter_obj
+                pipeline, scorer, judge, db, args, lock, counter_obj
             )
             for v_key in pending_variants
         ]
@@ -140,7 +152,15 @@ def main():
     parser.add_argument("--source", type=str, default="50_each", help="Dataset source (default: 50_each)")
     parser.add_argument("--workers", type=int, default=3, help="Number of parallel concurrent cases (default: 3)")
     parser.add_argument("--db-path", type=str, default="results/benchmark_results.db")
+    parser.add_argument("--seed", type=int, default=None, help="Random seed for reproducibility")
+    parser.add_argument("--closed-loop", action="store_true",
+                        help="Feed governance concerns back to the Diagnosis Agent (variant ids get a -CL suffix)")
+    parser.add_argument("--variant-workers", type=int, default=5,
+                        help="Concurrent variants per case; use 1 for contention-free latency measurement")
     args = parser.parse_args()
+    if args.seed is not None:
+        random.seed(args.seed)
+        np.random.seed(args.seed)
 
     logger.info("=================================================================")
     logger.info(f"STARTING ACCELERATED BENCHMARK: {args.total_cases} CASES across 5 VARIANTS")
@@ -148,10 +168,12 @@ def main():
     logger.info("=================================================================")
 
     # Initialize components
-    client = UnifiedLLMClient(provider=args.provider, force_mock=False)
+    # Strict: a failed live call skips that run instead of logging simulated output as a real result.
+    client = UnifiedLLMClient(provider=args.provider, force_mock=False, allow_mock_fallback=False)
     pipeline = ClinicalGovernancePipeline(client)
     data_loader = ClinicalDatasetLoader()
     scorer = ClinicalEvaluationScorer()
+    judge = LLMJudgeAgent(client)
     db = BenchmarkDB(args.db_path)
 
     # Ingest stratified dataset
@@ -174,7 +196,7 @@ def main():
     logger.info(f"Launching multi-tiered concurrency ({args.workers} cases x 5 concurrent variants)...")
     with ThreadPoolExecutor(max_workers=args.workers) as case_executor:
         futures = [
-            case_executor.submit(process_case, case, c_idx, len(cases), variants, pipeline, scorer, db, args, lock, counter_obj)
+            case_executor.submit(process_case, case, c_idx, len(cases), variants, pipeline, scorer, judge, db, args, lock, counter_obj)
             for c_idx, case in enumerate(cases, 1)
         ]
         for future in as_completed(futures):

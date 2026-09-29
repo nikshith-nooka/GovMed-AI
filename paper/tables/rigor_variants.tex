@@ -1,0 +1,17 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrrrrr}
+\toprule
+variant\_id & accuracy\_valid\_gold & detector\_neutral\_quality & reported\_quality & tokens\_mean & e2e\_latency\_p50\_s & e2e\_latency\_p95\_s & diagnosis\_changed\_vs\_v1\_pct \\
+\midrule
+V1 & 0.389 & 0.523 & 0.846 & 3104.400 & 45.100 & 112.400 & 0.000 \\
+V2 & 0.385 & 0.522 & 0.809 & 4989.200 & 78.200 & 221.000 & 1.300 \\
+V3 & 0.385 & 0.522 & 0.845 & 4687.700 & 64.200 & 137.900 & 2.000 \\
+V4 & 0.371 & 0.517 & 0.716 & 4848.500 & 70.700 & 165.200 & 2.700 \\
+V5 & 0.371 & 0.514 & 0.674 & 8411.800 & 111.300 & 256.200 & 2.700 \\
+\bottomrule
+\end{tabular}
+\caption{Measured variant summary (valid-gold accuracy, detector-neutral quality, end-to-end latency).}
+\label{tab:rigor_variants}
+\end{table}

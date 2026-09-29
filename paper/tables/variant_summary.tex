@@ -1,15 +1,15 @@
-\begin{table}
-\caption{Comparative Governance-Cost Performance across Multi-Agent Clinical Pipeline Variants (NVIDIA NIM meta/llama-3.2-11b-vision-instruct).}
-\label{tab:governance_summary}
+\begin{table*}
+\caption{Comparative Governance-Cost Performance and Ablation across Multi-Agent Clinical Architectures.}
+\label{tab:variant_summary}
 \begin{tabular}{llccccccc}
 \toprule
-Variant & Governance Configuration & Runs & Quality Score & Diagnostic Accuracy & Mean Tokens & Latency (ms) & Inference Cost & Safety Flags / Case \\
+Variant & Governance Configuration & Quality ($Q$) & $\Delta Q$ (\%) & Tokens ($T$) & $\Delta T$ (\%) & Latency (s) & Halluc. Rate & Safety Interventions \\
 \midrule
-V1 & Baseline (Ungoverned) & 150 & 0.845 $\pm$ 0.138 & 73.4\% & 3,106 & 38,459 & \$0.0004 & 0.00 \\
-V2 & Verifier Governance & 150 & 0.809 $\pm$ 0.151 & 74.0\% & 4,989 & 59,603 & \$0.0007 & 0.00 \\
-V3 & HITL Simulator Governance & 150 & 0.845 $\pm$ 0.137 & 74.0\% & 4,687 & 39,054 & \$0.0006 & 0.00 \\
-V4 & Safety Validator Governance & 150 & 0.715 $\pm$ 0.135 & 74.1\% & 4,848 & 45,444 & \$0.0006 & 1.89 \\
-V5 & Full Governance (Defense-in-Depth) & 150 & 0.674 $\pm$ 0.154 & 74.1\% & 8,411 & 95,460 & \$0.0011 & 1.90 \\
+V1 & Baseline (Ungoverned) & 0.846000 & 0.000000 & 3,103 & 0.000000 & 38.500000 & 0.000000 & 0.000000 \\
+V2 & Verifier Governance & 0.809000 & -4.400000 & 4,989 & 60.800000 & 59.600000 & 0.473000 & 0.000000 \\
+V3 & HITL Simulator Governance & 0.845000 & -0.100000 & 4,687 & 51.100000 & 39.100000 & 0.000000 & 0.000000 \\
+V4 & Safety Validator Governance & 0.716000 & -15.500000 & 4,848 & 56.200000 & 45.400000 & 0.000000 & 1.887000 \\
+V5 & Full Governance (Defense-in-Depth) & 0.674000 & -20.400000 & 8,411 & 171.100000 & 95.500000 & 0.513000 & 1.900000 \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}

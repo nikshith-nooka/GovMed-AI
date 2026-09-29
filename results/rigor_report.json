@@ -1,0 +1,794 @@
+{
+  "generated_at": 1790678442.052978,
+  "db_path": "results/benchmark_results.db",
+  "n_runs_analyzed": 750,
+  "n_cases": 150,
+  "models": [
+    "nvidia / meta/llama-3.2-11b-vision-instruct"
+  ],
+  "integrity": {
+    "synthetic_columns": [
+      "uncertainty_jru",
+      "llm_judge_score",
+      "rubric_quality_score",
+      "risk_adjusted_quality",
+      "governance_efficiency_factor",
+      "hitl_minutes"
+    ],
+    "judge_score_is_derived": true,
+    "jru_min_by_variant": {
+      "V1": 0.12,
+      "V2": 0.08,
+      "V3": 0.05,
+      "V4": 0.03,
+      "V5": 0.02
+    },
+    "notes": [
+      "Columns empty in the original run database but populated now: uncertainty_jru, llm_judge_score, rubric_quality_score, risk_adjusted_quality, governance_efficiency_factor, hitl_minutes. They were produced by a post-hoc script, not measured, and are excluded from all evidence.",
+      "llm_judge_score equals overall_quality - 0.05*JRU in >95% of rows: it is derived from the rubric, so no independent LLM judge scored these runs."
+    ]
+  },
+  "measurement_validity": {
+    "parse_failure_rate_by_agent": {
+      "diagnosis": {
+        "failed": 216,
+        "total": 750,
+        "rate": 0.288
+      },
+      "verifier": {
+        "failed": 74,
+        "total": 300,
+        "rate": 0.247
+      },
+      "research": {
+        "failed": 110,
+        "total": 750,
+        "rate": 0.147
+      },
+      "safety": {
+        "failed": 27,
+        "total": 300,
+        "rate": 0.09
+      },
+      "report": {
+        "failed": 21,
+        "total": 750,
+        "rate": 0.028
+      }
+    },
+    "runs_with_unparsed_diagnosis": 216,
+    "runs_with_option_letter_diagnosis": 395,
+    "reported_accuracy_on_option_letter_runs": 0.9,
+    "reported_accuracy_on_unparsed_runs": 1.0,
+    "reported_accuracy_mean": 0.739,
+    "corrected_accuracy_mean_all_cases": 0.293,
+    "corrected_accuracy_mean_valid_gold": 0.38,
+    "reported_accuracy_mean_valid_gold": 0.783,
+    "cases_total": 150,
+    "cases_with_valid_gold": 71,
+    "templated_gold_by_dataset": {
+      "meddialog": 28,
+      "medqa": 34,
+      "pubmedqa": 17
+    },
+    "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; e2e_latency sums every agent step."
+  },
+  "variants": [
+    {
+      "variant_id": "V1",
+      "n_runs": 150,
+      "accuracy_valid_gold": 0.3894,
+      "detector_neutral_quality": 0.5232,
+      "reported_quality": 0.8463,
+      "tokens_mean": 3104.4,
+      "cost_mean_usd": 0.000411,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 45.1,
+      "e2e_latency_p95_s": 112.4,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 0.0
+    },
+    {
+      "variant_id": "V2",
+      "n_runs": 150,
+      "accuracy_valid_gold": 0.3852,
+      "detector_neutral_quality": 0.5219,
+      "reported_quality": 0.8086,
+      "tokens_mean": 4989.2,
+      "cost_mean_usd": 0.000658,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 71,
+      "e2e_latency_p50_s": 78.2,
+      "e2e_latency_p95_s": 221.0,
+      "hallucination_flag_rate": 0.4733,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 1.3
+    },
+    {
+      "variant_id": "V3",
+      "n_runs": 150,
+      "accuracy_valid_gold": 0.3852,
+      "detector_neutral_quality": 0.5219,
+      "reported_quality": 0.8454,
+      "tokens_mean": 4687.7,
+      "cost_mean_usd": 0.00061,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 64.2,
+      "e2e_latency_p95_s": 137.9,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 2.0
+    },
+    {
+      "variant_id": "V4",
+      "n_runs": 150,
+      "accuracy_valid_gold": 0.3711,
+      "detector_neutral_quality": 0.5169,
+      "reported_quality": 0.7155,
+      "tokens_mean": 4848.5,
+      "cost_mean_usd": 0.000637,
+      "safety_alerts_total": 297,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 70.7,
+      "e2e_latency_p95_s": 165.2,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": 1.98,
+      "diagnosis_changed_vs_v1_pct": 2.7
+    },
+    {
+      "variant_id": "V5",
+      "n_runs": 150,
+      "accuracy_valid_gold": 0.3711,
+      "detector_neutral_quality": 0.5137,
+      "reported_quality": 0.6739,
+      "tokens_mean": 8411.8,
+      "cost_mean_usd": 0.001065,
+      "safety_alerts_total": 303,
+      "hallucination_flags_total": 77,
+      "e2e_latency_p50_s": 111.3,
+      "e2e_latency_p95_s": 256.2,
+      "hallucination_flag_rate": 0.5133,
+      "safety_alerts_per_run": 2.02,
+      "diagnosis_changed_vs_v1_pct": 2.7
+    }
+  ],
+  "paired_tests": [
+    {
+      "metric": "accuracy",
+      "comparison": "V2 - V1",
+      "n_pairs": 71,
+      "mean_diff": -0.0042,
+      "ci95_low": -0.0127,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.317311
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V3 - V1",
+      "n_pairs": 71,
+      "mean_diff": -0.0042,
+      "ci95_low": -0.0127,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.317311
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V4 - V1",
+      "n_pairs": 71,
+      "mean_diff": -0.0183,
+      "ci95_low": -0.0507,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.179712
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V5 - V1",
+      "n_pairs": 71,
+      "mean_diff": -0.0183,
+      "ci95_low": -0.0507,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.179712
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V2 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0013,
+      "ci95_low": -0.004,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.317311
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V3 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0013,
+      "ci95_low": -0.004,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.317311
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V4 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0063,
+      "ci95_low": -0.0177,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 0.179712
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V5 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0096,
+      "ci95_low": -0.0239,
+      "ci95_high": 0.0006,
+      "wilcoxon_p": 0.144127
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V2 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0377,
+      "ci95_low": -0.0448,
+      "ci95_high": -0.0305,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V3 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.0009,
+      "ci95_low": -0.0043,
+      "ci95_high": 0.0025,
+      "wilcoxon_p": 1.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V4 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.1309,
+      "ci95_low": -0.1402,
+      "ci95_high": -0.1211,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V5 - V1",
+      "n_pairs": 150,
+      "mean_diff": -0.1724,
+      "ci95_low": -0.1845,
+      "ci95_high": -0.1602,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V2 - V1",
+      "n_pairs": 150,
+      "mean_diff": 1884.76,
+      "ci95_low": 1826.7518,
+      "ci95_high": 1941.4748,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V3 - V1",
+      "n_pairs": 150,
+      "mean_diff": 1583.2867,
+      "ci95_low": 1550.2,
+      "ci95_high": 1617.4208,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V4 - V1",
+      "n_pairs": 150,
+      "mean_diff": 1744.08,
+      "ci95_low": 1705.5988,
+      "ci95_high": 1782.4443,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V5 - V1",
+      "n_pairs": 150,
+      "mean_diff": 5307.3933,
+      "ci95_low": 5221.7737,
+      "ci95_high": 5397.4672,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V2 - V1",
+      "n_pairs": 150,
+      "mean_diff": 40.836,
+      "ci95_low": 32.75,
+      "ci95_high": 49.6068,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V3 - V1",
+      "n_pairs": 150,
+      "mean_diff": 19.4712,
+      "ci95_low": 13.9808,
+      "ci95_high": 24.6682,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V4 - V1",
+      "n_pairs": 150,
+      "mean_diff": 25.7545,
+      "ci95_low": 19.5446,
+      "ci95_high": 32.0776,
+      "wilcoxon_p": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V5 - V1",
+      "n_pairs": 150,
+      "mean_diff": 72.7755,
+      "ci95_low": 60.374,
+      "ci95_high": 85.9921,
+      "wilcoxon_p": 0.0
+    }
+  ],
+  "audit_paradox": [
+    {
+      "variant_id": "V2",
+      "reported_quality_drop": 0.0377,
+      "detector_neutral_quality_drop": 0.0013,
+      "share_of_drop_from_detector_penalties": 0.965
+    },
+    {
+      "variant_id": "V3",
+      "reported_quality_drop": 0.0009,
+      "detector_neutral_quality_drop": 0.0013,
+      "share_of_drop_from_detector_penalties": -0.429
+    },
+    {
+      "variant_id": "V4",
+      "reported_quality_drop": 0.1309,
+      "detector_neutral_quality_drop": 0.0063,
+      "share_of_drop_from_detector_penalties": 0.952
+    },
+    {
+      "variant_id": "V5",
+      "reported_quality_drop": 0.1724,
+      "detector_neutral_quality_drop": 0.0096,
+      "share_of_drop_from_detector_penalties": 0.945
+    }
+  ],
+  "alert_discrimination": [
+    {
+      "signal": "hallucination_flag",
+      "variant_id": "V2",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.592,
+      "fire_rate": 0.437,
+      "sensitivity": 0.381,
+      "false_positive_rate": 0.517,
+      "precision": 0.516,
+      "auroc": 0.432
+    },
+    {
+      "signal": "hallucination_flag",
+      "variant_id": "V5",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 0.465,
+      "sensitivity": 0.442,
+      "false_positive_rate": 0.5,
+      "precision": 0.576,
+      "auroc": 0.471
+    },
+    {
+      "signal": "safety_alerts",
+      "variant_id": "V4",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 1.0,
+      "sensitivity": 1.0,
+      "false_positive_rate": 1.0,
+      "precision": 0.606,
+      "auroc": 0.541
+    },
+    {
+      "signal": "safety_alerts",
+      "variant_id": "V5",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 1.0,
+      "sensitivity": 1.0,
+      "false_positive_rate": 1.0,
+      "precision": 0.606,
+      "auroc": 0.564
+    },
+    {
+      "signal": "safety_alerts_high",
+      "variant_id": "V4",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 0.352,
+      "sensitivity": 0.279,
+      "false_positive_rate": 0.464,
+      "precision": 0.48,
+      "auroc": 0.407
+    },
+    {
+      "signal": "safety_alerts_high",
+      "variant_id": "V5",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 0.366,
+      "sensitivity": 0.302,
+      "false_positive_rate": 0.464,
+      "precision": 0.5,
+      "auroc": 0.419
+    },
+    {
+      "signal": "hitl_decision",
+      "variant_id": "V3",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.592,
+      "fire_rate": 0.352,
+      "sensitivity": 0.31,
+      "false_positive_rate": 0.414,
+      "precision": 0.52,
+      "auroc": 0.448
+    },
+    {
+      "signal": "hitl_decision",
+      "variant_id": "V5",
+      "n": 71,
+      "misdiagnosis_prevalence": 0.606,
+      "fire_rate": 0.775,
+      "sensitivity": 0.698,
+      "false_positive_rate": 0.893,
+      "precision": 0.545,
+      "auroc": 0.402
+    }
+  ],
+  "alert_reproducibility": {
+    "n_cases": 150,
+    "any_alert_kappa": null,
+    "alert_count_spearman": 0.517,
+    "identical_alert_count_pct": 72.7,
+    "severity_distribution": {
+      "CRITICAL": 4,
+      "HIGH": 118,
+      "MEDIUM": 258,
+      "LOW": 220
+    }
+  },
+  "hitl": [
+    {
+      "variant_id": "V3",
+      "decision": "APPROVED",
+      "n": 46,
+      "misdiagnosis_rate": 0.63
+    },
+    {
+      "variant_id": "V3",
+      "decision": "REJECTED",
+      "n": 1,
+      "misdiagnosis_rate": 1.0
+    },
+    {
+      "variant_id": "V3",
+      "decision": "REQUEST_REVISION",
+      "n": 24,
+      "misdiagnosis_rate": 0.5
+    },
+    {
+      "variant_id": "V5",
+      "decision": "APPROVED",
+      "n": 16,
+      "misdiagnosis_rate": 0.812
+    },
+    {
+      "variant_id": "V5",
+      "decision": "REQUEST_REVISION",
+      "n": 55,
+      "misdiagnosis_rate": 0.545
+    }
+  ],
+  "calibration": {
+    "ece": 0.2873,
+    "brier": 0.3254,
+    "n": 71,
+    "bins": [
+      {
+        "bin": "0.0-0.1",
+        "n": 4,
+        "mean_confidence": 0.038,
+        "observed_accuracy": 0.0
+      },
+      {
+        "bin": "0.1-0.2",
+        "n": 2,
+        "mean_confidence": 0.125,
+        "observed_accuracy": 0.5
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 27,
+        "mean_confidence": 0.241,
+        "observed_accuracy": 0.444
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 3,
+        "mean_confidence": 0.4,
+        "observed_accuracy": 0.667
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 7,
+        "mean_confidence": 0.6,
+        "observed_accuracy": 0.286
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 23,
+        "mean_confidence": 0.802,
+        "observed_accuracy": 0.435
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 5,
+        "mean_confidence": 0.91,
+        "observed_accuracy": 0.4
+      }
+    ]
+  },
+  "latency_by_agent": [
+    {
+      "agent": "Report Agent",
+      "calls": 750,
+      "mean_s": 29.0,
+      "p95_s": 74.5,
+      "max_s": 539.2,
+      "mean_share_of_run": 0.32,
+      "mean_tokens": 1719.0
+    },
+    {
+      "agent": "Diagnosis Agent",
+      "calls": 750,
+      "mean_s": 27.8,
+      "p95_s": 77.0,
+      "max_s": 354.0,
+      "mean_share_of_run": 0.323,
+      "mean_tokens": 1306.0
+    },
+    {
+      "agent": "Verifier Agent",
+      "calls": 300,
+      "mean_s": 25.2,
+      "p95_s": 65.1,
+      "max_s": 275.0,
+      "mean_share_of_run": 0.224,
+      "mean_tokens": 1325.0
+    },
+    {
+      "agent": "Safety Validator",
+      "calls": 300,
+      "mean_s": 17.0,
+      "p95_s": 40.9,
+      "max_s": 186.6,
+      "mean_share_of_run": 0.168,
+      "mean_tokens": 1248.0
+    },
+    {
+      "agent": "HITL Simulator",
+      "calls": 300,
+      "mean_s": 14.3,
+      "p95_s": 35.0,
+      "max_s": 158.3,
+      "mean_share_of_run": 0.151,
+      "mean_tokens": 1354.0
+    },
+    {
+      "agent": "Research Agent",
+      "calls": 750,
+      "mean_s": 11.1,
+      "p95_s": 28.5,
+      "max_s": 66.2,
+      "mean_share_of_run": 0.14,
+      "mean_tokens": 612.0
+    }
+  ],
+  "strata": {
+    "dataset": [
+      {
+        "dataset": "meddialog",
+        "cases": 50,
+        "cases_valid_gold": 22,
+        "accuracy_valid_gold": 0.727,
+        "diagnosis_parse_failure_rate": 0.28
+      },
+      {
+        "dataset": "medqa",
+        "cases": 50,
+        "cases_valid_gold": 16,
+        "accuracy_valid_gold": 0.356,
+        "diagnosis_parse_failure_rate": 0.3
+      },
+      {
+        "dataset": "pubmedqa",
+        "cases": 50,
+        "cases_valid_gold": 33,
+        "accuracy_valid_gold": 0.18,
+        "diagnosis_parse_failure_rate": 0.24
+      }
+    ],
+    "specialty": [
+      {
+        "specialty": "Internal Medicine",
+        "cases": 59,
+        "cases_valid_gold": 30,
+        "accuracy_valid_gold": 0.262,
+        "diagnosis_parse_failure_rate": 0.169
+      },
+      {
+        "specialty": "Cardiology",
+        "cases": 17,
+        "cases_valid_gold": 10,
+        "accuracy_valid_gold": 0.285,
+        "diagnosis_parse_failure_rate": 0.471
+      },
+      {
+        "specialty": "Pulmonology",
+        "cases": 15,
+        "cases_valid_gold": 4,
+        "accuracy_valid_gold": 0.5,
+        "diagnosis_parse_failure_rate": 0.267
+      },
+      {
+        "specialty": "Gastroenterology",
+        "cases": 14,
+        "cases_valid_gold": 5,
+        "accuracy_valid_gold": 0.57,
+        "diagnosis_parse_failure_rate": 0.429
+      },
+      {
+        "specialty": "Surgery",
+        "cases": 13,
+        "cases_valid_gold": 10,
+        "accuracy_valid_gold": 0.555,
+        "diagnosis_parse_failure_rate": 0.154
+      },
+      {
+        "specialty": "Pediatrics",
+        "cases": 11,
+        "cases_valid_gold": 5,
+        "accuracy_valid_gold": 0.34,
+        "diagnosis_parse_failure_rate": 0.364
+      },
+      {
+        "specialty": "Infectious Disease",
+        "cases": 10,
+        "cases_valid_gold": 2,
+        "accuracy_valid_gold": 1.0,
+        "diagnosis_parse_failure_rate": 0.2
+      },
+      {
+        "specialty": "Neurology",
+        "cases": 6,
+        "cases_valid_gold": 3,
+        "accuracy_valid_gold": 0.95,
+        "diagnosis_parse_failure_rate": 0.167
+      },
+      {
+        "specialty": "Nephrology",
+        "cases": 3,
+        "cases_valid_gold": 2,
+        "accuracy_valid_gold": 0.0,
+        "diagnosis_parse_failure_rate": 1.0
+      },
+      {
+        "specialty": "Rheumatology",
+        "cases": 2,
+        "cases_valid_gold": 0,
+        "accuracy_valid_gold": null,
+        "diagnosis_parse_failure_rate": 0.5
+      }
+    ],
+    "difficulty": [
+      {
+        "difficulty": "High",
+        "cases": 91,
+        "cases_valid_gold": 47,
+        "accuracy_valid_gold": 0.361,
+        "diagnosis_parse_failure_rate": 0.341
+      },
+      {
+        "difficulty": "Medium",
+        "cases": 59,
+        "cases_valid_gold": 24,
+        "accuracy_valid_gold": 0.446,
+        "diagnosis_parse_failure_rate": 0.169
+      }
+    ]
+  },
+  "failure_taxonomy": {
+    "misdiagnosed_cases_v1": 42,
+    "flagged_by_any_variant": {
+      "verifier": 20,
+      "safety_high": 14,
+      "hitl": 29
+    },
+    "missed_by_all_governance": 8,
+    "confident_wrong_ge_0_7": 16,
+    "examples": [
+      {
+        "case_id": "pubmedqa_21645374",
+        "gold": "Programmed Cell Death (PCD) in Lace Plant Leaves",
+        "predicted": "A"
+      },
+      {
+        "case_id": "pubmedqa_16418930",
+        "gold": "Assessment of Visual Acuity and Comparison of Landolt C and Snellen E Acuity",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_hf_002",
+        "gold": "Ototoxicity Assessment in a Patient with Transitional Cell Carcinoma",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_hf_003",
+        "gold": "Cholesterol Embolization Syndrome",
+        "predicted": "C"
+      },
+      {
+        "case_id": "pubmedqa_9488747",
+        "gold": "Anaphylaxis due to Dermographism in Infants",
+        "predicted": "A"
+      },
+      {
+        "case_id": "pubmedqa_23831910",
+        "gold": "Evaluation of Anemia/Gastrointestinal Bleed, Small Bowel IBD, and Dilation of Strictures",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_hf_007",
+        "gold": "Renal Artery Stenosis",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_hf_008",
+        "gold": "Acute Chest Pain",
+        "predicted": "A"
+      }
+    ]
+  },
+  "clinician_validation": {
+    "n_reviews": 0,
+    "status": "No clinician reviews yet. Collect them in the Clinician Review page."
+  },
+  "limitations": [
+    "Single model (one provider); results may not transfer to other LLMs.",
+    "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
+    "Accuracy uses lenient string matching against gold labels; only non-templated labels are scored.",
+    "Governance outputs are not validated against clinicians until reviews are collected."
+  ],
+  "headline_findings": [
+    "Reported accuracy 0.739 is inflated by substring matching: 216 runs with an unparsed (empty) diagnosis scored 1.0, and 395 runs whose 'diagnosis' is a bare option letter (149/150 cases contain no options, so a letter is a non-answer) scored 0.9. With recovered outputs and whole-word matching, accuracy is 0.293.",
+    "Only 71 of 150 gold labels are real diagnoses; the rest are templated titles. On scorable cases accuracy is 0.38.",
+    "Open-loop governance changed the primary diagnosis in at most 2.7% of cases: the layers annotate but do not alter clinical decisions.",
+    "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
+    "94-96% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
+    "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.402-0.564 (0.5 = chance).",
+    "The safety validator raised at least one alert on 100% of runs, so alert presence carries no information about whether the diagnosis is wrong.",
+    "Same validator, same cached diagnosis (V4 vs V5): identical alert counts in only 72.7% of cases (Spearman 0.517).",
+    "Statistical power is limited: 71 scorable cases and 42 baseline misdiagnoses. A larger benchmark with an objective answer key is required before publication.",
+    "Model-reported diagnosis probability: ECE 0.2873, Brier 0.3254 (n=71).",
+    "Latency bottleneck: Report Agent (mean 29.0s, p95 74.5s).",
+    "Integrity: Columns empty in the original run database but populated now: uncertainty_jru, llm_judge_score, rubric_quality_score, risk_adjusted_quality, governance_efficiency_factor, hitl_minutes. They were produced by a post-hoc script, not measured, and are excluded from all evidence. llm_judge_score equals overall_quality - 0.05*JRU in >95% of rows: it is derived from the rubric, so no independent LLM judge scored these runs."
+  ]
+}

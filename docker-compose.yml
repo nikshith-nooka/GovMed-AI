@@ -5,12 +5,12 @@ services:
     build: .
     container_name: govbench-clinical-app
     ports:
-      - "8501:8501"
+      - "8000:8000"
     environment:
       - GROQ_API_KEY=${GROQ_API_KEY}
+      - NVIDIA_API_KEY=${NVIDIA_API_KEY}
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
-      - DEFAULT_LLM_PROVIDER=groq
     volumes:
       - ./results:/app/results
       - ./benchmarks:/app/benchmarks
@@ -28,4 +28,4 @@ services:
     volumes:
       - ./results:/app/results
       - ./benchmarks:/app/benchmarks
-    command: python run_benchmark.py --cases 10 --source stratified --variant all --provider groq
+    command: python -m scripts.run_full_benchmark --total-cases 10 --provider groq --workers 1

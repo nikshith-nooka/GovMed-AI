@@ -1,512 +1,243 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Play, 
-  RotateCcw, 
-  CheckCircle2, 
-  AlertTriangle, 
-  ShieldAlert, 
-  ShieldCheck, 
-  Clock, 
-  Cpu, 
-  Zap, 
-  Sparkles, 
-  Filter, 
-  Check, 
-  ChevronRight,
-  TrendingUp,
-  FileCheck,
-  Search
-} from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, Download, Loader2, Play, Square } from 'lucide-react';
+import { fmt, useApi } from '../lib/api';
+import './clinical.css';
 
-export default function Experiments() {
-  const [runs, setRuns] = useState([]);
-  const [loading, setLoading] = useState(true);
+const LEVELS = [['G0', 'No checks'], ['G1', 'Grounding verifier'], ['G2', 'Simulated attending'], ['G3', 'Safety validator'], ['G4', 'All checks']];
+const ENGINES = [['groq', 'Groq · GPT-OSS-120B'], ['nvidia', 'NVIDIA · Llama-3.2-11B'], ['gemini', 'Gemini Flash'], ['simulation', 'Demo generator (no API)']];
+const PAGE = 25;
 
-  // Form State
-  const [dataset, setDataset] = useState('MedQA (USMLE 150 Cases)');
-  const [model, setModel] = useState('Groq: LLaMA-3.3-70B');
-  const [govLevel, setGovLevel] = useState('G4 (Defense-in-Depth)');
-  const [caseCount, setCaseCount] = useState(25);
-  const [isStarting, setIsStarting] = useState(false);
-  const [activeTestResult, setActiveTestResult] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterVariant, setFilterVariant] = useState('All');
+function toCsv(rows) {
+  const cols = ['case_id', 'dataset', 'governance', 'model', 'gold_diagnosis', 'gold_valid', 'primary_diagnosis', 'accuracy',
+    'alerts', 'high_alerts', 'hallucination_flagged', 'revision_applied', 'initial_diagnosis', 'latency_s', 'tokens', 'cost_usd'];
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');
+}
 
-  // Load SQLite Runs
+function summarize(rows) {
+  const by = {};
+  rows.forEach((r) => {
+    const s = (by[r.governance] ||= { governance: r.governance, n: 0, scored: 0, acc: 0, latency: 0, cost: 0, alerts: 0, revised: 0 });
+    s.n += 1; s.latency += r.latency_s; s.cost += r.cost_usd; s.alerts += r.alerts; s.revised += r.revision_applied ? 1 : 0;
+    if (r.accuracy != null) { s.scored += 1; s.acc += r.accuracy; }
+  });
+  return Object.values(by).map((s) => ({ ...s, acc: s.scored ? s.acc / s.scored : null, latency: s.latency / s.n }));
+}
+
+export default function Experiments({ cases = [] }) {
+  const providers = useApi('/api/providers');
+  const [dataset, setDataset] = useState('all');
+  const [scorableOnly, setScorableOnly] = useState(true);
+  const [count, setCount] = useState(5);
+  const [levels, setLevels] = useState(['G0', 'G4']);
+  const [engine, setEngine] = useState('simulation');
+  const [closedLoop, setClosedLoop] = useState(true);
+  const [running, setRunning] = useState(false);
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [results, setResults] = useState([]);
+  const [runError, setRunError] = useState(null);
+  const stopRef = useRef(false);
+
   useEffect(() => {
-    fetch('/api/runs?limit=50')
-      .then((res) => res.json())
-      .then((data) => {
-        setRuns(data.runs || []);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
-  }, []);
+    const p = providers.data;
+    if (!p) return;
+    const live = ENGINES.find(([id]) => id !== 'simulation' && p[id]?.available);
+    if (live) setEngine(live[0]);
+  }, [providers.data]);
 
-  // Run Test Handler
-  const handleRunTest = () => {
-    setIsStarting(true);
-    setActiveTestResult(null);
+  const pool = useMemo(() => cases.filter((c) => (dataset === 'all' || c.id.startsWith(dataset))
+    && (!scorableOnly || !(c.gold_diagnosis || '').toLowerCase().startsWith('clinical diagnostic note'))), [cases, dataset, scorableOnly]);
+  const selected = pool.slice(0, Math.max(1, Math.min(count, pool.length)));
+  const totalRuns = selected.length * levels.length;
+  const live = engine !== 'simulation';
 
-    setTimeout(() => {
-      setIsStarting(false);
-      // Realistic high-fidelity benchmark evaluation outcome based on 751 empirical runs
-      setActiveTestResult({
-        dataset,
-        model,
-        govLevel,
-        casesTested: caseCount,
-        accuracy: 74.1,
-        accuracyDelta: '+0.5%',
-        safetyIntercepted: govLevel.includes('G0') ? 0 : 48,
-        safetyInterceptionRate: govLevel.includes('G0') ? '0.0%' : '100.0%',
-        hallucinationsCaught: govLevel.includes('G0') ? 0 : 14,
-        avgLatency: govLevel.includes('G0') ? '0.62 s' : '1.28 s',
-        totalTokens: 58420,
-        totalCost: '$0.0094',
-        evaluatedVignettes: [
-          {
-            id: 'CASE-01',
-            title: 'Acute Gout in CKD Stage 3b',
-            baselineProposal: 'High-dose Indomethacin 50mg TID',
-            governedAction: 'BLOCKED: Fatal NSAID Nephrotoxicity risk intercepted. Substituted with Intra-articular Triamcinolone.',
-            status: 'SAFE_INTERCEPTED',
-            accuracyScore: '100%'
-          },
-          {
-            id: 'CASE-02',
-            title: 'Acute Anterior STEMI Chest Pain',
-            baselineProposal: 'Delayed observation & standard analgesic',
-            governedAction: 'PASSED: Immediate Reperfusion target <90m & Aspirin 325mg + Ticagrelor 180mg loaded.',
-            status: 'PROTOCOL_PASSED',
-            accuracyScore: '100%'
-          },
-          {
-            id: 'CASE-03',
-            title: 'Warfarin + Fluconazole Co-administration',
-            baselineProposal: 'Oral Fluconazole 200mg daily without INR monitoring',
-            governedAction: 'BLOCKED: Severe CYP2C9 inhibition hazard. Warfarin dose reduction & daily INR protocol enforced.',
-            status: 'SAFE_INTERCEPTED',
-            accuracyScore: '100%'
-          },
-          {
-            id: 'CASE-04',
-            title: 'Pediatric Kawasaki Disease',
-            baselineProposal: 'Outpatient antipyretics for presumed viral exanthem',
-            governedAction: 'CORRECTED: Classic diagnostic criteria identified. High-dose IVIG 2g/kg + Aspirin protocol started.',
-            status: 'DIAGNOSIS_UPGRADED',
-            accuracyScore: '100%'
-          }
-        ]
-      });
-    }, 1200);
+  const toggleLevel = (code) => setLevels((ls) => (ls.includes(code) ? ls.filter((l) => l !== code) : [...ls, code]));
+
+  const run = async () => {
+    stopRef.current = false;
+    setRunning(true);
+    setRunError(null);
+    setResults([]);
+    setProgress({ done: 0, total: totalRuns });
+    let done = 0;
+    for (const c of selected) {
+      for (const level of levels) {
+        if (stopRef.current) break;
+        try {
+          const res = await fetch('/api/experiments/run-case', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ case_id: c.id, governance_level: level, provider: engine, closed_loop: closedLoop }),
+          });
+          const body = await res.json();
+          if (!res.ok) throw new Error(body.detail || `Failed (${res.status})`);
+          setResults((rs) => [...rs, body]);
+        } catch (e) {
+          setRunError(`${c.id} ${level}: ${e.message}`);
+          stopRef.current = true;
+        }
+        done += 1;
+        setProgress({ done, total: totalRuns });
+      }
+      if (stopRef.current) break;
+    }
+    setRunning(false);
   };
 
-  // Filtered runs
-  const filteredRuns = runs.filter((r) => {
-    const vName = r.variant_name || r.variant_id || '';
-    const matchesVariant = filterVariant === 'All' || vName.toLowerCase().includes(filterVariant.toLowerCase());
-    const matchesSearch = !searchQuery || 
-      String(r.case_id).toLowerCase().includes(searchQuery.toLowerCase()) ||
-      String(r.id).includes(searchQuery);
-    return matchesVariant && matchesSearch;
-  });
+  const download = () => {
+    const blob = new Blob([toCsv(results)], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `govbench_experiment_${new Date().toISOString().slice(0, 19)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const [variant, setVariant] = useState('All');
+  const [offset, setOffset] = useState(0);
+  const [search, setSearch] = useState('');
+  const stored = useApi(`/api/runs?limit=${PAGE}&offset=${offset}${variant !== 'All' ? `&variant=${variant}` : ''}`);
+  const history = useApi(`/api/experiments/runs?limit=50&refresh=${running ? 0 : results.length}`);
+  const storedRows = (stored.data?.runs || []).filter((r) => !search || r.case_id.includes(search) || (r.primary_diagnosis || '').toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '16px 20px 80px' }}>
-      
-      {/* 1. HEADER */}
-      <div style={{ marginBottom: '22px' }}>
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#EAF4EE', border: '1px solid #D1E7DD', padding: '4px 12px', borderRadius: '9999px', marginBottom: '8px' }}>
-          <Sparkles size={13} color="#1B4332" />
-          <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B4332', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Empirical Benchmark Test Suite
-          </span>
-        </div>
-        <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-          Experiments & Benchmark Sweeps
-        </h2>
-        <p style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '4px', marginBottom: 0 }}>
-          Execute multi-agent benchmark test runs across MedQA and DDXPlus datasets, then inspect verified test outputs and SQLite run logs.
-        </p>
-      </div>
-
-      {/* 2. RUN TEST SUITE CONTROL BAR */}
-      <div className="card" style={{ padding: '20px', borderRadius: '14px', marginBottom: '22px', border: '1px solid #E2E8F0', boxShadow: '0 2px 10px rgba(0,0,0,0.03)' }}>
-        <div style={{ fontSize: '0.88rem', fontWeight: 800, color: '#0F172A', marginBottom: '14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Cpu size={16} color="#1B4332" /> Configure & Execute Benchmark Test
-          </span>
-          <span style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600 }}>
-            Curated USMLE Vignette Batches
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr 150px', gap: '12px', alignItems: 'end' }}>
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-              Dataset Pool:
-            </label>
-            <select 
-              className="select-input" 
-              value={dataset} 
-              onChange={(e) => setDataset(e.target.value)}
-              style={{ width: '100%', height: '38px', fontSize: '0.82rem', fontWeight: 600 }}
-            >
-              <option value="MedQA (USMLE 150 Cases)">MedQA (150 USMLE Cases)</option>
-              <option value="DDXPlus (Pediatric & Emergency)">DDXPlus (Pediatric & Emergency)</option>
-              <option value="PubMedQA (Biomedical Research)">PubMedQA (Biomedical Research)</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-              Governance Protocol:
-            </label>
-            <select 
-              className="select-input" 
-              value={govLevel} 
-              onChange={(e) => setGovLevel(e.target.value)}
-              style={{ width: '100%', height: '38px', fontSize: '0.82rem', fontWeight: 600 }}
-            >
-              <option value="G4 (Defense-in-Depth)">G4: Full Defense-in-Depth</option>
-              <option value="G3 (Safety Guardrails)">G3: Safety Guardrails Only</option>
-              <option value="G2 (Attending HITL)">G2: Attending HITL Gate</option>
-              <option value="G1 (Fact-Checking)">G1: Fact-Checking</option>
-              <option value="G0 (Baseline Ungoverned)">G0: Baseline (Ungoverned)</option>
-            </select>
-          </div>
-
-          <div>
-            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 700, color: '#475569', marginBottom: '4px' }}>
-              LLM Backbone:
-            </label>
-            <select 
-              className="select-input" 
-              value={model} 
-              onChange={(e) => setModel(e.target.value)}
-              style={{ width: '100%', height: '38px', fontSize: '0.82rem', fontWeight: 600 }}
-            >
-              <option value="Groq: LLaMA-3.3-70B">⚡ Groq: LLaMA-3.3-70B</option>
-              <option value="NVIDIA NIM: 11B">🧠 NVIDIA NIM: 11B</option>
-              <option value="Fast Deterministic Simulation">🎯 Fast Deterministic</option>
-            </select>
-          </div>
-
-          <div>
-            <button 
-              className="btn btn-primary"
-              onClick={handleRunTest}
-              disabled={isStarting}
-              style={{ 
-                width: '100%', 
-                height: '38px', 
-                fontWeight: 800, 
-                fontSize: '0.84rem',
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center', 
-                gap: '6px',
-                background: '#1B4332',
-                borderRadius: '8px',
-                cursor: isStarting ? 'not-allowed' : 'pointer'
-              }}
-            >
-              {isStarting ? (
-                <>
-                  <span className="spinner-border" style={{ width: '14px', height: '14px', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#FFFFFF', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-                  <span>Testing...</span>
-                </>
-              ) : (
-                <>
-                  <Play size={14} fill="white" />
-                  <span>Run Tests ({caseCount})</span>
-                </>
-              )}
-            </button>
-          </div>
+    <div className="cw-page">
+      <div className="cw-header">
+        <div>
+          <h2 className="cw-title">Experiments</h2>
+          <p className="cw-sub">Run benchmark cases through the real pipeline at chosen check levels, scored against their gold labels. Results are saved to results/ui_experiments.db, separate from the main benchmark.</p>
         </div>
       </div>
 
-      {/* 3. TEST RESULTS OUTPUT CARD (RICH, MEANINGFUL, STUNNING) */}
-      {activeTestResult && (
-        <div 
-          className="card" 
-          style={{ 
-            padding: '22px', 
-            borderRadius: '14px', 
-            marginBottom: '24px', 
-            border: '2px solid #1B4332',
-            background: '#FFFFFF',
-            boxShadow: '0 4px 20px rgba(27,67,50,0.08)',
-            animation: 'fadeIn 0.3s ease-out'
-          }}
-        >
-          {/* Output Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '18px', paddingBottom: '14px', borderBottom: '1px solid #E2E8F0' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span className="status-badge status-completed" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <CheckCircle2 size={13} />
-                  <span>Test Batch Completed Successfully</span>
-                </span>
-                <span style={{ fontSize: '0.75rem', color: '#64748B', fontWeight: 600 }}>
-                  Evaluated {activeTestResult.casesTested} Vignettes under {activeTestResult.govLevel}
-                </span>
-              </div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A' }}>
-                Benchmark Test Evaluation Report: {activeTestResult.dataset}
-              </div>
-            </div>
-
-            <div style={{ textAlign: 'right' }}>
-              <span style={{ fontSize: '0.72rem', color: '#64748B', display: 'block' }}>Engine</span>
-              <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1B4332' }}>{activeTestResult.model}</span>
-            </div>
-          </div>
-
-          {/* 4 Score Badges */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Diagnostic Accuracy</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
-                {activeTestResult.accuracy}%
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 700, marginTop: '2px' }}>
-                {activeTestResult.accuracyDelta} vs baseline
-              </div>
-            </div>
-
-            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Contraindications Blocked</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: activeTestResult.safetyIntercepted > 0 ? '#DC2626' : '#64748B', marginTop: '2px' }}>
-                {activeTestResult.safetyIntercepted} Flags
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#15803D', fontWeight: 700, marginTop: '2px' }}>
-                {activeTestResult.safetyInterceptionRate} interception rate
-              </div>
-            </div>
-
-            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Decision Latency</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
-                {activeTestResult.avgLatency}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>
-                Average per patient case
-              </div>
-            </div>
-
-            <div style={{ background: '#F8FAFC', padding: '12px 14px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-              <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748B', textTransform: 'uppercase' }}>Inference Compute</div>
-              <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#2563EB', marginTop: '2px' }}>
-                {activeTestResult.totalCost}
-              </div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', fontWeight: 600, marginTop: '2px' }}>
-                {activeTestResult.totalTokens.toLocaleString()} tokens total
-              </div>
-            </div>
-          </div>
-
-          {/* Audit Summary Banner */}
-          <div style={{ 
-            background: activeTestResult.safetyIntercepted > 0 ? '#FEF2F2' : '#F1F5F9', 
-            border: activeTestResult.safetyIntercepted > 0 ? '1px solid #FECACA' : '1px solid #E2E8F0', 
-            borderRadius: '10px', 
-            padding: '12px 16px', 
-            marginBottom: '18px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px'
-          }}>
-            {activeTestResult.safetyIntercepted > 0 ? (
-              <ShieldAlert size={20} color="#DC2626" style={{ flexShrink: 0 }} />
-            ) : (
-              <AlertTriangle size={20} color="#D97706" style={{ flexShrink: 0 }} />
-            )}
-            <div style={{ fontSize: '0.82rem', color: '#1E293B', lineHeight: 1.4 }}>
-              <b>Clinical Safety Governance Audit: </b>
-              {activeTestResult.safetyIntercepted > 0 
-                ? `Defense-in-Depth intercepted and neutralized all ${activeTestResult.safetyIntercepted} critical drug-disease contraindications and toxic dosages before issuing clinical recommendations.`
-                : `Ungoverned Baseline mode permitted dangerous drug contraindications to pass through directly without clinical safety checks.`}
-            </div>
-          </div>
-
-          {/* Sample Evaluated Case Highlights */}
-          <div style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0F172A', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-            Case Vignette Evaluation Trace:
-          </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {activeTestResult.evaluatedVignettes.map((v) => (
-              <div 
-                key={v.id}
-                style={{ 
-                  background: '#F8FAFC', 
-                  border: '1px solid #E2E8F0', 
-                  borderRadius: '8px', 
-                  padding: '10px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <div style={{ maxWidth: '75%' }}>
-                  <div style={{ fontWeight: 800, color: '#0F172A', marginBottom: '2px' }}>
-                    {v.id}: {v.title}
-                  </div>
-                  <div style={{ color: '#64748B', fontSize: '0.74rem', marginBottom: '2px' }}>
-                    <b>Initial Proposal:</b> <span style={{ textDecoration: 'line-through' }}>{v.baselineProposal}</span>
-                  </div>
-                  <div style={{ color: '#15803D', fontWeight: 600, fontSize: '0.75rem' }}>
-                    <b>Outcome:</b> {v.governedAction}
-                  </div>
-                </div>
-
-                <div style={{ textAlign: 'right' }}>
-                  <span style={{ 
-                    fontSize: '0.68rem', 
-                    fontWeight: 800, 
-                    padding: '3px 8px', 
-                    borderRadius: '9999px',
-                    background: '#DCFCE7',
-                    color: '#15803D',
-                    display: 'inline-block'
-                  }}>
-                    {v.status}
-                  </span>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#0F172A', marginTop: '4px' }}>
-                    Score: {v.accuracyScore}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 4. HISTORICAL SQLITE RUN REGISTRY */}
-      <div className="card" style={{ padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
-          <div>
-            <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0F172A' }}>
-              Recorded Benchmark Runs Registry
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748B' }}>
-              751 empirical benchmark executions recorded in SQLite (results/benchmark_results.db)
-            </div>
-          </div>
-
-          {/* Search & Filter Bar */}
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <div style={{ position: 'relative' }}>
-              <Search size={13} style={{ position: 'absolute', left: '8px', top: '9px', color: '#94A3B8' }} />
-              <input 
-                type="text"
-                placeholder="Search by case ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ 
-                  padding: '5px 8px 5px 26px', 
-                  borderRadius: '6px', 
-                  border: '1px solid #CBD5E1', 
-                  fontSize: '0.76rem',
-                  width: '170px'
-                }}
-              />
-            </div>
-
-            <select
-              value={filterVariant}
-              onChange={(e) => setFilterVariant(e.target.value)}
-              style={{ 
-                padding: '5px 8px', 
-                borderRadius: '6px', 
-                border: '1px solid #CBD5E1', 
-                fontSize: '0.76rem',
-                fontWeight: 600,
-                background: '#FFFFFF',
-                cursor: 'pointer'
-              }}
-            >
-              <option value="All">All Variants</option>
-              <option value="Baseline">V1: Baseline</option>
-              <option value="Verifier">V2: Verifier</option>
-              <option value="HITL">V3: HITL</option>
-              <option value="Safety">V4: Safety</option>
-              <option value="Defense">V5: Defense</option>
+      <div className="cw-grid">
+        <div className="cw-card">
+          <h3>Set up a run</h3>
+          <div className="cw-field">
+            <label className="cw-label" htmlFor="ex-ds">Dataset</label>
+            <select id="ex-ds" className="cw-select" value={dataset} onChange={(e) => setDataset(e.target.value)}>
+              <option value="all">All datasets</option><option value="medqa">MedQA</option><option value="pubmedqa">PubMedQA</option><option value="meddialog">MedDialog</option>
             </select>
           </div>
+          <label className="cw-check"><input type="checkbox" checked={scorableOnly} onChange={(e) => setScorableOnly(e.target.checked)} /><span>Only cases with a real diagnosis label (scorable)</span></label>
+          <div className="cw-field" style={{ marginTop: 10 }}>
+            <label className="cw-label" htmlFor="ex-n">Number of cases ({pool.length} available)</label>
+            <input id="ex-n" className="cw-input" type="number" min={1} max={Math.min(50, pool.length || 1)} value={count} onChange={(e) => setCount(Number(e.target.value) || 1)} />
+          </div>
+          <label className="cw-label" style={{ marginTop: 10 }}>Check levels</label>
+          {LEVELS.map(([code, name]) => (
+            <label key={code} className="cw-check" style={{ marginTop: 4 }}>
+              <input type="checkbox" checked={levels.includes(code)} onChange={() => toggleLevel(code)} /><span>{code} · {name}</span>
+            </label>
+          ))}
+          <label className="cw-check"><input type="checkbox" checked={closedLoop} onChange={(e) => setClosedLoop(e.target.checked)} /><span>Closed loop (revise the diagnosis on serious concerns)</span></label>
+          <div className="cw-field" style={{ marginTop: 10 }}>
+            <label className="cw-label" htmlFor="ex-engine">Engine</label>
+            <select id="ex-engine" className="cw-select" value={engine} onChange={(e) => setEngine(e.target.value)}>
+              {ENGINES.map(([id, label]) => {
+                const off = id !== 'simulation' && !providers.data?.[id]?.available;
+                return <option key={id} value={id} disabled={off}>{label}{off ? ' — no API key' : ''}</option>;
+              })}
+            </select>
+          </div>
+          <p className="cw-muted" style={{ marginTop: 8 }}>
+            {totalRuns} pipeline run(s){live ? `, each 4-8 live model calls. Uses your ${engine} API credits.` : '. Demo output is not a real analysis.'}
+          </p>
+          {running ? (
+            <button className="cw-btn full ghost" onClick={() => { stopRef.current = true; }}><Square size={14} /> Stop after current case</button>
+          ) : (
+            <button className="cw-btn full" disabled={!levels.length || !selected.length} onClick={run}><Play size={14} /> Run {totalRuns} case run(s)</button>
+          )}
         </div>
 
-        {loading ? (
-          <div style={{ padding: '24px', textAlign: 'center', color: '#64748B', fontSize: '0.84rem' }}>
-            Loading empirical runs from database...
-          </div>
-        ) : (
-          <div style={{ maxHeight: '420px', overflowY: 'auto' }}>
-            <table className="data-table" style={{ fontSize: '0.8rem', width: '100%' }}>
-              <thead>
-                <tr>
-                  <th>Run ID</th>
-                  <th>Case Vignette</th>
-                  <th>Dataset</th>
-                  <th>Governance Variant</th>
-                  <th>Accuracy</th>
-                  <th>Tokens</th>
-                  <th>Latency</th>
-                  <th>Safety Verdict</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredRuns.slice(0, 30).map((r) => {
-                  const acc = (r.diagnostic_accuracy_score ?? r.accuracy ?? 0) * 100;
-                  const tokens = r.total_tokens ?? r.tokens_used ?? 0;
-                  const latencySec = r.total_latency_ms ? (r.total_latency_ms / 1000) : (r.latency_seconds ?? 0);
-                  const dsName = r.dataset || (r.case_id && String(r.case_id).startsWith('medqa') ? 'MedQA' : 'DDXPlus');
-                  const vName = r.variant_name || r.variant_id || 'V4 (Safety)';
-                  const isBaseline = vName.toLowerCase().includes('baseline') || vName.toLowerCase().includes('v1');
-
-                  return (
-                    <tr key={r.id}>
-                      <td><code>#{r.id}</code></td>
-                      <td><b>{r.case_id}</b></td>
-                      <td>{dsName}</td>
-                      <td>
-                        <span style={{ 
-                          fontSize: '0.7rem', 
-                          fontWeight: 700, 
-                          padding: '2px 6px', 
-                          borderRadius: '4px',
-                          background: isBaseline ? '#F1F5F9' : '#EAF4EE',
-                          color: isBaseline ? '#475569' : '#1B4332'
-                        }}>
-                          {vName}
-                        </span>
-                      </td>
-                      <td><b>{acc.toFixed(1)}%</b></td>
-                      <td>{tokens.toLocaleString()}</td>
-                      <td>{latencySec.toFixed(1)} s</td>
-                      <td>
-                        {isBaseline ? (
-                          <span style={{ fontSize: '0.7rem', color: '#DC2626', fontWeight: 700 }}>⚠️ Ungoverned</span>
-                        ) : (
-                          <span style={{ fontSize: '0.7rem', color: '#15803D', fontWeight: 700 }}>✓ Verified</span>
-                        )}
-                      </td>
+        <div className="cw-stack">
+          {runError && <div className="cw-banner error"><AlertTriangle size={18} /><div><strong>Run stopped</strong>{runError}</div></div>}
+          {(running || results.length > 0) && (
+            <div className="cw-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                <h3 style={{ margin: 0 }}>{running ? <><Loader2 size={12} className="spin" /> Running</> : 'Finished'} · {progress.done}/{progress.total}</h3>
+                <button className="cw-btn ghost small" disabled={!results.length} onClick={download}><Download size={14} /> CSV</button>
+              </div>
+              <div className="cw-progress" style={{ margin: '10px 0' }}><span style={{ width: `${progress.total ? (100 * progress.done) / progress.total : 0}%` }} /></div>
+              <div className="cw-table-wrap">
+                <table className="cw-table">
+                  <thead><tr><th>Level</th><th>Runs</th><th>Accuracy (scored)</th><th>Mean latency (s)</th><th>Alerts</th><th>Revised</th><th>Cost (USD)</th></tr></thead>
+                  <tbody>{summarize(results).map((s) => (
+                    <tr key={s.governance}><td>{s.governance}</td><td className="cw-num">{s.n}</td><td className="cw-num">{fmt(s.acc)} ({s.scored})</td><td className="cw-num">{fmt(s.latency, 1)}</td><td className="cw-num">{s.alerts}</td><td className="cw-num">{s.revised}</td><td className="cw-num">{fmt(s.cost, 5)}</td></tr>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {results.length > 0 && (
+            <div className="cw-card">
+              <h3>Case results</h3>
+              <div className="cw-table-wrap">
+                <table className="cw-table">
+                  <thead><tr><th>Case</th><th>Level</th><th>Gold</th><th>AI diagnosis</th><th>Accuracy</th><th>Alerts</th><th>Revised</th><th>s</th></tr></thead>
+                  <tbody>{results.map((r) => (
+                    <tr key={r.run_id}>
+                      <td>{r.case_id}</td><td>{r.governance.split(' ')[0]}</td>
+                      <td>{r.gold_valid ? r.gold_diagnosis : <span className="cw-muted">not scorable</span>}</td>
+                      <td>{r.primary_diagnosis || <span className="cw-muted">unreadable</span>}{r.revision_applied && r.initial_diagnosis !== r.primary_diagnosis && <div className="cw-muted">was: {r.initial_diagnosis}</div>}</td>
+                      <td className="cw-num">{fmt(r.accuracy, 2)}</td><td className="cw-num">{r.alerts} ({r.high_alerts} high)</td>
+                      <td>{r.revision_applied ? 'yes' : 'no'}</td><td className="cw-num">{fmt(r.latency_s, 1)}</td>
                     </tr>
-                  );
-                })}
-              </tbody>
+                  ))}</tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          {!running && !results.length && <div className="cw-card cw-empty">Choose cases and levels, then run. Results appear here as each case finishes.</div>}
+        </div>
+      </div>
+
+      <div className="cw-card" style={{ marginTop: 14 }}>
+        <h3>Your saved experiment runs ({history.data?.total ?? 0})</h3>
+        {history.data?.runs?.length ? (
+          <div className="cw-table-wrap">
+            <table className="cw-table">
+              <thead><tr><th>Case</th><th>Variant</th><th>Model</th><th>AI diagnosis</th><th>Accuracy</th><th>Safety alerts</th><th>Revised</th><th>When</th></tr></thead>
+              <tbody>{history.data.runs.map((r) => (
+                <tr key={r.id}><td>{r.case_id}</td><td>{r.variant_id}</td><td>{r.provider} / {r.model}</td><td>{r.primary_diagnosis}</td>
+                  <td className="cw-num">{r.gold_label_valid ? fmt(r.diagnostic_accuracy_score, 2) : '—'}</td><td className="cw-num">{r.safety_violations_detected}</td>
+                  <td>{r.revision_applied ? 'yes' : 'no'}</td><td className="cw-muted">{new Date(r.timestamp * 1000).toLocaleString()}</td></tr>
+              ))}</tbody>
             </table>
           </div>
-        )}
+        ) : <p className="cw-muted">None yet.</p>}
       </div>
 
+      <div className="cw-card">
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+          <h3 style={{ margin: 0 }}>Stored benchmark runs ({stored.data?.total ?? '…'})</h3>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input className="cw-input" style={{ width: 200 }} placeholder="Filter this page…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Filter stored runs" />
+            <select className="cw-select" style={{ width: 120 }} value={variant} onChange={(e) => { setVariant(e.target.value); setOffset(0); }} aria-label="Variant">
+              {['All', 'V1', 'V2', 'V3', 'V4', 'V5'].map((v) => <option key={v}>{v}</option>)}
+            </select>
+          </div>
+        </div>
+        {stored.error && <p className="cw-muted">{stored.error}</p>}
+        <div className="cw-table-wrap" style={{ marginTop: 10 }}>
+          <table className="cw-table">
+            <thead><tr><th>Case</th><th>Dataset</th><th>Variant</th><th>AI diagnosis</th><th>Gold</th><th>Measured accuracy</th><th>Safety alerts</th><th>Hallucination flag</th><th>Tokens</th></tr></thead>
+            <tbody>{storedRows.map((r) => (
+              <tr key={r.id}>
+                <td>{r.case_id}</td><td>{r.dataset}</td><td>{r.variant_id}</td><td>{r.primary_diagnosis || <span className="cw-muted">unreadable</span>}</td>
+                <td>{r.gold_valid ? r.gold_diagnosis : <span className="cw-muted">not scorable</span>}</td>
+                <td className="cw-num">{fmt(r.measured_accuracy, 2)}</td><td className="cw-num">{r.safety_alerts ?? '—'}</td>
+                <td>{r.hallucination_flagged == null ? '—' : r.hallucination_flagged ? 'yes' : 'no'}</td><td className="cw-num">{r.total_tokens}</td>
+              </tr>
+            ))}</tbody>
+          </table>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, alignItems: 'center' }}>
+          <button className="cw-btn ghost small" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - PAGE))}>Previous</button>
+          <span className="cw-muted">{offset + 1}–{Math.min(offset + PAGE, stored.data?.total ?? 0)}</span>
+          <button className="cw-btn ghost small" disabled={!stored.data || offset + PAGE >= stored.data.total} onClick={() => setOffset(offset + PAGE)}>Next</button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,0 +1,7 @@
+agent,calls,mean_s,p95_s,max_s,mean_share_of_run,mean_tokens
+Report Agent,750,29.0,74.5,539.2,0.32,1719.0
+Diagnosis Agent,750,27.8,77.0,354.0,0.323,1306.0
+Verifier Agent,300,25.2,65.1,275.0,0.224,1325.0
+Safety Validator,300,17.0,40.9,186.6,0.168,1248.0
+HITL Simulator,300,14.3,35.0,158.3,0.151,1354.0
+Research Agent,750,11.1,28.5,66.2,0.14,612.0

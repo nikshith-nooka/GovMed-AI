@@ -33,3 +33,30 @@ results/*_backup.db
 Thumbs.db
 .idea/
 .vscode/
+
+# Local tooling, caches and scratch work
+.claude/
+.kilo/
+graphify-out/
+scratch/
+tectonic
+tectonic_install.sh
+
+# LaTeX build artifacts and draft assets kept outside paper/
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.synctex*
+/format/
+/figures/
+
+# Runtime and test databases (the main DB and its original backup are tracked)
+/benchmark_results.db
+results/seed_*.db
+results/seeded_*.db
+results/validation_judge.db
+results/ui_experiments.db
+!results/benchmark_results.db.bak
+
+# Unrelated documents
+62_Deep_Learning-Based_Detection_of_Plastic_Waste_in_Ocean_Images_for_Environmental_Monitoring.pdf

@@ -2,27 +2,34 @@ import React, { useState, useEffect } from 'react';
 import Sidebar from './components/Sidebar';
 import TopNavbar from './components/TopNavbar';
 import Dashboard from './pages/Dashboard';
-import RunClinicalCase from './pages/RunClinicalCase';
 import ClinicalCases from './pages/ClinicalCases';
 import AgentPipeline from './pages/AgentPipeline';
 import ResultsComparison from './pages/ResultsComparison';
 import Experiments from './pages/Experiments';
 import Reports from './pages/Reports';
+import ClinicianWorkspace from './pages/ClinicianWorkspace';
+import ClinicianReview from './pages/ClinicianReview';
+import ResearchFindings from './pages/ResearchFindings';
 
 const PAGE_TO_PATH = {
-  'dashboard': '/',
-  'run-case': '/run-case',
-  'cases': '/clinical-cases',
-  'pipeline': '/pipeline',
-  'results': '/results',
-  'experiments': '/experiments',
-  'reports': '/reports',
+  dashboard: '/',
+  clinician: '/clinician',
+  review: '/review',
+  findings: '/findings',
+  cases: '/clinical-cases',
+  pipeline: '/pipeline',
+  results: '/results',
+  experiments: '/experiments',
+  reports: '/reports',
 };
 
 const PATH_TO_PAGE = {
   '/': 'dashboard',
   '/dashboard': 'dashboard',
-  '/run-case': 'run-case',
+  '/clinician': 'clinician',
+  '/review': 'review',
+  '/findings': 'findings',
+  '/run-case': 'clinician',
   '/clinical-cases': 'cases',
   '/cases': 'cases',
   '/pipeline': 'pipeline',
@@ -35,19 +42,46 @@ const PATH_TO_PAGE = {
   '/reports': 'reports',
 };
 
-export default function App() {
-  const getPageFromLocation = () => {
-    if (typeof window === 'undefined') return 'dashboard';
-    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-    return PATH_TO_PAGE[path] || 'dashboard';
-  };
+function pageFromLocation() {
+  if (typeof window === 'undefined') return 'dashboard';
+  const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+  return PATH_TO_PAGE[path] || 'dashboard';
+}
 
-  const [currentPage, setCurrentPageState] = useState(getPageFromLocation);
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('ErrorBoundary caught:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="card" style={{ padding: '30px', margin: '20px', textAlign: 'center' }}>
+          <h3 style={{ color: '#dc2626', marginBottom: '10px' }}>This page hit an error</h3>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{this.state.error?.message || 'An unexpected rendering error occurred.'}</p>
+          <button className="btn btn-primary" onClick={() => { window.location.href = '/'; }}>Return to Dashboard</button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+export default function App() {
+  const [currentPage, setCurrentPageState] = useState(pageFromLocation);
   const [stats, setStats] = useState(null);
   const [cases, setCases] = useState([]);
+  const [casesError, setCasesError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [prefill, setPrefill] = useState(null);
+  const [caseQuery, setCaseQuery] = useState('');
 
-  // Synchronized page change with browser URL
   const setCurrentPage = (pageKey) => {
     setCurrentPageState(pageKey);
     const targetPath = PAGE_TO_PATH[pageKey] || '/';
@@ -56,94 +90,72 @@ export default function App() {
     }
   };
 
+  const openInWorkspace = (fields) => {
+    setPrefill({ ...fields, token: Date.now() });
+    setCurrentPage('clinician');
+  };
+
+  const searchCases = (query) => {
+    setCaseQuery(query);
+    setCurrentPage('cases');
+  };
+
   useEffect(() => {
-    // Listen to browser Back / Forward buttons
-    const handlePopState = () => {
-      setCurrentPageState(getPageFromLocation());
-    };
+    const handlePopState = () => setCurrentPageState(pageFromLocation());
     window.addEventListener('popstate', handlePopState);
 
-    // Initial URL synchronization check
-    const currentPath = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-    if (PATH_TO_PAGE[currentPath] && window.location.pathname !== (PAGE_TO_PATH[PATH_TO_PAGE[currentPath]] || '/')) {
-      window.history.replaceState({ page: PATH_TO_PAGE[currentPath] }, '', PAGE_TO_PATH[PATH_TO_PAGE[currentPath]]);
-    }
-
-    // Fetch stats
     fetch('/api/stats')
-      .then((res) => res.json())
-      .then((data) => setStats(data))
-      .catch((err) => console.warn('Using default stats:', err));
+      .then((res) => (res.ok ? res.json() : null))
+      .then(setStats)
+      .catch(() => setStats(null));
 
-    // Fetch clinical cases
     fetch('/api/cases')
-      .then((res) => res.json())
-      .then((data) => setCases(data))
-      .catch((err) => console.warn('Using default cases:', err));
+      .then(async (res) => {
+        if (!res.ok) throw new Error(`Could not load cases (${res.status})`);
+        setCases(await res.json());
+      })
+      .catch((err) => setCasesError(err.message));
 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const renderCurrentPage = () => {
     switch (currentPage) {
-      case 'dashboard':
-        return <Dashboard setCurrentPage={setCurrentPage} stats={stats} />;
-      case 'run-case':
-        return <RunClinicalCase cases={cases} />;
+      case 'clinician':
+        return <ClinicianWorkspace cases={cases} prefill={prefill} />;
+      case 'review':
+        return <ClinicianReview />;
+      case 'findings':
+        return <ResearchFindings />;
       case 'cases':
-        return <ClinicalCases cases={cases} setCurrentPage={setCurrentPage} />;
+        return <ClinicalCases cases={cases} error={casesError} initialQuery={caseQuery} openInWorkspace={openInWorkspace} />;
       case 'pipeline':
         return <AgentPipeline />;
       case 'results':
         return <ResultsComparison />;
       case 'experiments':
-        return <Experiments />;
+        return <Experiments cases={cases} />;
       case 'reports':
         return <Reports />;
       default:
-        return <Dashboard setCurrentPage={setCurrentPage} stats={stats} />;
+        return <Dashboard setCurrentPage={setCurrentPage} stats={stats} openInWorkspace={openInWorkspace} />;
     }
   };
 
-  class ErrorBoundary extends React.Component {
-    constructor(props) {
-      super(props);
-      this.state = { hasError: false, error: null };
-    }
-    static getDerivedStateFromError(error) {
-      return { hasError: true, error };
-    }
-    componentDidCatch(error, errorInfo) {
-      console.error("ErrorBoundary caught:", error, errorInfo);
-    }
-    render() {
-      if (this.state.hasError) {
-        return (
-          <div className="card" style={{ padding: '30px', margin: '20px', textAlign: 'center' }}>
-            <h3 style={{ color: '#dc2626', marginBottom: '10px' }}>⚠️ Page Encountered an Error</h3>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{this.state.error?.message || 'An unexpected rendering error occurred.'}</p>
-            <button className="btn btn-primary" onClick={() => window.location.href = '/'}>
-              Return to Dashboard
-            </button>
-          </div>
-        );
-      }
-      return this.props.children;
-    }
-  }
-
   return (
     <div className="app-layout">
-      <Sidebar 
-        currentPage={currentPage} 
-        setCurrentPage={setCurrentPage} 
+      <Sidebar
+        currentPage={currentPage}
+        setCurrentPage={setCurrentPage}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
       <main className="main-content">
-        <TopNavbar 
+        <TopNavbar
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           isSidebarOpen={sidebarOpen}
+          onSearch={searchCases}
+          onOpenReviews={() => setCurrentPage('review')}
         />
         <ErrorBoundary key={currentPage}>
           {renderCurrentPage()}

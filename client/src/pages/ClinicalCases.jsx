@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import './clinical.css';
 import { 
   Search, 
   Filter, 
@@ -15,8 +16,11 @@ import {
   Sparkles
 } from 'lucide-react';
 
-export default function ClinicalCases({ cases = [], setCurrentPage }) {
-  const [searchQuery, setSearchQuery] = useState('');
+const isScorable = (c) => !!c.gold_diagnosis && !c.gold_diagnosis.toLowerCase().startsWith('clinical diagnostic note');
+
+export default function ClinicalCases({ cases = [], error = null, initialQuery = '', openInWorkspace }) {
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
+  useEffect(() => { setSearchQuery(initialQuery); }, [initialQuery]);
   const [selectedDataset, setSelectedDataset] = useState('All');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
 
@@ -41,42 +45,52 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
     return matchesSearch && matchesDataset && matchesSpecialty;
   });
 
+  const matchesExceptSpecialty = (c) => {
+    const q = searchQuery.toLowerCase();
+    const inSearch = !q || [c.question, c.gold_diagnosis, c.id].some((f) => f && f.toLowerCase().includes(q));
+    const inDataset = selectedDataset === 'All' || c.id?.startsWith(selectedDataset.toLowerCase());
+    return inSearch && inDataset;
+  };
+  const specialtyCount = (spec) => pool.filter((c) => matchesExceptSpecialty(c) && (spec === 'All' || c.specialty === spec)).length;
+  const activeFilters = [searchQuery && `search "${searchQuery}"`, selectedDataset !== 'All' && selectedDataset, selectedSpecialty !== 'All' && selectedSpecialty].filter(Boolean);
+  const clearFilters = () => { setSearchQuery(''); setSelectedDataset('All'); setSelectedSpecialty('All'); };
+
   const [activeCase, setActiveCase] = useState(filteredCases[0] || pool[0] || null);
 
   const datasets = [
     { key: 'All', label: 'All Datasets', count: pool.length },
-    { key: 'MedQA', label: 'MedQA (USMLE)', count: pool.filter(c => c.id?.startsWith('medqa')).length || 50 },
-    { key: 'PubMedQA', label: 'PubMedQA', count: pool.filter(c => c.id?.startsWith('pubmedqa')).length || 50 },
-    { key: 'MedDialog', label: 'MedDialog', count: pool.filter(c => c.id?.startsWith('meddialog')).length || 50 },
+    { key: 'MedQA', label: 'MedQA (USMLE)', count: pool.filter(c => c.id?.startsWith('medqa')).length },
+    { key: 'PubMedQA', label: 'PubMedQA', count: pool.filter(c => c.id?.startsWith('pubmedqa')).length },
+    { key: 'MedDialog', label: 'MedDialog', count: pool.filter(c => c.id?.startsWith('meddialog')).length },
   ];
 
-  const specialties = ['All', 'Cardiology', 'Nephrology', 'Rheumatology', 'Neurology', 'Pediatrics', 'Pulmonology', 'Surgery', 'Gastroenterology', 'Infectious Disease'];
+  const specialties = ['All', ...Array.from(new Set(pool.map((c) => c.specialty).filter(Boolean))).sort()];
 
-  const currentDisplayCase = activeCase || filteredCases[0] || pool[0];
+  const currentDisplayCase = (activeCase && filteredCases.includes(activeCase)) ? activeCase : filteredCases[0];
 
   return (
     <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '16px 20px 80px' }}>
       
       {/* 1. HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
         <div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#EAF4EE', border: '1px solid #D1E7DD', padding: '4px 12px', borderRadius: '9999px', marginBottom: '8px' }}>
             <Database size={13} color="#1B4332" />
             <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B4332', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Full Knowledge Base & Dataset Pool
             </span>
-            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>· {pool.length} Validated Cases Logged</span>
+            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>· {pool.length} cases · {pool.filter(isScorable).length} with a real diagnosis label</span>
           </div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
             Clinical Cases Dataset Explorer
           </h2>
           <p style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '4px', marginBottom: 0 }}>
-            Explore all 150 standardized clinical cases across USMLE MedQA, PubMedQA, and MedDialog used in multi-agent governance benchmarks.
+            Browse the {pool.length} benchmark cases (MedQA, PubMedQA, MedDialog). Cases marked "not scorable" have a templated gold label, not a diagnosis.{error ? ` Could not load cases: ${error}` : ''}
           </p>
         </div>
 
         {/* Dataset Filter Tabs */}
-        <div style={{ display: 'flex', background: '#F1F5F9', padding: '4px', borderRadius: '8px', gap: '4px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', background: '#F1F5F9', padding: '4px', borderRadius: '8px', gap: '4px' }}>
           {datasets.map((d) => (
             <button
               key={d.key}
@@ -108,7 +122,8 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
           <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
             <Search size={15} style={{ position: 'absolute', left: '10px', top: '11px', color: '#94A3B8' }} />
             <input 
-              type="text"
+              type="search"
+              aria-label="Search cases"
               placeholder="Search by diagnosis, symptoms, or case ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -124,7 +139,7 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
           </div>
 
           {/* Specialty Filter Pills */}
-          <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', padding: '2px 0' }}>
+          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '2px 0' }}>
             {specialties.map((spec) => (
               <button
                 key={spec}
@@ -142,7 +157,7 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
                   whiteSpace: 'nowrap'
                 }}
               >
-                {spec}
+                {spec} ({specialtyCount(spec)})
               </button>
             ))}
           </div>
@@ -150,19 +165,27 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
       </div>
 
       {/* 3. 2-COLUMN VIEW: FULL 150 CASE LIST (LEFT) & FULL EHR INSPECTOR (RIGHT) */}
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '18px', alignItems: 'start' }}>
+      <div className="cases-split" style={{ display: 'grid', gap: '18px', alignItems: 'start' }}>
         
         {/* LEFT COLUMN: LIST OF ALL CASES (PAGINATED SCROLLABLE) */}
         <div className="card" style={{ padding: '14px', borderRadius: '12px', border: '1px solid #E2E8F0', maxHeight: '720px', overflowY: 'auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #F1F5F9' }}>
             <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
-              {filteredCases.length} Clinical Cases
+              {filteredCases.length} Clinical Cases{activeFilters.length > 0 && <button onClick={clearFilters} style={{ marginLeft: '8px', border: 0, background: 'none', color: '#2D6A4F', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer' }}>Clear filters</button>}
             </span>
             <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
               Select case to inspect
             </span>
           </div>
 
+          {filteredCases.length === 0 && (
+            <div style={{ padding: '18px 6px', fontSize: '0.84rem', color: '#475569' }}>
+              No cases match {activeFilters.join(' + ') || 'the current filters'}.
+              <div style={{ marginTop: '10px' }}>
+                <button className="btn btn-primary" onClick={clearFilters} style={{ padding: '6px 12px', fontSize: '0.78rem', borderRadius: '6px', cursor: 'pointer' }}>Clear all filters</button>
+              </div>
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {filteredCases.map((c, idx) => {
               const isSelected = (currentDisplayCase?.id) === (c.id);
@@ -208,7 +231,7 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
                   </div>
 
                   <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', marginBottom: '4px', lineHeight: 1.3 }}>
-                    {c.gold_diagnosis || 'Clinical Vignette'}
+                    {c.gold_diagnosis || 'No gold label'}{!isScorable(c) && ' · not scorable'}
                   </div>
 
                   <p style={{ fontSize: '0.74rem', color: '#64748B', margin: 0, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -242,7 +265,7 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
                   </span>
                 </div>
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  {currentDisplayCase.gold_diagnosis || 'Clinical Case Assessment'}
+                  {currentDisplayCase.gold_diagnosis || 'No gold label'}{!isScorable(currentDisplayCase) && ' (templated label, not scorable)'}
                 </h3>
               </div>
             </div>
@@ -275,8 +298,8 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
                 Diagnostic Assessment & Multi-Agent Deliberation Note:
               </div>
               <div style={{ background: '#EAF4EE', border: '1px solid #D1E7DD', borderRadius: '8px', padding: '12px 16px', fontSize: '0.82rem', color: '#1B4332', lineHeight: 1.5 }}>
-                <b>Guideline Grounding: </b>
-                {currentDisplayCase.clinical_rationale || 'Evaluated against peer-reviewed clinical guidelines and safety contraindication checks.'}
+                <b>Dataset rationale: </b>
+                {currentDisplayCase.clinical_rationale || 'No rationale recorded for this case.'}
               </div>
             </div>
 
@@ -284,13 +307,10 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
             <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
               <button 
                 className="btn btn-primary"
-                onClick={() => {
-                  if (setCurrentPage) {
-                    setCurrentPage('run-case');
-                  } else {
-                    window.location.href = '/run-case';
-                  }
-                }}
+                onClick={() => openInWorkspace?.({
+                  chief_complaint: currentDisplayCase.question.split(/(?<=[.?!])\s/)[0].slice(0, 160),
+                  hpi: currentDisplayCase.question.slice(0, 8000),
+                })}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -304,7 +324,7 @@ export default function ClinicalCases({ cases = [], setCurrentPage }) {
                 }}
               >
                 <Stethoscope size={15} />
-                <span>Test in Clinical Copilot →</span>
+                <span>Open in Clinician Workspace →</span>
               </button>
             </div>
 

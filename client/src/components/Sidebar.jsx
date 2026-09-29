@@ -1,22 +1,26 @@
 import { 
   LayoutDashboard, 
-  Stethoscope,
   ClipboardList, 
   GitFork, 
   BarChart2, 
   FileSpreadsheet, 
-  FileText 
+  FileText,
+  HeartPulse,
+  ClipboardCheck,
+  FlaskConical
 } from 'lucide-react';
 
 export default function Sidebar({ currentPage, setCurrentPage, isOpen, onClose }) {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-    { id: 'run-case', label: 'Clinical Case Runner', icon: <Stethoscope size={16} /> },
+    { id: 'clinician', label: 'Clinician Workspace', icon: <HeartPulse size={16} /> },
+    { id: 'review', label: 'Clinician Review', icon: <ClipboardCheck size={16} /> },
+    { id: 'findings', label: 'Research Findings', icon: <FlaskConical size={16} /> },
     { id: 'cases', label: 'Clinical Cases Dataset', icon: <ClipboardList size={16} /> },
     { id: 'pipeline', label: 'Agent Pipeline & Governance', icon: <GitFork size={16} /> },
     { id: 'results', label: 'Benchmark Analytics', icon: <BarChart2 size={16} /> },
-    { id: 'experiments', label: 'Experiments & Sweeps', icon: <FileSpreadsheet size={16} /> },
-    { id: 'reports', label: 'Reports & IEEE Export', icon: <FileText size={16} /> },
+    { id: 'experiments', label: 'Experiments', icon: <FileSpreadsheet size={16} /> },
+    { id: 'reports', label: 'Reports & LaTeX Export', icon: <FileText size={16} /> },
   ];
 
   const handleSelect = (id) => {
@@ -52,10 +56,10 @@ export default function Sidebar({ currentPage, setCurrentPage, isOpen, onClose }
         <div className="sidebar-footer">
           <div className="sidebar-footer-title">Datasets Ingested</div>
           <div className="sidebar-footer-item">
-            <span>📦</span> MedQA (USMLE 150 Cases)
+            <span>📦</span> 150 cases: MedQA, PubMedQA, MedDialog (50 each)
           </div>
           <div className="sidebar-footer-item">
-            <span>📦</span> DDXPlus & PubMedQA
+            <span>⚠️</span> Decision support only, not a diagnosis
           </div>
           <div className="sidebar-quote">
             "Responsible AI for safer clinical decision-making."

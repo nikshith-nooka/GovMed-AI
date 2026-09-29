@@ -1,0 +1,32 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrrrrr}
+\toprule
+metric & comparison & n\_pairs & mean\_diff & ci95\_low & ci95\_high & wilcoxon\_p \\
+\midrule
+accuracy & V2 - V1 & 71 & -0.004 & -0.013 & 0.000 & 0.317 \\
+accuracy & V3 - V1 & 71 & -0.004 & -0.013 & 0.000 & 0.317 \\
+accuracy & V4 - V1 & 71 & -0.018 & -0.051 & 0.000 & 0.180 \\
+accuracy & V5 - V1 & 71 & -0.018 & -0.051 & 0.000 & 0.180 \\
+detector\_neutral\_quality & V2 - V1 & 150 & -0.001 & -0.004 & 0.000 & 0.317 \\
+detector\_neutral\_quality & V3 - V1 & 150 & -0.001 & -0.004 & 0.000 & 0.317 \\
+detector\_neutral\_quality & V4 - V1 & 150 & -0.006 & -0.018 & 0.000 & 0.180 \\
+detector\_neutral\_quality & V5 - V1 & 150 & -0.010 & -0.024 & 0.001 & 0.144 \\
+reported\_quality & V2 - V1 & 150 & -0.038 & -0.045 & -0.030 & 0.000 \\
+reported\_quality & V3 - V1 & 150 & -0.001 & -0.004 & 0.003 & 1.000 \\
+reported\_quality & V4 - V1 & 150 & -0.131 & -0.140 & -0.121 & 0.000 \\
+reported\_quality & V5 - V1 & 150 & -0.172 & -0.184 & -0.160 & 0.000 \\
+tokens & V2 - V1 & 150 & 1884.760 & 1826.752 & 1941.475 & 0.000 \\
+tokens & V3 - V1 & 150 & 1583.287 & 1550.200 & 1617.421 & 0.000 \\
+tokens & V4 - V1 & 150 & 1744.080 & 1705.599 & 1782.444 & 0.000 \\
+tokens & V5 - V1 & 150 & 5307.393 & 5221.774 & 5397.467 & 0.000 \\
+e2e\_latency\_s & V2 - V1 & 150 & 40.836 & 32.750 & 49.607 & 0.000 \\
+e2e\_latency\_s & V3 - V1 & 150 & 19.471 & 13.981 & 24.668 & 0.000 \\
+e2e\_latency\_s & V4 - V1 & 150 & 25.755 & 19.545 & 32.078 & 0.000 \\
+e2e\_latency\_s & V5 - V1 & 150 & 72.775 & 60.374 & 85.992 & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{Paired differences vs. V1 with bootstrap 95\% CI and Wilcoxon signed-rank p.}
+\label{tab:rigor_paired_tests}
+\end{table}

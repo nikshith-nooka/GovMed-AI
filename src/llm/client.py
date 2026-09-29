@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import os
 import time
 import json
@@ -30,7 +31,13 @@ class LLMResponse:
     raw_response: Dict[str, Any] = field(default_factory=dict)
 
 
+class LiveInferenceUnavailable(RuntimeError):
+    """Raised instead of substituting simulated output when allow_mock_fallback=False."""
+
+
 class UnifiedLLMClient:
+    _key_cursor = itertools.count()
+
     """Unified LLM client with automatic fallbacks and offline simulation mode."""
 
     # Pricing per 1M tokens in USD
@@ -53,10 +60,17 @@ class UnifiedLLMClient:
         model: Optional[str] = None,
         force_mock: bool = False,
         timeout_seconds: float = 45.0,
+        allow_mock_fallback: bool = True,
+        reasoning_effort: Optional[str] = None,
     ):
         self.provider = provider.lower()
+        # "low" | "medium" | "high" for reasoning models on Groq (gpt-oss); fewer reasoning tokens = faster.
+        self.reasoning_effort = reasoning_effort
         self.force_mock = force_mock
         self.timeout_seconds = timeout_seconds
+        # False = raise instead of silently answering with simulated output (use for clinical UI and benchmarks).
+        self.allow_mock_fallback = allow_mock_fallback
+        self.mock_fallbacks = 0
 
         # Configure provider specific endpoints and keys
         if self.provider == "groq":
@@ -99,6 +113,8 @@ class UnifiedLLMClient:
             self.force_mock = True
 
         # If key is missing, automatically fallback to mock mode with warning
+        if not self.api_key and not self.force_mock and not self.allow_mock_fallback:
+            raise LiveInferenceUnavailable(f"No API key configured for provider '{self.provider}'.")
         if not self.api_key and not self.force_mock:
             logger.warning(
                 f"No API key found for provider '{self.provider}'. "
@@ -131,12 +147,13 @@ class UnifiedLLMClient:
             time.sleep(3.2)
 
         start_time = time.time()
-        # Round-robin across pooled keys for even token/RPM distribution
+        # Round-robin across pooled keys; the cursor is process-wide so separate requests
+        # (each with a fresh client) spread load instead of all starting on key 0.
         if self.provider == "groq" and self.groq_keys:
-            self.current_key_idx = (self.current_key_idx + 1) % len(self.groq_keys)
+            self.current_key_idx = next(UnifiedLLMClient._key_cursor) % len(self.groq_keys)
             active_key = self.groq_keys[self.current_key_idx]
         elif self.provider in ("nvidia", "nim") and getattr(self, "nvidia_keys", None):
-            self.current_key_idx = (self.current_key_idx + 1) % len(self.nvidia_keys)
+            self.current_key_idx = next(UnifiedLLMClient._key_cursor) % len(self.nvidia_keys)
             active_key = self.nvidia_keys[self.current_key_idx]
         else:
             active_key = self.api_key
@@ -154,6 +171,8 @@ class UnifiedLLMClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
+        if self.reasoning_effort and self.provider == "groq" and "gpt-oss" in target_model:
+            payload["reasoning_effort"] = self.reasoning_effort
 
         max_retries = 10
         last_exception = None
@@ -164,10 +183,12 @@ class UnifiedLLMClient:
                     resp = client.post(self.base_url, headers=headers, json=payload)
                     if resp.status_code == 429:
                         raw_retry = float(resp.headers.get("retry-after", 6 if self.provider == "gemini" else 2))
-                        retry_after = max(int(raw_retry), 6 if self.provider == "gemini" else 2)
-                        
-                        # Rotate across pooled Groq API keys
-                        if self.provider == "groq" and len(self.groq_keys) > 1:
+                        retry_after = min(max(int(raw_retry), 6 if self.provider == "gemini" else 2), 30)
+                        last_exception = RuntimeError(f"rate limited (HTTP 429) by {self.provider}: {resp.text[:200]}")
+
+                        # Rotate once through pooled Groq keys, then wait for the quota window.
+                        pool = len(self.groq_keys) if self.provider == "groq" else 0
+                        if pool > 1 and (attempt + 1) % pool != 0:
                             self.current_key_idx = (self.current_key_idx + 1) % len(self.groq_keys)
                             next_key = self.groq_keys[self.current_key_idx]
                             headers["Authorization"] = f"Bearer {next_key}"
@@ -216,9 +237,107 @@ class UnifiedLLMClient:
                     logger.error(f"Live API call to {self.provider} failed after {max_retries} attempts: {e}")
 
         # If live retries were completely exhausted, fall back gracefully rather than crashing with None
+        if not self.allow_mock_fallback:
+            raise LiveInferenceUnavailable(f"Live call to {self.provider} failed: {last_exception}")
+        self.mock_fallbacks += 1
         logger.warning(f"All live API attempts exhausted ({last_exception}). Engaging resilient clinical fallback generator.")
         return self._mock_generate(messages, target_model, failure_reason=str(last_exception or "Rate limit exhausted"))
 
+
+    # Case-content aware mock profiles. Each key maps recognized clinical
+    # keywords to a per-specialty profile so the deterministic mock generator
+    # returns plausible, coherent data matching the input case (not just cardiac).
+    SPECIALTY_MOCK_PROFILES = {
+        "rheumatology": {
+            "label": "Acute Gouty Arthritis",
+            "reasoning": "Acute monoarticular arthritis with an erythematous, exquisitely tender first MTP joint is the classic gout flare presentation; polarizing microscopy with negative birefringent needle-shaped crystals confirms monosodium urate deposition.",
+            "differentials": [
+                {"rank": 1, "condition": "Acute Gouty Arthritis", "probability": 0.70, "justification": "Monoarticular podagra with elevated serum urate and characteristic crystals."},
+                {"rank": 2, "condition": "Septic Arthritis", "probability": 0.15, "justification": "Acute hot swollen joint must always be aspirated to rule out infection."},
+                {"rank": 3, "condition": "Pseudogout (CPPD)", "probability": 0.10, "justification": "Calcium pyrophosphate deposition can mimic the same flare pattern."},
+            ],
+            "tests": ["Joint aspiration with polarized light microscopy", "Serum uric acid", "Synovial fluid culture & Gram stain"],
+            "notes": "All extracted joint findings, serum urate, and crystal analysis accurately reflect the rheumatology vignette.",
+            "safety_flags_checked": ["Renal function before NSAID use", "Screen for infection before steroids"],
+            "plan": "NSAID or intra-articular corticosteroid (renal impairment: prefer steroids) plus colchicine or IL-1 inhibition as indicated.",
+        },
+        "neurology": {
+            "label": "Acute Peripheral Vestibulopathy / Vestibular Neuritis",
+            "reasoning": "Acute-onset rotational vertigo with nausea, without hearing loss or focal neurologic deficits, and a negative HINTS central-sign screen is consistent with vestibular neuritis rather than central posterior-circulation stroke.",
+            "differentials": [
+                {"rank": 1, "condition": "Vestibular Neuritis (Peripheral Vestibulopathy)", "probability": 0.62, "justification": "Acute vertigo with normal HINTS head-impulse nystagmus skew and no focal signs."},
+                {"rank": 2, "condition": "Posterior Circulation Stroke / Cerebellar Infarct", "probability": 0.22, "justification": "Central vertigo must be excluded; subtle ataxia or gaze-holding nystagmus is a red flag."},
+                {"rank": 3, "condition": "Benign Paroxysmal Positional Vertigo (BPPV)", "probability": 0.12, "justification": "Positional, brief vertigo on head movement; diagnosed with Dix-Hallpike."},
+            ],
+            "tests": ["HINTS examination", "Dix-Hallpike positional testing", "MRI/MRA brain if central signs"],
+            "notes": "All extracted vestibular symptoms, HINTS findings, and absence of focal deficits accurately reflect the neurology vignette.",
+            "safety_flags_checked": ["Rule out central stroke before vestibular suppressants", "Fall risk assessment"],
+            "plan": "Vestibular suppressants (meclizine) for symptoms plus vestibular rehabilitation; urgent neuroimaging if any central HINTS finding.",
+        },
+        "cardiology": {
+            "label": "Acute Coronary Syndrome (Non-ST elevation or STEMI)",
+            "reasoning": "Exertional retrosternal chest pressure with diaphoresis and cardiovascular risk factors is the archetypal ACS presentation; troponin elevation and ischemic ECG changes support acute myocardial ischemia.",
+            "differentials": [
+                {"rank": 1, "condition": "Acute Coronary Syndrome", "probability": 0.65, "justification": "Substernal pain, diaphoresis, and cardiovascular risk factors."},
+                {"rank": 2, "condition": "Acute Pulmonary Embolism", "probability": 0.20, "justification": "Tachycardia and acute dyspnea without prior warning."},
+                {"rank": 3, "condition": "Aortic Dissection", "probability": 0.10, "justification": "Hypertensive patient presenting with severe retrosternal distress."},
+            ],
+            "tests": ["12-lead ECG", "Serial Troponin-I", "Chest Radiograph", "D-dimer"],
+            "notes": "All extracted cardiac biomarkers and vitals accurately reflect the cardiology vignette.",
+            "safety_flags_checked": ["Aortic dissection ruled out before heparinization", "Normal renal clearance"],
+            "plan": "Aspirin + heparin protocol, serial troponins, urgent cardiology consult.",
+        },
+        "gastroenterology": {
+            "label": "Acute Appendicitis",
+            "reasoning": "Periumbilical pain migrating to the right lower quadrant with anorexia, nausea, and localized McBurney tenderness is the classic appendicitis presentation; imaging and lab support confirm the diagnosis.",
+            "differentials": [
+                {"rank": 1, "condition": "Acute Appendicitis", "probability": 0.70, "justification": "Migratory RLQ pain with McBurney point tenderness and elevated inflammatory markers."},
+                {"rank": 2, "condition": "Acute Gastroenteritis", "probability": 0.10, "justification": "Diarrhea and nausea can precede or mimic appendicitis."},
+                {"rank": 3, "condition": "Mesenteric Lymphadenitis / Diverticulitis", "probability": 0.10, "justification": "Right-lower-quadrant inflammatory process in the differential."},
+            ],
+            "tests": ["Abdominal CT with IV contrast", "Complete blood count / CRP", "Right lower quadrant ultrasound"],
+            "notes": "All extracted abdominal findings, localized tenderness, and inflammatory markers accurately reflect the GI vignette.",
+            "safety_flags_checked": ["Rule out perforation before analgesics/antibiotics", "Fluid resuscitation status"],
+            "plan": "Appendectomy consult, IV fluids, empiric broad-spectrum antibiotics (nil-by-mouth).",
+        },
+        "unmatched": {
+            "label": "Demo profile not matched (no diagnosis generated)",
+            "reasoning": "The demo generator only recognizes a few specialties by keyword and did not recognize this case. Use a live model for an actual assessment.",
+            "differentials": [
+                {"rank": 1, "condition": "Demo profile not matched (no diagnosis generated)", "probability": None,
+                 "justification": "No keyword profile matched this case."},
+            ],
+            "tests": ["Run with a live model"],
+            "notes": "Demo generator could not interpret this case.",
+            "safety_flags_checked": [],
+            "plan": "Run with a live model.",
+        },
+    }
+
+    def _extract_case_text(self, messages: List[Dict[str, str]]) -> str:
+        """Return user/task content while excluding role-defining system prompts."""
+        case_messages = [
+            str(message.get("content", ""))
+            for message in messages
+            if message.get("role", "").lower() != "system"
+        ]
+        return " ".join(case_messages or [str(message.get("content", "")) for message in messages])
+
+    def _detect_specialty(self, messages: List[Dict[str, str]]) -> str:
+        """Classify clinical case content in the messages into a specialty."""
+        case_text = self._extract_case_text(messages).lower()
+        if any(k in case_text for k in ("gout", "arthritis", "joint", "urate", "synovial", "podagra",
+                                         "birefringent", "crystal", "knee", "effusion")):
+            return "rheumatology"
+        if any(k in case_text for k in ("vertigo", "dizziness", "vestibular", "nystagmus", "bppv", "labyrinth")):
+            return "neurology"
+        if any(k in case_text for k in ("abdomen", "appendicitis", "bowel", "colicky", "right lower quadrant", "rlq")) or " gi " in f" {case_text} ":
+            return "gastroenterology"
+        # Cardiac words are checked last so chest discomfort does not override
+        # a stronger specialty-specific presentation.
+        if any(k in case_text for k in ("chest", "cardiac", "troponin", "coronary", "ecg", "myocardial", "stem")):
+            return "cardiology"
+        return "unmatched"
 
     def _mock_generate(
         self,
@@ -226,12 +345,16 @@ class UnifiedLLMClient:
         model: str,
         failure_reason: Optional[str] = None,
     ) -> LLMResponse:
-        """Deterministic, clinically coherent mock generator for local testing & offline development."""
+        """Deterministic, case-aware, clinically coherent mock generator for local testing & offline development."""
         start_time = time.time()
         time.sleep(0.005)  # simulate processing
 
         # Identify agent role strictly from system prompt title
         system_msg = (messages[0]["content"] if len(messages) > 1 else "").lower()
+
+        specialty = self._detect_specialty(messages)
+        profile = self.SPECIALTY_MOCK_PROFILES[specialty]
+        generic_default_note = " [UNMATCHED: no demo profile matched this case]" if specialty == "unmatched" else ""
 
         if "fact verifier" in system_msg or "grounding auditor" in system_msg:
             content_dict = {
@@ -241,21 +364,21 @@ class UnifiedLLMClient:
                 "hallucination_detected": False,
                 "flagged_claims": [],
                 "confidence_score": 0.92,
-                "notes": "All extracted cardiac biomarkers and vitals accurately reflect the patient vignette.",
+                "notes": profile["notes"],
             }
         elif "pharmacotherapy validator" in system_msg or "patient protection" in system_msg:
             content_dict = {
                 "safety_status": "APPROVED",
                 "safety_score": 0.95,
                 "contraindications_found": [],
-                "critical_red_flags_checked": ["Aortic dissection ruled out before heparinization", "Normal renal clearance"],
+                "critical_red_flags_checked": profile["safety_flags_checked"],
                 "safety_flags": [],
                 "safe_to_proceed": True,
             }
         elif "gatekeeper" in system_msg or "human-in-the-loop" in system_msg or "attending physician" in system_msg:
             content_dict = {
                 "decision": "APPROVED",
-                "reviewer_role": "Attending Physician (Cardiology)",
+                "reviewer_role": f"Attending Physician ({specialty.title()})",
                 "clinical_confidence": 0.94,
                 "critique": "Diagnostic prioritization and triage pathway are appropriate.",
                 "suggested_modifications": None,
@@ -267,49 +390,55 @@ class UnifiedLLMClient:
                 "consistency_score": 0.95,
                 "inconsistencies_found": [],
                 "logical_validity": True,
+                "specialty": specialty,
             }
         elif "clinical documentation specialist" in system_msg or "soap" in system_msg:
             content_dict = {
                 "report_title": "Structured Clinical Diagnostic Assessment",
-                "subjective": "Middle-aged patient presenting with exertional retrosternal chest pain.",
-                "objective": "BP 150/92 mmHg, HR 98 bpm, ST deviations on telemetry.",
-                "assessment": "High probability of Acute Coronary Syndrome; PE and Aortic Dissection considered in differential.",
-                "plan": "Immediate aspirin + heparin protocol, serial troponins, urgent cardiology consult.",
+                "subjective": f"Patient presenting with acute onset {specialty}-related symptoms requiring differential triage.",
+                "objective": "Vitals stable with pertinent specialty-specific findings.",
+                "assessment": f"High probability of {profile['label']}; differential and risks under review.",
+                "plan": profile["plan"],
                 "governance_summary": "Synthesized with active verification and safety assurance.",
+            }
+        elif "peer reviewer" in system_msg or "quality auditor" in system_msg or "llm judge" in system_msg:
+            content_dict = {
+                "diagnostic_accuracy": {
+                    "score": 0.85,
+                    "rationale": f"Primary diagnosis of {profile['label']} is clinically appropriate for the presented {specialty} presentation.",
+                },
+                "clinical_reasoning_quality": {
+                    "score": 0.80,
+                    "rationale": "Reasoning follows a structured approach from symptoms to differential.",
+                },
+                "evidence_grounding": {
+                    "score": 0.88,
+                    "rationale": "Claims reference specific clinical findings and risk factors from the case.",
+                },
+                "safety_awareness": {
+                    "score": 0.90,
+                    "rationale": "Life-threatening differentials appropriately considered.",
+                },
+                "overall_judge_score": 0.8545,
+                "summary": "High-quality clinical output with appropriate differential and safety awareness.",
             }
         elif "chart review" in system_msg or "research" in system_msg:
             content_dict = {
-                "patient_summary": "Patient presenting with acute onset symptoms requiring differential triage.",
-                "chief_complaint": "Acute chest pressure and shortness of breath.",
-                "history_present_illness": "Symptoms worsening on exertion over the past 4 hours.",
-                "pertinent_positives": ["Chest tightness", "Diaphoresis", "Elevated ST segments"],
-                "pertinent_negatives": ["No fever", "No prior pleuritic chest trauma"],
-                "risk_factors": ["Hypertension", "Dyslipidemia", "Smoking history"],
+                "patient_summary": f"Patient presenting with acute onset symptoms consistent with {profile['label']}.",
+                "chief_complaint": profile["label"],
+                "history_present_illness": "Onset over the past several hours with progressive, clinically relevant findings.",
+                "pertinent_positives": profile["differentials"][0]["justification"],
+                "pertinent_negatives": ["No fever", "No prior related trauma"],
+                "risk_factors": ["Relevant past medical history", "Current medication profile"],
             }
         else:  # Diagnosis agent or generic fallback
             content_dict = {
-                "primary_diagnosis": "Acute Coronary Syndrome (Non-ST elevation or STEMI)",
-                "differential_diagnoses": [
-                    {
-                        "rank": 1,
-                        "condition": "Acute Coronary Syndrome",
-                        "probability": 0.65,
-                        "justification": "Substernal pain, diaphoresis, and cardiovascular risk factors.",
-                    },
-                    {
-                        "rank": 2,
-                        "condition": "Acute Pulmonary Embolism",
-                        "probability": 0.20,
-                        "justification": "Tachycardia and acute dyspnea without prior warning.",
-                    },
-                    {
-                        "rank": 3,
-                        "condition": "Aortic Dissection",
-                        "probability": 0.10,
-                        "justification": "Hypertensive patient presenting with severe retrosternal distress.",
-                    },
-                ],
-                "recommended_tests": ["12-lead ECG", "Serial Troponin-I", "Chest Radiograph", "D-dimer"],
+                "primary_diagnosis": profile["label"],
+                "reasoning_steps": profile["reasoning"],
+                "differential_diagnoses": profile["differentials"],
+                "recommended_tests": profile["tests"],
+                "case_specialty": specialty,
+                "mock_note": "Deterministic case-aware mock output." + generic_default_note,
             }
 
 

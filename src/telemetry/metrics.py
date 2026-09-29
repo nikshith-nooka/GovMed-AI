@@ -34,6 +34,7 @@ class PipelineRunResult:
     total_tokens: int = 0
     total_latency_ms: float = 0.0
     total_cost_usd: float = 0.0
+    simulated_physician_minutes: float = 0.0
 
     # Diagnostic & Governance Outcomes
     primary_diagnosis: str = ""
@@ -52,6 +53,38 @@ class PipelineRunResult:
     safety_violations_detected: int = 0
     hitl_decision: str = "N/A"
     governance_flags: List[str] = field(default_factory=list)
+
+    # Rubric-based quality (pre-blend composite)
+    rubric_quality_score: float = 0.0
+
+    # LLM Judge Scores
+    llm_judge_score: float = 0.0
+    llm_judge_scores: Dict[str, Any] = field(default_factory=dict)
+    report_quality_score: float = 0.0
+
+    # Uncertainty & Risk-Adjusted Quality
+    uncertainty_jru: float = 0.0
+    risk_adjusted_quality: float = 0.0
+
+    # Governance Efficiency Factor (GEF): quality delivered per unit of
+    # compute/token spend — higher is more governance-efficient.
+    governance_efficiency_factor: float = 0.0
+
+    # HITL Economics
+    hitl_minutes: float = 0.0
+    hitl_human_cost: float = 0.0
+
+    # Measurement-validity fields
+    detector_neutral_quality: float = 0.0
+    gold_label_valid: bool = True
+    jru_source: str = "grounding_proxy"
+    parse_failures: List[str] = field(default_factory=list)
+
+    # Closed-loop governance: did a governance signal cause the diagnosis to be revised?
+    closed_loop: bool = False
+    revision_applied: bool = False
+    initial_primary_diagnosis: str = ""
+    revision_triggers: List[str] = field(default_factory=list)
 
     # Detailed agent traces
     agent_steps: List[AgentStepLog] = field(default_factory=list)

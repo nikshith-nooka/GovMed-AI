@@ -11,7 +11,7 @@ Use this skill when onboarding, verifying dependencies, or inspecting the GovBen
 - **Python Environment**: `.venv/bin/python` (Python 3.11+ managed with `uv` or `pip`)
 - **Package Manager**: `uv` / `pip` (defined in `pyproject.toml`)
 - **Active Model Provider**: NVIDIA NIM (`DEFAULT_LLM_PROVIDER=nvidia`, Model: `meta/llama-3.2-11b-vision-instruct`)
-- **Web App**: Streamlit on port `8501` (`.venv/bin/streamlit run app.py`)
+- **Web App**: FastAPI + React on port `8000` (`uv run uvicorn src.api.server:app --port 8000`; build the client first with `npm run build` in `client/`)
 - **Database**: SQLite at `results/benchmark_results.db` (Schema: `runs`, `agent_steps`)
 
 ## 2. Directory Architecture Map

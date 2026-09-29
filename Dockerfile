@@ -22,8 +22,6 @@ RUN uv pip install --system -e .
 # Copy application source code
 COPY . .
 
-# Expose Streamlit port
-EXPOSE 8501
-
-# Default command: launch the Streamlit research dashboard
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# The FastAPI server also serves the prebuilt React client from client/dist
+EXPOSE 8000
+CMD ["uvicorn", "src.api.server:app", "--host", "0.0.0.0", "--port", "8000"]

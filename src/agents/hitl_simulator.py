@@ -3,10 +3,17 @@
 from __future__ import annotations
 
 import json
+import random
 from typing import Any, Dict, Tuple
 from src.agents.base import BaseClinicalAgent
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
+from src.config.governance_economics import (
+    PHYSICIAN_REVIEW_MINUTES_MEAN,
+    PHYSICIAN_REVIEW_MINUTES_STD,
+    PHYSICIAN_REVIEW_MINUTES_MIN,
+    PHYSICIAN_REVIEW_MINUTES_MAX,
+)
 
 HITL_SYSTEM_PROMPT = """You are an experienced Attending Physician acting as a Human-in-the-Loop (HITL) Clinical Gatekeeper.
 You are reviewing an AI-generated diagnostic plan before it is finalized into the patient's record.
@@ -66,6 +73,18 @@ class HITLSimulatorAgent(BaseClinicalAgent):
         if decision != "APPROVED":
             flags.append(f"HITL Intervention: {decision} - {str(data.get('critique', ''))[:80]}")
 
-        preview = f"HITL: {decision} ({data.get('simulated_physician_minutes', 2.0)} min review)"
+        # Stochastic physician review time: sample from a normal distribution
+        # rather than trusting the LLM-provided value.
+        sampled_minutes = random.gauss(
+            PHYSICIAN_REVIEW_MINUTES_MEAN,
+            PHYSICIAN_REVIEW_MINUTES_STD,
+        )
+        sampled_minutes = max(
+            PHYSICIAN_REVIEW_MINUTES_MIN,
+            min(PHYSICIAN_REVIEW_MINUTES_MAX, round(sampled_minutes, 2)),
+        )
+        data["simulated_physician_minutes"] = sampled_minutes
+
+        preview = f"HITL: {decision} ({sampled_minutes} min review)"
         step_log = self.build_step_log(resp, preview, flags=flags)
         return data, step_log
