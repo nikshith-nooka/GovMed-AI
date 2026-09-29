@@ -50,6 +50,9 @@ JUDGE_AGENT = "LLM Judge Agent"
 REVISION_AGENT = "Diagnosis Agent (Revision)"
 # Free-tier tokens-per-minute per API key; override with --tpm.
 DEFAULT_TPM_PER_KEY = {"groq": 8000}
+# Free-tier tokens-per-day for the whole organisation (Groq applies it across all keys of one account,
+# so pooling keys does not raise it); override with --tpd.
+DEFAULT_TPD_PER_ORG = {"groq": 200_000}
 KEY_ENV = {"groq": ("GROQ_API_KEYS", "GROQ_API_KEY"), "nvidia": ("NVIDIA_API_KEYS", "NVIDIA_API_KEY"),
            "nim": ("NVIDIA_API_KEYS", "NVIDIA_API_KEY"), "gemini": (None, "GEMINI_API_KEY"),
            "openrouter": (None, "OPENROUTER_API_KEY")}
@@ -194,6 +197,8 @@ def process_case(case, c_idx, total_cases, variants, pipeline, scorer, judge, db
         cached_diag = (diagnosis_output, step2)
     except Exception as e:
         logger.error(f"Error generating baseline diagnosis for Case '{case_id}': {e}. Skipping case.")
+        with lock:
+            counter_obj["skipped"] += len(pending_variants)
         return
 
     with ThreadPoolExecutor(max_workers=max(1, min(len(pending_variants), args.variant_workers))) as variant_executor:
@@ -312,9 +317,12 @@ def estimate_plan(cases: List[Dict[str, Any]], variants: List[str], loop_modes: 
     tpm_key = args.tpm or DEFAULT_TPM_PER_KEY.get(args.provider)
     latency_min = totals["latency_s"] / max(1, args.workers) / 60.0
     rate_min = tokens / (tpm_key * max(1, keys)) if tpm_key else None
-    return {"rows": rows, "runs": totals["runs"], "tokens": round(tokens), "cost_usd": round(totals["cost"], 4),
+    tpd = args.tpd or DEFAULT_TPD_PER_ORG.get(args.provider)
+    days_min = tokens / tpd * 24 * 60 if tpd else None  # daily quota: minutes of calendar time
+    return {"daily_quota_bound_min": None if days_min is None else round(days_min, 1), "tpd": tpd,
+            "rows": rows, "runs": totals["runs"], "tokens": round(tokens), "cost_usd": round(totals["cost"], 4),
             "latency_bound_min": round(latency_min, 1), "rate_limit_bound_min": None if rate_min is None else round(rate_min, 1),
-            "estimated_wall_min": round(max(latency_min, rate_min or 0.0), 1), "api_keys": keys,
+            "estimated_wall_min": round(max(latency_min, rate_min or 0.0, days_min or 0.0), 1), "api_keys": keys,
             "tpm_per_key": tpm_key, "notes": sorted(set(notes))}
 
 
@@ -331,7 +339,11 @@ def print_estimate(est: Dict[str, Any], basis: str, n_cases: int, args, generato
             if est["rate_limit_bound_min"] is not None else "no TPM limit given (--tpm)")
     print(f"Time: latency-bound {est['latency_bound_min']} min ({args.workers} case worker(s), "
           f"{args.variant_workers} variant worker(s)); rate-limit-bound {rate}.")
-    print(f"Estimated wall time: {est['estimated_wall_min']} min (~{est['estimated_wall_min'] / 60:.1f} h)")
+    if est.get("daily_quota_bound_min") is not None:
+        print(f"Daily quota: {est['tpd']:,} tokens/day per organisation -> {est['daily_quota_bound_min'] / 1440:.1f} day(s) "
+              f"of quota (keys on the same account share it).")
+    wall = est["estimated_wall_min"]
+    print(f"Estimated wall time: {wall} min (~{wall / 60:.1f} h, ~{wall / 1440:.1f} days)")
     for note in est["notes"]:
         print(f"  note: {note}")
 
@@ -366,6 +378,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dry-run", action="store_true", help="Print estimated tokens / cost / time and exit")
     parser.add_argument("--tpm", type=int, default=None,
                         help="Tokens-per-minute limit per API key for --dry-run (Groq free tier default: 8000)")
+    parser.add_argument("--tpd", type=int, default=None,
+                        help="Tokens-per-day limit per organisation for --dry-run (Groq free tier default: 200000)")
     return parser
 
 

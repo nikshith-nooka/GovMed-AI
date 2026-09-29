@@ -14,14 +14,15 @@ computed once per case and shared by every variant.
 ## Run
 ```bash
 # Always estimate first
-uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
+uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider nvidia \
+    --judge-model nvidia/nemotron-3-super-120b-a12b --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
 # Then run (resumes automatically; variants run one at a time for clean latency)
-uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
+uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider nvidia \
+    --judge-model nvidia/nemotron-3-super-120b-a12b --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
 ```
 
 Rules:
+- Groq's free tier allows 200k tokens per day per account (shared by all keys); `--dry-run` reports it.
 - The judge must be a different model from the generator; same-model verdicts are rejected.
 - The offline demo provider is refused; a failed live call skips the run rather than storing simulated output.
 - Write new experiments to a new DB; `results/benchmark_results.db` is the audited 750-run record.

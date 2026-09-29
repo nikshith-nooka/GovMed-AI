@@ -161,11 +161,14 @@ keyword-based generator; it is suitable for exploring the interface, not for ana
 # Build the 300-question MedQA benchmark (original options and answer key; scored by exact option)
 uv run python -m scripts.build_medqa_benchmark
 
-# Estimate tokens, cost and time first, then run open and closed loop with a judge from a different model
-uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
-uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
+# Estimate tokens, cost and time first (including provider daily quotas), then run open and closed loop
+# with a judge that is a different model from the generator
+uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider nvidia \
+    --judge-model nvidia/nemotron-3-super-120b-a12b --loop-modes open,closed --seed 42 \
+    --db-path results/medqa_v2.db --dry-run
+uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider nvidia \
+    --judge-model nvidia/nemotron-3-super-120b-a12b --loop-modes open,closed --seed 42 \
+    --db-path results/medqa_v2.db
 
 # Measured re-analysis: results/rigor_report.json and paper/tables/rigor_*.{csv,tex}
 uv run govbench-rigor

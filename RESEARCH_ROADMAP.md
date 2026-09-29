@@ -30,18 +30,20 @@ All numbers come from `results/rigor_report.json` (regenerate with `uv run govbe
 | Prompt-injection fencing and test set, API token, PHI blocking, retention, persistent jobs, rate-limit status | Done |
 | Deterministic contraindication rules | Done (`src/clinical/rules.py`, 14 rules) |
 | Fixed 50-item clinician protocol, Fleiss' kappa | Done (`benchmarks/clinician_protocol_50.json`, served first in the review queue) |
-| **Main experiment:** MedQA 300, open vs closed loop | **To run** (about 2,700 runs, ~19 h, ~$5 on Groq; use `--dry-run` for a fresh estimate) |
-| **Second model** | **To run** (NVIDIA Llama-3.2-11B vs Groq GPT-OSS-120B) |
+| **Main experiment:** MedQA 300, open vs closed loop | **To run** on NVIDIA (about 2,700 runs, ~30M tokens, ~19 h; use `--dry-run` for a fresh estimate) |
+| **Second model** | **To run** (Groq GPT-OSS-120B). The Groq free tier allows 200k tokens per day per account, shared by all keys: the full design needs ~148 days there, so use a paid Groq tier (~$5 of tokens) or a reduced design |
 | **Clinician ratings** (3 reviewers x the same 50 outputs) | **To collect** in *Clinician Review* |
 | Live prompt-injection evaluation | To run: `uv run python -m scripts.run_injection_eval --provider groq` |
 
 ## 3. Commands for the remaining experiments
 
 ```bash
+# Main experiment: NVIDIA generator, judged by a different model on NVIDIA NIM
+uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider nvidia \
+    --judge-model nvidia/nemotron-3-super-120b-a12b --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
+# Second model (needs a paid Groq tier for the full design; check with --dry-run first)
 uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
-uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --judge-provider groq \
-    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
+    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
 uv run python -m scripts.run_rigor_analysis --db-path results/medqa_v2.db --cases-path benchmarks/medqa_300.json \
     --reference-db none --out results/rigor_report_medqa.json --tables-dir paper/tables/medqa --clinician-protocol ""
 ```
