@@ -1,0 +1,134 @@
+#!/usr/bin/env python3
+"""Draw the manuscript figures from the measured analysis (results/rigor_report.json).
+
+Every plotted value is read from the report written by ``govbench-rigor``; nothing is typed in by hand.
+Run ``uv run govbench-rigor`` first, then ``uv run python -m scripts.make_paper_figures``.
+"""
+
+import json
+from pathlib import Path
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.patches import FancyBboxPatch  # noqa: E402
+
+ROOT = Path(__file__).resolve().parent.parent
+REPORT = ROOT / "results" / "rigor_report.json"
+OUT = ROOT / "paper" / "figures"
+
+plt.rcParams.update({
+    "font.family": "serif", "font.size": 8, "axes.titlesize": 8, "axes.labelsize": 8,
+    "legend.fontsize": 7, "xtick.labelsize": 7, "ytick.labelsize": 7,
+    "axes.spines.top": False, "axes.spines.right": False, "savefig.bbox": "tight",
+})
+GREY, BLUE, ORANGE, GREEN = "#6b7280", "#1d4ed8", "#c2410c", "#15803d"
+
+
+def _save(fig, name):
+    OUT.mkdir(parents=True, exist_ok=True)
+    fig.savefig(OUT / f"{name}.pdf")
+    fig.savefig(OUT / f"{name}.png", dpi=300)
+    plt.close(fig)
+    print(f"wrote paper/figures/{name}.pdf")
+
+
+def architecture():
+    fig, ax = plt.subplots(figsize=(7.0, 2.0))
+    ax.set_xlim(0, 10.3)
+    ax.set_ylim(0, 5.6)
+    ax.axis("off")
+
+    def box(x, y, w, h, text, color):
+        ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.02,rounding_size=0.12",
+                                    fc=color, ec="#374151", lw=0.6))
+        ax.text(x + w / 2, y + h / 2, text, ha="center", va="center", fontsize=7)
+
+    def arrow(x1, y1, x2, y2):
+        ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
+                    arrowprops=dict(arrowstyle="-|>", lw=0.6, color="#374151"))
+
+    box(0.0, 2.3, 1.4, 0.9, "Case\ntext", "#f3f4f6")
+    box(1.8, 2.3, 1.5, 0.9, "Research\n(extract)", "#dbeafe")
+    box(3.7, 2.3, 1.5, 0.9, "Diagnosis\n(differential)", "#dbeafe")
+    checks = [(4.5, "Grounding verifier"), (3.4, "Attending simulator"),
+              (2.3, "Safety validator"), (1.2, "Consistency checker")]
+    for y, label in checks:
+        box(5.9, y + 0.05, 2.3, 0.7, label, "#fef3c7")
+        arrow(5.2, 2.75, 5.9, y + 0.4)
+    box(8.6, 2.2, 1.6, 1.1, "Report /\ndecision\nsupport", "#dcfce7")
+    for y, _ in checks:
+        arrow(8.2, y + 0.4, 8.6, 2.75)
+    arrow(1.4, 2.75, 1.8, 2.75)
+    arrow(3.3, 2.75, 3.7, 2.75)
+    ax.annotate("", xy=(4.45, 2.3), xytext=(7.05, 1.25),
+                arrowprops=dict(arrowstyle="-|>", lw=0.6, color=ORANGE, linestyle="--",
+                                connectionstyle="arc3,rad=-0.35"))
+    ax.text(3.0, 0.45, "closed loop only: blocking finding → one bounded revision",
+            fontsize=5.8, color=ORANGE)
+    _save(fig, "architecture")
+
+
+def audit_paradox(r):
+    variants = r["variants"]
+    ids = [v["variant_id"] for v in variants]
+    x = list(range(len(ids)))
+    w = 0.26
+    fig, ax = plt.subplots(figsize=(3.45, 1.75))
+    ax.bar([i - w for i in x], [v["reported_quality"] for v in variants], w,
+           label="Reported rubric quality", color=GREY)
+    ax.bar(x, [v["detector_neutral_quality"] for v in variants], w,
+           label="Detector-neutral quality", color=BLUE)
+    ax.bar([i + w for i in x], [v["accuracy_valid_gold"] for v in variants], w,
+           label="Accuracy (scorable cases)", color=GREEN)
+    ax.set_xticks(x)
+    ax.set_xticklabels([f"G{int(i[1]) - 1}\n({i})" for i in ids])
+    ax.set_ylim(0, 1)
+    ax.set_ylabel("Score")
+    ax.legend(frameon=False, loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=3, fontsize=6)
+    _save(fig, "audit_paradox")
+
+
+def alert_auroc(r):
+    rows = r["alert_discrimination"]
+    labels = [f"{a['signal'].replace('_', ' ')} ({a['variant_id']})" for a in rows]
+    vals = [a["auroc"] for a in rows]
+    y = list(range(len(rows)))
+    fig, ax = plt.subplots(figsize=(3.45, 1.8))
+    ax.hlines(y, 0.5, vals, color="#9ca3af", lw=0.8)
+    ax.plot(vals, y, "o", color=ORANGE, ms=3.5)
+    ax.axvline(0.5, color="#111827", lw=0.6, ls="--")
+    ax.set_yticks(y)
+    ax.set_yticklabels(labels)
+    ax.set_xlim(0.3, 0.7)
+    ax.set_xlabel("AUROC for a wrong primary diagnosis (0.5 = chance)")
+    ax.invert_yaxis()
+    _save(fig, "alert_auroc")
+
+
+def calibration(r):
+    cal = r["calibration"]
+    bins = cal["bins"]
+    fig, ax = plt.subplots(figsize=(1.9, 1.75))
+    ax.plot([0, 1], [0, 1], ls="--", color="#111827", lw=0.6)
+    ax.scatter([b["mean_confidence"] for b in bins], [b["observed_accuracy"] for b in bins],
+               s=[6 + 4 * b["n"] for b in bins], color=BLUE, alpha=0.75, edgecolor="none")
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_xlabel("Stated probability")
+    ax.set_ylabel("Observed accuracy")
+    ax.set_title(f"ECE {cal['ece']:.2f}, n={cal['n']}")
+    _save(fig, "calibration")
+
+
+def main():
+    report = json.loads(REPORT.read_text())
+    architecture()
+    audit_paradox(report)
+    alert_auroc(report)
+    calibration(report)
+
+
+if __name__ == "__main__":
+    main()

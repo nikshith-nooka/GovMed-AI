@@ -1,0 +1,5 @@
+comparison,n_pairs,only_v1_correct,only_variant_correct,accuracy_diff,accuracy_diff_ci95_low,accuracy_diff_ci95_high,cohens_h,mcnemar_exact_p,mcnemar_exact_p_holm
+V2 - V1,71,1,0,-0.0141,-0.0423,0.0,-0.029,1.0,1.0
+V3 - V1,71,1,0,-0.0141,-0.0423,0.0,-0.029,1.0,1.0
+V4 - V1,71,2,0,-0.0282,-0.0704,0.0,-0.058,0.5,1.0
+V5 - V1,71,2,0,-0.0282,-0.0704,0.0,-0.058,0.5,1.0

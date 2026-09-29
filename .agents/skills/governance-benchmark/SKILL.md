@@ -1,34 +1,33 @@
 ---
 name: governance-benchmark
-description: Executes, monitors, and analyzes the multi-agent clinical governance benchmark across MedQA, PubMedQA, and MedDialog using NVIDIA NIM or Groq.
+description: Runs and analyses the GovBench-Clinical governance benchmark (G0-G4, open and closed loop) on the MedQA answer-key benchmark or the 150-case audited set.
 ---
 
-# Clinical Governance Benchmark Runner Skill
+# Governance benchmark
 
-Use this skill to run or monitor the full 750-case ablation benchmark across the 5 clinical governance configurations.
+## Levels
+G0 / V1 no checks · G1 / V2 grounding verifier · G2 / V3 simulated attending (an LLM) · G3 / V4 safety validator ·
+G4 / V5 all checks plus the consistency checker. Closed-loop variants carry a `-CL` suffix; a blocking finding
+triggers one revision, after which the enabled checks re-run on the revised diagnosis. Research and diagnosis are
+computed once per case and shared by every variant.
 
-## 1. Quick Launch Commands
-- **Full 150-Case (750-Run) Benchmark (Parallel 5-Worker Mode)**:
-  ```bash
-  .venv/bin/python scripts/run_full_benchmark.py --provider nvidia --source 50_each --total-cases 150 --workers 5
-  ```
-- **Single-Case Live Diagnostics**:
-  ```bash
-  .venv/bin/python -m scripts.run_full_benchmark --provider nvidia --total-cases 1
-  ```
-- **Inspect Live Progress**:
-  ```bash
-  .venv/bin/python scripts/compare_metrics.py
-  ```
+## Run
+```bash
+# Always estimate first
+uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
+    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
+# Then run (resumes automatically; variants run one at a time for clean latency)
+uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
+    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
+```
 
-## 2. The 5 Governance Configurations (V1 to V5)
-1. **V1: Baseline (Ungoverned)** — 3-agent core (Triage, Research, Diagnostic).
-2. **V2: Verifier Governance** — Adds Verifier / Fact-Checker agent with reflection loop.
-3. **V3: HITL Simulator Governance** — Adds Risk-Calibrated Human-in-the-Loop triage simulator.
-4. **V4: Safety Validator Governance** — Adds automated pharmacology, contraindication & dosing checks.
-5. **V5: Full Governance (Defense-in-Depth)** — Complete 6-agent cascade with all governance layers.
+Rules:
+- The judge must be a different model from the generator; same-model verdicts are rejected.
+- The offline demo provider is refused; a failed live call skips the run rather than storing simulated output.
+- Write new experiments to a new DB; `results/benchmark_results.db` is the audited 750-run record.
 
-## 3. Dataset Interleaving & Split
-- **Source**: `50_each` (150 total cases: 50 MedQA, 50 PubMedQA, 50 MedDialog).
-- **Execution Strategy**: Round-robin interleaved across datasets with intra-case caching to minimize redundant LLM token spend.
-- **Persistence**: Checkpointed into `results/benchmark_results.db`. Interrupted runs automatically resume without re-running completed cases.
+## Analyse
+```bash
+uv run python -m scripts.run_rigor_analysis --db-path results/medqa_v2.db --cases-path benchmarks/medqa_300.json \
+    --reference-db none --out results/rigor_report_medqa.json --tables-dir paper/tables/medqa --clinician-protocol ""
+```

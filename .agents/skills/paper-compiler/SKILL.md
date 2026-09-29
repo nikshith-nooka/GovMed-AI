@@ -1,29 +1,20 @@
 ---
 name: paper-compiler
-description: Synchronizes empirical benchmark metrics with LaTeX tables and builds the academic paper (paper/main.tex) for IEEE Transactions on Medical Informatics.
+description: Regenerates the measured analysis, figures and tables, checks every number in paper/main.tex against the report, and compiles the IEEE-format manuscript.
 ---
 
-# Academic Paper Sync & Compilation Skill
+# Paper build
 
-Use this skill to update empirical results in `paper/main.tex` and compile the manuscript into a publication-ready PDF.
+Every number in `paper/main.tex` must come from `results/rigor_report.json`.
 
-## 1. Export Empirical Benchmark Metrics
-To dump the latest statistical tables, Pareto frontier data, and LaTeX macros from `results/benchmark_results.db`:
 ```bash
-.venv/bin/python scripts/export_results.py
+uv run govbench-rigor                          # results/rigor_report.json + paper/tables/rigor_*.{csv,tex}
+uv run python -m scripts.make_paper_figures    # paper/figures/*.pdf from the report
+uv run python -m scripts.check_paper_numbers   # fails if the paper states a number the report does not contain
+uv run python scripts/build_paper.py           # compiles with the bundled tectonic into paper_out/main.pdf
 ```
 
-## 2. LaTeX Build Workflow
-From the `paper/` directory:
-```bash
-cd paper
-pdflatex -interaction=nonstopmode main.tex
-bibtex main
-pdflatex -interaction=nonstopmode main.tex
-pdflatex -interaction=nonstopmode main.tex
-```
-
-## 3. Paper Structure Guidelines
-- **Target Journal**: IEEE Transactions on Medical Informatics (IEEE TMI / TBME).
-- **Core Contribution**: The first quantitative evaluation of the marginal cost-effectiveness, latency overhead, and safety intervention rate of multi-agent governance layers in clinical reasoning.
-- **Key Phenomenon Documented**: The *"Audit Paradox"* (governed pipelines honestly surface and penalize ungrounded diagnoses and contraindicated prescriptions that blind baseline pipelines ignore).
+Rules:
+- Do not cite a reference that has not been checked against arXiv, a DOI resolver or the publisher.
+- Do not report the columns listed under `integrity.synthetic_columns` in the report; they were not measured.
+- State limitations (single model, sample size, no clinician validation yet) wherever results are summarised.

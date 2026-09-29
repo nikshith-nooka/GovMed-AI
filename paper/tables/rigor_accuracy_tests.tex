@@ -1,0 +1,16 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrrrrrrr}
+\toprule
+comparison & n\_pairs & only\_v1\_correct & only\_variant\_correct & accuracy\_diff & accuracy\_diff\_ci95\_low & accuracy\_diff\_ci95\_high & cohens\_h & mcnemar\_exact\_p & mcnemar\_exact\_p\_holm \\
+\midrule
+V2 - V1 & 71 & 1 & 0 & -0.014 & -0.042 & 0.000 & -0.029 & 1.000 & 1.000 \\
+V3 - V1 & 71 & 1 & 0 & -0.014 & -0.042 & 0.000 & -0.029 & 1.000 & 1.000 \\
+V4 - V1 & 71 & 2 & 0 & -0.028 & -0.070 & 0.000 & -0.058 & 0.500 & 1.000 \\
+V5 - V1 & 71 & 2 & 0 & -0.028 & -0.070 & 0.000 & -0.058 & 0.500 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{Exact McNemar test on paired binary correctness vs. V1 (raw and Holm-adjusted p), accuracy difference and Cohen's $h$ with bootstrap 95\% CI.}
+\label{tab:rigor_accuracy_tests}
+\end{table}

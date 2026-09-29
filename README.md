@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-58%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-155%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -35,7 +35,7 @@ should be presented: what was checked, what was **not** checked, and what still 
 - [Project structure](#project-structure)
 - [Limitations and roadmap](#limitations-and-roadmap)
 - [Citation](#citation)
-- [Author](#author)
+- [Authors](#authors)
 
 ---
 
@@ -48,7 +48,13 @@ should be presented: what was checked, what was **not** checked, and what still 
 - **Clinician-facing output** — alerts grouped by severity, an explicit list of checks that did not run, a physician view
   and a clinical-assistant view with an SBAR handoff.
 - **Blinded clinician review** — a built-in rating tool that produces the human validation data the benchmark needs.
-- **Honest failure handling** — a failed live model call returns an error; it never falls back to simulated output.
+- **Deterministic safety rules** — 14 contraindication rules (e.g. NSAIDs in renal impairment, metformin at low eGFR,
+  sildenafil with nitrates) run on every case, independent of the model, each with its guideline source.
+- **Re-checked revisions** — after a closed-loop revision the enabled checks run again on the revised diagnosis.
+- **Safe by default** — identifiable patient data is blocked before it reaches a model provider, case text is fenced
+  against prompt injection, run endpoints can require an API token, and stored case text expires after a retention period.
+- **Honest failure handling** — a failed live model call returns an error; it never falls back to simulated output. The
+  offline demo generator is labelled "not AI" on every result and cannot be used for experiments.
 - **Multiple providers** — Groq, NVIDIA NIM, Google Gemini and OpenRouter, with pooled-key rotation and rate-limit backoff.
 
 ---
@@ -95,6 +101,7 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 | Why do governed variants score lower on quality? | 94–96% of the drop comes from the rubric penalising each variant's own detectors; the ungoverned baseline has none to be penalised by. |
 | Do the alerts identify wrong diagnoses? | Not yet: the safety validator raises at least one alert on every run, and each governance signal detects misdiagnosis at AUROC 0.40–0.56 (0.5 is chance). |
 | How accurate is the pipeline? | 0.29 overall and 0.38 on the 71 cases with a real diagnosis label, after correcting a substring-matching scorer that reported 0.74. |
+| Is the study powered? | No: variants disagree with the baseline on 1–2 of 71 cases (exact McNemar p ≥ 0.5, 1.0 after Holm correction). A 5-point difference needs 312–940 paired cases, which is why a 300-question MedQA benchmark with its answer key is included. |
 | Is the model's stated confidence reliable? | No: expected calibration error is 0.29. The interface presents likelihoods as a ranking, not a probability. |
 | What does governance cost? | Median end-to-end latency rises from 45 s (G0) to 111 s (G4) on the benchmark model; tokens rise from about 3,100 to 8,400 per case. |
 
@@ -151,19 +158,38 @@ keyword-based generator; it is suitable for exploring the interface, not for ana
 
 ```bash
 # Benchmark: open-loop, then closed-loop (variant ids gain a -CL suffix)
-uv run python -m scripts.run_full_benchmark --total-cases 150 --provider nvidia --variant-workers 1
-uv run python -m scripts.run_full_benchmark --total-cases 150 --provider nvidia --variant-workers 1 --closed-loop
+# Build the 300-question MedQA benchmark (original options and answer key; scored by exact option)
+uv run python -m scripts.build_medqa_benchmark
+
+# Estimate tokens, cost and time first, then run open and closed loop with a judge from a different model
+uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
+    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db --dry-run
+uv run govbench --benchmark benchmarks/medqa_300.json --provider groq --judge-provider nvidia \
+    --loop-modes open,closed --seed 42 --db-path results/medqa_v2.db
 
 # Measured re-analysis: results/rigor_report.json and paper/tables/rigor_*.{csv,tex}
 uv run govbench-rigor
+
+# Paper: figures from the report, a check that every number in the paper is in the report, then compile
+uv run govbench-figures
+uv run python -m scripts.check_paper_numbers
+uv run python scripts/build_paper.py
+
+# Prompt-injection evaluation against a live provider
+uv run python -m scripts.run_injection_eval --provider groq
 
 # Tests and a concurrency smoke test
 uv run pytest
 uv run python -m scripts.load_test --requests 200 --concurrency 16
 ```
 
-The benchmark runner is strict: a failed live call skips that run rather than recording simulated output.
-`--variant-workers 1` measures latency without contention between variants.
+The benchmark runner is strict: a failed live call skips that run rather than recording simulated output. Variants run
+one at a time so latency is measured without contention, interrupted runs resume where they stopped, and every run
+records the model, temperature and seed of each step.
+
+**Configuration** (`.env`): `GOVBENCH_API_TOKEN` requires a bearer token on run and review endpoints (the interface
+asks for it once), `GOVBENCH_AUTH_ALL=1` extends it to all data endpoints, and `GOVBENCH_RETENTION_DAYS` (default 30)
+sets how long interactive results and stored case text are kept.
 
 ---
 
@@ -189,16 +215,16 @@ src/
 ├── pipeline/      orchestrator: variants, parallel checks, closed loop, progress callbacks
 ├── llm/           unified client for Groq, NVIDIA NIM, Gemini, OpenRouter and demo mode
 ├── evaluation/    scorer, language-model judge, statistics
-├── analysis/      measured re-analysis (rigor.py), ablation, frontier
-├── clinical/      clinician-facing decision support
+├── analysis/      measured re-analysis (rigor.py)
+├── clinical/      decision support, deterministic contraindication rules, identifier (PHI) detection
 ├── api/           FastAPI server, which also serves the built client
-└── telemetry/     SQLite storage and run metrics
+└── telemetry/     SQLite storage, run metrics and persistent jobs
 client/            React + Vite application
 scripts/           benchmark runner, re-analysis, load test, figures and exports
-benchmarks/        the 150-case benchmark (curated_sample.json)
+benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
-tests/             58 unit and integration tests
+tests/             155 unit and integration tests, including a prompt-injection set
 ```
 
 ---
@@ -210,7 +236,8 @@ tests/             58 unit and integration tests
 - A single model and provider was benchmarked.
 - 79 of the 150 gold labels are templated titles rather than diagnoses, so accuracy rests on 71 scorable cases.
 - No clinician validation has been collected yet.
-- The manuscript draft in `paper/` is being revised to match the measured results.
+- The deterministic rules cover 14 common contraindications; they are a safety net, not a drug-interaction database.
+- The manuscript in `paper/` reports only measured results; `scripts/check_paper_numbers.py` enforces this.
 
 **Next steps** (detailed in [RESEARCH_ROADMAP.md](RESEARCH_ROADMAP.md))
 
@@ -224,17 +251,23 @@ tests/             58 unit and integration tests
 ## Citation
 
 ```bibtex
-@software{nooka_govbench_clinical,
-  author = {Nooka, Nikshith},
-  title  = {GovBench-Clinical: A Measurement-Audited Benchmark for Governed Multi-Agent Clinical AI},
+@misc{areddy2026openloop,
+  author = {Areddy, Divya Reddy and Namburi, Rishika and Nooka, Nikshith and Peddireddy, Venkata Sujitha Sree},
+  title  = {Open-Loop Governance Is Not Governance: A Measurement Audit of Multi-Agent Clinical {LLM} Pipelines},
   year   = {2026},
+  note   = {GovBench-Clinical software and manuscript},
   url    = {https://github.com/nikki-nooka/GovMed-AI}
 }
 ```
 
-## Author
+## Authors
 
-**Nooka Nikshith** · [@nikki-nooka](https://github.com/nikki-nooka)
+Department of Artificial Intelligence and Machine Learning, Malla Reddy University, Hyderabad, India.
+
+- Areddy Divya Reddy
+- Namburi Rishika
+- **Nooka Nikshith** · [@nikki-nooka](https://github.com/nikki-nooka), repository maintainer
+- Peddireddy Venkata Sujitha Sree
 
 ## License
 
