@@ -307,6 +307,26 @@ def test_clinician_protocol_is_fixed_blinded_and_stratified(option_benchmark):
     assert all(set(item) == {"run_id", "case_id"} for item in protocol["items"])  # no variant, no label
 
 
+def test_closed_loop_effect_counts_fixes_and_breaks(tmp_path):
+    cases = [dict(MCQ, id=f"medqa_test_{i:04d}", case_id=f"medqa_test_{i:04d}") for i in range(8)]
+    cases_path = tmp_path / "cases.json"
+    cases_path.write_text(json.dumps(cases))
+    db = BenchmarkDB(str(tmp_path / "bench.db"))
+    pipeline = ClinicalGovernancePipeline(UnifiedLLMClient(provider="mock", force_mock=True))
+    scorer = ClinicalEvaluationScorer()
+    for i, case in enumerate(cases):
+        # Open loop right on cases 0-1; closed loop right on 0-5 except 1: 4 fixed, 1 broken.
+        for closed, right in ((False, i < 2), (True, i < 6 and i != 1)):
+            result = pipeline.run(case, "full_governance", closed_loop=closed)
+            result.raw_outputs["diagnosis"] = {"primary_diagnosis": "C" if right else "A", "differential_diagnoses": []}
+            db.log_run(scorer.score_run(result, case))
+    (row,) = RigorousAnalysis(str(tmp_path / "bench.db"), str(cases_path), reference_db_path=None).closed_loop_effect()
+    assert row["comparison"] == "V5-CL - V5" and row["n_pairs"] == 8
+    assert (row["fixed_by_revision"], row["broken_by_revision"]) == (4, 1)
+    assert row["accuracy_open"] == 0.25 and row["accuracy_closed"] == 0.625
+    assert row["mcnemar_exact_p_holm"] >= row["mcnemar_exact_p"]
+
+
 # ---------------------------------------------------------------- paper number checker
 def test_paper_number_checker():
     tex = "\n".join([

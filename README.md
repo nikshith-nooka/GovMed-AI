@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-163%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-164%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -228,7 +228,7 @@ scripts/           benchmark runner, re-analysis, load test, figures and exports
 benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
-tests/             163 unit and integration tests, including a prompt-injection set
+tests/             164 unit and integration tests, including a prompt-injection set
 ```
 
 ---

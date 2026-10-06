@@ -387,6 +387,29 @@ class RigorousAnalysis:
                         "mcnemar_exact_p": _r(test["p_value"], 6)})
         return out
 
+    def closed_loop_effect(self) -> List[Dict[str, Any]]:
+        """Closed vs open loop on the same cases (X-CL vs X): exact McNemar, Holm across X, and revision outcomes."""
+        df = self.runs[self.runs["gold_valid"]]
+        wide = df.pivot_table(index="case_id", columns="variant_id", values="correct", aggfunc="max")
+        revised = self.raw_runs.set_index("variant_id")["revision_applied"] if "revision_applied" in self.raw_runs else None
+        out = []
+        for cl in [c for c in wide.columns if str(c).endswith("-CL") and str(c)[:-3] in wide.columns]:
+            base = str(cl)[:-3]
+            pair = wide[[base, cl]].dropna().astype(bool)
+            a, b = pair[base].to_numpy(), pair[cl].to_numpy()
+            test = mcnemar_exact(a, b)
+            diff, lo, hi = paired_bootstrap(a, b, lambda x, y: float(y.mean() - x.mean()))
+            rev = revised.loc[[cl]] if revised is not None and cl in revised.index else pd.Series(dtype=float)
+            out.append({"comparison": f"{cl} - {base}", "n_pairs": test["n_pairs"],
+                        "accuracy_open": _r(a.mean()), "accuracy_closed": _r(b.mean()),
+                        "fixed_by_revision": test["only_b_correct"], "broken_by_revision": test["only_a_correct"],
+                        "revision_rate": _r(rev.fillna(0).astype(float).mean()) if len(rev) else None,
+                        "accuracy_diff": _r(diff), "accuracy_diff_ci95_low": _r(lo), "accuracy_diff_ci95_high": _r(hi),
+                        "mcnemar_exact_p": _r(test["p_value"], 6)})
+        for row, adj in zip(out, holm_bonferroni([r["mcnemar_exact_p"] for r in out]), strict=True):
+            row["mcnemar_exact_p_holm"] = _r(adj, 6)
+        return out
+
     @staticmethod
     def apply_holm(paired: List[Dict[str, Any]], acc_tests: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Holm-Bonferroni over every paired comparison in the report (Wilcoxon rows + McNemar rows)."""
@@ -686,6 +709,11 @@ class RigorousAnalysis:
                      f"Holm-Bonferroni over {rep['multiple_comparisons']['family_size']} paired tests (smallest raw p "
                      f"{lo}); accuracy differences range {min(t['accuracy_diff'] for t in mc)} to "
                      f"{max(t['accuracy_diff'] for t in mc)}.")
+        for t in rep.get("closed_loop_effect") or []:
+            f.append(f"Closed vs open loop ({t['comparison']}, n={t['n_pairs']}): accuracy {t['accuracy_open']} -> "
+                     f"{t['accuracy_closed']}; revision fixed {t['fixed_by_revision']} and broke "
+                     f"{t['broken_by_revision']} answers (exact McNemar p={t['mcnemar_exact_p']}, "
+                     f"Holm {t['mcnemar_exact_p_holm']}).")
         shares = [a["share_of_drop_from_detector_penalties"] for a in rep["audit_paradox"]
                   if a["share_of_drop_from_detector_penalties"] is not None and a["reported_quality_drop"] > 0.01]
         if shares:
@@ -746,6 +774,7 @@ class RigorousAnalysis:
             "variants": self.variant_summary(),
             "paired_tests": self.paired_tests(),
             "accuracy_tests": self.accuracy_tests(),
+            "closed_loop_effect": self.closed_loop_effect(),
             "audit_paradox": self.audit_paradox(),
             "alert_discrimination": self.alert_discrimination(),
             "alert_reproducibility": self.alert_reproducibility(),
