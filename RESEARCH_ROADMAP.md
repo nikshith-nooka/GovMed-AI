@@ -30,7 +30,7 @@ All numbers come from `results/rigor_report.json` (regenerate with `uv run govbe
 | Prompt-injection fencing and test set, API token, PHI blocking, retention, persistent jobs, rate-limit status | Done |
 | Deterministic contraindication rules | Done (`src/clinical/rules.py`, 14 rules) |
 | Fixed 50-item clinician protocol, Fleiss' kappa | Done (`benchmarks/clinician_protocol_50.json`, served first in the review queue) |
-| **Main experiment:** MedQA 300, open vs closed loop | **Running** (started 2026-09-29, `results/medqa_v2.db`, log `results/medqa_v2.log`) on NVIDIA (about 2,700 runs, ~30M tokens, ~19 h; use `--dry-run` for a fresh estimate) |
+| **Main experiment:** MedQA 300, open vs closed loop | **Running** (2026-10-06): G0, G4 and G4 closed loop, report agent skipped, `results/medqa_fast.db`. The 2026-09-29 run stopped after 52 runs when the network dropped |
 | **Second model** | **To run** (Groq GPT-OSS-120B). The Groq free tier allows 200k tokens per day per account, shared by all keys: the full design needs ~148 days there, so use a paid Groq tier (~$5 of tokens) or a reduced design |
 | **Clinician ratings** (3 reviewers x the same 50 outputs) | **To collect** in *Clinician Review* |
 | Live prompt-injection evaluation | Done (12 attacks, Llama-3.2-11B, G4). Before fixes: 1 leak, 1 suppressed AI alert. After fixes: 0 leaks; the AI safety validator can still be talked out of an alert (1/12), but the rule alert fired in 12/12 and the injection warning in 12/12. Results: `results/injection_eval_nvidia_g4{_before,}.json` |

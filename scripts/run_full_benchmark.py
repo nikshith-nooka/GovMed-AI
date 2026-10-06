@@ -149,7 +149,7 @@ def run_single_variant(v_key, case, case_id, c_idx, total_cases, cached_res, cac
         )
 
         result = pipeline.run(case, variant_key=v_key, cached_research=cached_res, cached_diagnosis=cached_diag,
-                              closed_loop=args.closed_loop)
+                              closed_loop=args.closed_loop, include_report=not args.no_report)
         judge_scores = None
         if judge is not None:
             judge_scores, judge_step = judge.execute(result.raw_outputs, case)
@@ -375,6 +375,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--judge-model", type=str, default=None)
     parser.add_argument("--allow-same-model-judge", action="store_true",
                         help="Permit a same-model judge; its verdicts are flagged and excluded from JRU")
+    parser.add_argument("--variants", type=str, default=None,
+                        help="Comma list of variant keys to run (default: all), e.g. baseline,full_governance")
+    parser.add_argument("--no-report", action="store_true",
+                        help="Skip the SOAP Report Agent (slowest step; not used in scoring)")
     parser.add_argument("--dry-run", action="store_true", help="Print estimated tokens / cost / time and exit")
     parser.add_argument("--tpm", type=int, default=None,
                         help="Tokens-per-minute limit per API key for --dry-run (Groq free tier default: 8000)")
@@ -400,6 +404,12 @@ def main(argv: Optional[List[str]] = None) -> None:
     else:
         cases = data_loader.get_benchmark_cases(requested_count=args.total_cases, source=args.source)
     variants = list(ClinicalGovernancePipeline.AVAILABLE_VARIANTS.keys())
+    if args.variants:
+        wanted = [v.strip() for v in args.variants.split(",") if v.strip()]
+        unknown = [v for v in wanted if v not in variants]
+        if unknown:
+            raise SystemExit(f"Unknown variants {unknown}; choose from {variants}")
+        variants = wanted
 
     if args.dry_run:
         # Resolves the provider's default model name only; no request is made.
