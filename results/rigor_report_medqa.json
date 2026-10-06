@@ -1,0 +1,1201 @@
+{
+  "generated_at": 1791279994.377058,
+  "db_path": "results/medqa_fast.db",
+  "n_runs_analyzed": 1800,
+  "n_cases": 300,
+  "models": [
+    "nvidia / meta/llama-3.2-11b-vision-instruct"
+  ],
+  "integrity": {
+    "synthetic_columns": [],
+    "judge_score_is_derived": false,
+    "jru_min_by_variant": {
+      "V1": 0.0,
+      "V2-CL": 0.0,
+      "V3-CL": 0.0,
+      "V4-CL": 0.0,
+      "V5": 0.0,
+      "V5-CL": 0.0
+    },
+    "notes": []
+  },
+  "measurement_validity": {
+    "parse_failure_rate_by_agent": {
+      "research": {
+        "failed": 15,
+        "total": 1800,
+        "rate": 0.008
+      },
+      "diagnosis": {
+        "failed": 11,
+        "total": 1800,
+        "rate": 0.006
+      },
+      "diagnosis_initial": {
+        "failed": 11,
+        "total": 534,
+        "rate": 0.021
+      }
+    },
+    "runs_with_unparsed_diagnosis": 11,
+    "runs_with_option_letter_diagnosis": 1063,
+    "reported_accuracy_on_option_letter_runs": 0.429,
+    "reported_accuracy_on_unparsed_runs": 0.0,
+    "reported_accuracy_mean": 0.433,
+    "corrected_accuracy_mean_all_cases": 0.433,
+    "corrected_accuracy_mean_valid_gold": 0.433,
+    "reported_accuracy_mean_valid_gold": 0.433,
+    "cases_total": 300,
+    "cases_with_valid_gold": 300,
+    "templated_gold_by_dataset": {},
+    "cases_with_answer_key": 300,
+    "runs_by_scoring_mode": {
+      "option_exact": 1800
+    },
+    "option_parse_status_counts": {
+      "letter": 1103,
+      "text_exact": 640,
+      "unparseable": 42,
+      "empty": 13,
+      "ambiguous": 1,
+      "text_contained": 1
+    },
+    "runs_with_unparseable_option_answer": 56,
+    "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; e2e_latency sums every agent step."
+  },
+  "variants": [
+    {
+      "variant_id": "V1",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.43,
+      "detector_neutral_quality": 0.6076,
+      "reported_quality": 0.7646,
+      "tokens_mean": 2200.9,
+      "cost_mean_usd": 0.000288,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 21.2,
+      "e2e_latency_p95_s": 49.0,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 0.0
+    },
+    {
+      "variant_id": "V2-CL",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.43,
+      "detector_neutral_quality": 0.6038,
+      "reported_quality": 0.7338,
+      "tokens_mean": 4827.4,
+      "cost_mean_usd": 0.000622,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 107,
+      "e2e_latency_p50_s": 46.3,
+      "e2e_latency_p95_s": 92.4,
+      "hallucination_flag_rate": 0.3567,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 43.3
+    },
+    {
+      "variant_id": "V3-CL",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.4633,
+      "detector_neutral_quality": 0.6314,
+      "reported_quality": 0.7788,
+      "tokens_mean": 4140.7,
+      "cost_mean_usd": 0.000523,
+      "safety_alerts_total": 0,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 35.1,
+      "e2e_latency_p95_s": 79.9,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": null,
+      "diagnosis_changed_vs_v1_pct": 43.7
+    },
+    {
+      "variant_id": "V4-CL",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.4167,
+      "detector_neutral_quality": 0.5944,
+      "reported_quality": 0.6371,
+      "tokens_mean": 4491.4,
+      "cost_mean_usd": 0.000571,
+      "safety_alerts_total": 516,
+      "hallucination_flags_total": 0,
+      "e2e_latency_p50_s": 38.2,
+      "e2e_latency_p95_s": 86.6,
+      "hallucination_flag_rate": null,
+      "safety_alerts_per_run": 1.72,
+      "diagnosis_changed_vs_v1_pct": 41.7
+    },
+    {
+      "variant_id": "V5",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.43,
+      "detector_neutral_quality": 0.6076,
+      "reported_quality": 0.6166,
+      "tokens_mean": 7570.4,
+      "cost_mean_usd": 0.000934,
+      "safety_alerts_total": 517,
+      "hallucination_flags_total": 106,
+      "e2e_latency_p50_s": 60.7,
+      "e2e_latency_p95_s": 105.7,
+      "hallucination_flag_rate": 0.3533,
+      "safety_alerts_per_run": 1.7233,
+      "diagnosis_changed_vs_v1_pct": 0.0
+    },
+    {
+      "variant_id": "V5-CL",
+      "n_runs": 300,
+      "accuracy_valid_gold": 0.43,
+      "detector_neutral_quality": 0.6111,
+      "reported_quality": 0.6131,
+      "tokens_mean": 11331.9,
+      "cost_mean_usd": 0.001405,
+      "safety_alerts_total": 532,
+      "hallucination_flags_total": 114,
+      "e2e_latency_p50_s": 91.7,
+      "e2e_latency_p95_s": 149.5,
+      "hallucination_flag_rate": 0.38,
+      "safety_alerts_per_run": 1.7733,
+      "diagnosis_changed_vs_v1_pct": 64.7
+    }
+  ],
+  "paired_tests": [
+    {
+      "metric": "accuracy",
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0,
+      "ci95_low": -0.05,
+      "ci95_high": 0.05,
+      "wilcoxon_p": 1.0,
+      "rank_biserial": 0.0,
+      "rank_biserial_ci95_low": -0.24,
+      "rank_biserial_ci95_high": 0.246,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0333,
+      "ci95_low": -0.0133,
+      "ci95_high": 0.08,
+      "wilcoxon_p": 0.165518,
+      "rank_biserial": 0.192,
+      "rank_biserial_ci95_low": -0.077,
+      "rank_biserial_ci95_high": 0.458,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.0133,
+      "ci95_low": -0.0633,
+      "ci95_high": 0.0333,
+      "wilcoxon_p": 0.586214,
+      "rank_biserial": -0.074,
+      "rank_biserial_ci95_low": -0.348,
+      "rank_biserial_ci95_high": 0.2,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 1.0,
+      "rank_biserial": null,
+      "rank_biserial_ci95_low": null,
+      "rank_biserial_ci95_high": null,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "accuracy",
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0,
+      "ci95_low": -0.06,
+      "ci95_high": 0.06,
+      "wilcoxon_p": 1.0,
+      "rank_biserial": 0.0,
+      "rank_biserial_ci95_low": -0.216,
+      "rank_biserial_ci95_high": 0.209,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.0038,
+      "ci95_low": -0.0397,
+      "ci95_high": 0.03,
+      "wilcoxon_p": 0.716214,
+      "rank_biserial": -0.041,
+      "rank_biserial_ci95_low": -0.256,
+      "rank_biserial_ci95_high": 0.179,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0238,
+      "ci95_low": -0.0085,
+      "ci95_high": 0.0564,
+      "wilcoxon_p": 0.167543,
+      "rank_biserial": 0.169,
+      "rank_biserial_ci95_low": -0.072,
+      "rank_biserial_ci95_high": 0.412,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.0132,
+      "ci95_low": -0.0462,
+      "ci95_high": 0.0188,
+      "wilcoxon_p": 0.300396,
+      "rank_biserial": -0.115,
+      "rank_biserial_ci95_low": -0.339,
+      "rank_biserial_ci95_high": 0.093,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0,
+      "ci95_low": 0.0,
+      "ci95_high": 0.0,
+      "wilcoxon_p": 1.0,
+      "rank_biserial": null,
+      "rank_biserial_ci95_low": null,
+      "rank_biserial_ci95_high": null,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "detector_neutral_quality",
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0035,
+      "ci95_low": -0.0386,
+      "ci95_high": 0.0438,
+      "wilcoxon_p": 0.872166,
+      "rank_biserial": 0.017,
+      "rank_biserial_ci95_low": -0.188,
+      "rank_biserial_ci95_high": 0.216,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.0308,
+      "ci95_low": -0.0527,
+      "ci95_high": -0.0099,
+      "wilcoxon_p": 3e-05,
+      "rank_biserial": -0.375,
+      "rank_biserial_ci95_low": -0.534,
+      "rank_biserial_ci95_high": -0.209,
+      "wilcoxon_p_holm": 0.00051
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 0.0143,
+      "ci95_low": -0.0051,
+      "ci95_high": 0.0338,
+      "wilcoxon_p": 0.170236,
+      "rank_biserial": 0.168,
+      "rank_biserial_ci95_low": -0.075,
+      "rank_biserial_ci95_high": 0.411,
+      "wilcoxon_p_holm": 1.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.1275,
+      "ci95_low": -0.1484,
+      "ci95_high": -0.1077,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": -0.71,
+      "rank_biserial_ci95_low": -0.812,
+      "rank_biserial_ci95_high": -0.6,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.148,
+      "ci95_low": -0.1546,
+      "ci95_high": -0.1415,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": -1.0,
+      "rank_biserial_ci95_low": -1.0,
+      "rank_biserial_ci95_high": -1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "reported_quality",
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": -0.1515,
+      "ci95_low": -0.1778,
+      "ci95_high": -0.1257,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": -0.618,
+      "rank_biserial_ci95_low": -0.719,
+      "rank_biserial_ci95_high": -0.512,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 2626.43,
+      "ci95_low": 2433.2922,
+      "ci95_high": 2824.9111,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 1939.74,
+      "ci95_low": 1827.3786,
+      "ci95_high": 2055.1104,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 2290.4267,
+      "ci95_low": 2120.8997,
+      "ci95_high": 2462.1612,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "mean_diff": 5369.4533,
+      "ci95_low": 5291.8683,
+      "ci95_high": 5456.0927,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "tokens",
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 9130.9367,
+      "ci95_low": 8859.8525,
+      "ci95_high": 9391.0722,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 26.4006,
+      "ci95_low": 23.405,
+      "ci95_high": 29.5673,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 0.918,
+      "rank_biserial_ci95_low": 0.865,
+      "rank_biserial_ci95_high": 0.96,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 16.7158,
+      "ci95_low": 14.302,
+      "ci95_high": 19.3417,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 0.83,
+      "rank_biserial_ci95_low": 0.752,
+      "rank_biserial_ci95_high": 0.894,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 20.6961,
+      "ci95_low": 17.9149,
+      "ci95_high": 23.5669,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 0.872,
+      "rank_biserial_ci95_low": 0.806,
+      "rank_biserial_ci95_high": 0.926,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "mean_diff": 40.4686,
+      "ci95_low": 38.7422,
+      "ci95_high": 42.2971,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 1.0,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    },
+    {
+      "metric": "e2e_latency_s",
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "mean_diff": 69.7502,
+      "ci95_low": 66.271,
+      "ci95_high": 73.4226,
+      "wilcoxon_p": 0.0,
+      "rank_biserial": 1.0,
+      "rank_biserial_ci95_low": 0.998,
+      "rank_biserial_ci95_high": 1.0,
+      "wilcoxon_p_holm": 0.0
+    }
+  ],
+  "accuracy_tests": [
+    {
+      "comparison": "V2-CL - V1",
+      "n_pairs": 300,
+      "accuracy_v1": 0.43,
+      "accuracy_variant": 0.43,
+      "only_v1_correct": 31,
+      "only_variant_correct": 31,
+      "discordance_rate": 0.2067,
+      "accuracy_diff": 0.0,
+      "accuracy_diff_ci95_low": -0.05,
+      "accuracy_diff_ci95_high": 0.05,
+      "cohens_h": 0.0,
+      "cohens_h_ci95_low": -0.101,
+      "cohens_h_ci95_high": 0.101,
+      "mcnemar_exact_p": 1.0,
+      "mcnemar_exact_p_holm": 1.0
+    },
+    {
+      "comparison": "V3-CL - V1",
+      "n_pairs": 300,
+      "accuracy_v1": 0.43,
+      "accuracy_variant": 0.4633,
+      "only_v1_correct": 21,
+      "only_variant_correct": 31,
+      "discordance_rate": 0.1733,
+      "accuracy_diff": 0.0333,
+      "accuracy_diff_ci95_low": -0.0133,
+      "accuracy_diff_ci95_high": 0.08,
+      "cohens_h": 0.067,
+      "cohens_h_ci95_low": -0.027,
+      "cohens_h_ci95_high": 0.161,
+      "mcnemar_exact_p": 0.211609,
+      "mcnemar_exact_p_holm": 1.0
+    },
+    {
+      "comparison": "V4-CL - V1",
+      "n_pairs": 300,
+      "accuracy_v1": 0.43,
+      "accuracy_variant": 0.4167,
+      "only_v1_correct": 29,
+      "only_variant_correct": 25,
+      "discordance_rate": 0.18,
+      "accuracy_diff": -0.0133,
+      "accuracy_diff_ci95_low": -0.0633,
+      "accuracy_diff_ci95_high": 0.0333,
+      "cohens_h": -0.027,
+      "cohens_h_ci95_low": -0.128,
+      "cohens_h_ci95_high": 0.068,
+      "mcnemar_exact_p": 0.683489,
+      "mcnemar_exact_p_holm": 1.0
+    },
+    {
+      "comparison": "V5 - V1",
+      "n_pairs": 300,
+      "accuracy_v1": 0.43,
+      "accuracy_variant": 0.43,
+      "only_v1_correct": 0,
+      "only_variant_correct": 0,
+      "discordance_rate": 0.0,
+      "accuracy_diff": 0.0,
+      "accuracy_diff_ci95_low": 0.0,
+      "accuracy_diff_ci95_high": 0.0,
+      "cohens_h": 0.0,
+      "cohens_h_ci95_low": 0.0,
+      "cohens_h_ci95_high": 0.0,
+      "mcnemar_exact_p": 1.0,
+      "mcnemar_exact_p_holm": 1.0
+    },
+    {
+      "comparison": "V5-CL - V1",
+      "n_pairs": 300,
+      "accuracy_v1": 0.43,
+      "accuracy_variant": 0.43,
+      "only_v1_correct": 42,
+      "only_variant_correct": 42,
+      "discordance_rate": 0.28,
+      "accuracy_diff": 0.0,
+      "accuracy_diff_ci95_low": -0.06,
+      "accuracy_diff_ci95_high": 0.0633,
+      "cohens_h": 0.0,
+      "cohens_h_ci95_low": -0.122,
+      "cohens_h_ci95_high": 0.127,
+      "mcnemar_exact_p": 1.0,
+      "mcnemar_exact_p_holm": 1.0
+    }
+  ],
+  "closed_loop_effect": [
+    {
+      "comparison": "V5-CL - V5",
+      "n_pairs": 300,
+      "accuracy_open": 0.43,
+      "accuracy_closed": 0.43,
+      "fixed_by_revision": 42,
+      "broken_by_revision": 42,
+      "revision_rate": 0.78,
+      "accuracy_diff": 0.0,
+      "accuracy_diff_ci95_low": -0.06,
+      "accuracy_diff_ci95_high": 0.0633,
+      "mcnemar_exact_p": 1.0,
+      "mcnemar_exact_p_holm": 1.0,
+      "revised_runs_scored": 233,
+      "within_run_fixed": 36,
+      "within_run_broken": 33
+    }
+  ],
+  "revision_by_variant": [
+    {
+      "variant_id": "V2-CL",
+      "revision_rate": 0.3567,
+      "revised_runs_scored": 106,
+      "within_run_fixed": 15,
+      "within_run_broken": 15,
+      "sign_test_p": 1.0
+    },
+    {
+      "variant_id": "V3-CL",
+      "revision_rate": 0.33,
+      "revised_runs_scored": 92,
+      "within_run_fixed": 14,
+      "within_run_broken": 6,
+      "sign_test_p": 0.115318
+    },
+    {
+      "variant_id": "V4-CL",
+      "revision_rate": 0.3133,
+      "revised_runs_scored": 88,
+      "within_run_fixed": 11,
+      "within_run_broken": 16,
+      "sign_test_p": 0.442068
+    },
+    {
+      "variant_id": "V5-CL",
+      "revision_rate": 0.78,
+      "revised_runs_scored": 233,
+      "within_run_fixed": 36,
+      "within_run_broken": 33,
+      "sign_test_p": 0.809949
+    }
+  ],
+  "audit_paradox": [
+    {
+      "variant_id": "V2-CL",
+      "reported_quality_drop": 0.0308,
+      "detector_neutral_quality_drop": 0.0038,
+      "share_of_drop_from_detector_penalties": 0.877
+    },
+    {
+      "variant_id": "V3-CL",
+      "reported_quality_drop": -0.0143,
+      "detector_neutral_quality_drop": -0.0238,
+      "share_of_drop_from_detector_penalties": -0.667
+    },
+    {
+      "variant_id": "V4-CL",
+      "reported_quality_drop": 0.1275,
+      "detector_neutral_quality_drop": 0.0132,
+      "share_of_drop_from_detector_penalties": 0.896
+    },
+    {
+      "variant_id": "V5",
+      "reported_quality_drop": 0.148,
+      "detector_neutral_quality_drop": 0.0,
+      "share_of_drop_from_detector_penalties": 1.0
+    },
+    {
+      "variant_id": "V5-CL",
+      "reported_quality_drop": 0.1515,
+      "detector_neutral_quality_drop": -0.0035,
+      "share_of_drop_from_detector_penalties": 1.023
+    }
+  ],
+  "alert_discrimination": [
+    {
+      "signal": "hallucination_flag",
+      "variant_id": "V2-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.357,
+      "sensitivity": 0.368,
+      "false_positive_rate": 0.341,
+      "precision": 0.589,
+      "auroc": 0.514
+    },
+    {
+      "signal": "hallucination_flag",
+      "variant_id": "V5",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.353,
+      "sensitivity": 0.351,
+      "false_positive_rate": 0.357,
+      "precision": 0.566,
+      "auroc": 0.497
+    },
+    {
+      "signal": "hallucination_flag",
+      "variant_id": "V5-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.38,
+      "sensitivity": 0.427,
+      "false_positive_rate": 0.318,
+      "precision": 0.64,
+      "auroc": 0.555
+    },
+    {
+      "signal": "safety_alerts",
+      "variant_id": "V4-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.583,
+      "fire_rate": 1.0,
+      "sensitivity": 1.0,
+      "false_positive_rate": 1.0,
+      "precision": 0.583,
+      "auroc": 0.533
+    },
+    {
+      "signal": "safety_alerts",
+      "variant_id": "V5",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 1.0,
+      "sensitivity": 1.0,
+      "false_positive_rate": 1.0,
+      "precision": 0.57,
+      "auroc": 0.507
+    },
+    {
+      "signal": "safety_alerts",
+      "variant_id": "V5-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 1.0,
+      "sensitivity": 1.0,
+      "false_positive_rate": 1.0,
+      "precision": 0.57,
+      "auroc": 0.533
+    },
+    {
+      "signal": "safety_alerts_high",
+      "variant_id": "V4-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.583,
+      "fire_rate": 0.313,
+      "sensitivity": 0.354,
+      "false_positive_rate": 0.256,
+      "precision": 0.66,
+      "auroc": 0.551
+    },
+    {
+      "signal": "safety_alerts_high",
+      "variant_id": "V5",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.327,
+      "sensitivity": 0.357,
+      "false_positive_rate": 0.287,
+      "precision": 0.622,
+      "auroc": 0.535
+    },
+    {
+      "signal": "safety_alerts_high",
+      "variant_id": "V5-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.337,
+      "sensitivity": 0.345,
+      "false_positive_rate": 0.326,
+      "precision": 0.584,
+      "auroc": 0.511
+    },
+    {
+      "signal": "hitl_decision",
+      "variant_id": "V3-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.537,
+      "fire_rate": 0.33,
+      "sensitivity": 0.379,
+      "false_positive_rate": 0.273,
+      "precision": 0.616,
+      "auroc": 0.553
+    },
+    {
+      "signal": "hitl_decision",
+      "variant_id": "V5",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.747,
+      "sensitivity": 0.766,
+      "false_positive_rate": 0.721,
+      "precision": 0.585,
+      "auroc": 0.523
+    },
+    {
+      "signal": "hitl_decision",
+      "variant_id": "V5-CL",
+      "n": 300,
+      "misdiagnosis_prevalence": 0.57,
+      "fire_rate": 0.75,
+      "sensitivity": 0.789,
+      "false_positive_rate": 0.698,
+      "precision": 0.6,
+      "auroc": 0.546
+    }
+  ],
+  "alert_reproducibility": {},
+  "hitl": [
+    {
+      "variant_id": "V3-CL",
+      "decision": "APPROVED",
+      "n": 201,
+      "misdiagnosis_rate": 0.498
+    },
+    {
+      "variant_id": "V3-CL",
+      "decision": "REJECTED",
+      "n": 3,
+      "misdiagnosis_rate": 0.667
+    },
+    {
+      "variant_id": "V3-CL",
+      "decision": "REQUEST_REVISION",
+      "n": 96,
+      "misdiagnosis_rate": 0.615
+    },
+    {
+      "variant_id": "V5",
+      "decision": "APPROVED",
+      "n": 76,
+      "misdiagnosis_rate": 0.526
+    },
+    {
+      "variant_id": "V5",
+      "decision": "REJECTED",
+      "n": 1,
+      "misdiagnosis_rate": 1.0
+    },
+    {
+      "variant_id": "V5",
+      "decision": "REQUEST_REVISION",
+      "n": 223,
+      "misdiagnosis_rate": 0.583
+    },
+    {
+      "variant_id": "V5-CL",
+      "decision": "APPROVED",
+      "n": 75,
+      "misdiagnosis_rate": 0.48
+    },
+    {
+      "variant_id": "V5-CL",
+      "decision": "REJECTED",
+      "n": 2,
+      "misdiagnosis_rate": 1.0
+    },
+    {
+      "variant_id": "V5-CL",
+      "decision": "REQUEST_REVISION",
+      "n": 223,
+      "misdiagnosis_rate": 0.596
+    }
+  ],
+  "calibration": {
+    "ece": 0.2374,
+    "brier": 0.3021,
+    "n": 297,
+    "bins": [
+      {
+        "bin": "0.0-0.1",
+        "n": 34,
+        "mean_confidence": 0.046,
+        "observed_accuracy": 0.441
+      },
+      {
+        "bin": "0.1-0.2",
+        "n": 18,
+        "mean_confidence": 0.125,
+        "observed_accuracy": 0.278
+      },
+      {
+        "bin": "0.2-0.3",
+        "n": 168,
+        "mean_confidence": 0.233,
+        "observed_accuracy": 0.446
+      },
+      {
+        "bin": "0.4-0.5",
+        "n": 13,
+        "mean_confidence": 0.4,
+        "observed_accuracy": 0.154
+      },
+      {
+        "bin": "0.5-0.6",
+        "n": 23,
+        "mean_confidence": 0.6,
+        "observed_accuracy": 0.478
+      },
+      {
+        "bin": "0.6-0.7",
+        "n": 1,
+        "mean_confidence": 0.7,
+        "observed_accuracy": 1.0
+      },
+      {
+        "bin": "0.7-0.8",
+        "n": 3,
+        "mean_confidence": 0.75,
+        "observed_accuracy": 0.333
+      },
+      {
+        "bin": "0.8-0.9",
+        "n": 36,
+        "mean_confidence": 0.804,
+        "observed_accuracy": 0.528
+      },
+      {
+        "bin": "0.9-1.0",
+        "n": 1,
+        "mean_confidence": 0.9,
+        "observed_accuracy": 0.0
+      }
+    ]
+  },
+  "latency_by_agent": [
+    {
+      "agent": "Diagnosis Agent",
+      "calls": 2334,
+      "mean_s": 16.8,
+      "p95_s": 32.8,
+      "max_s": 166.7,
+      "mean_share_of_run": 0.36,
+      "mean_tokens": 1612.0
+    },
+    {
+      "agent": "Verifier Agent",
+      "calls": 900,
+      "mean_s": 14.0,
+      "p95_s": 27.8,
+      "max_s": 62.0,
+      "mean_share_of_run": 0.227,
+      "mean_tokens": 1423.0
+    },
+    {
+      "agent": "Verifier Agent (Re-check)",
+      "calls": 341,
+      "mean_s": 13.7,
+      "p95_s": 24.5,
+      "max_s": 65.3,
+      "mean_share_of_run": 0.154,
+      "mean_tokens": 1415.0
+    },
+    {
+      "agent": "Safety Validator",
+      "calls": 900,
+      "mean_s": 11.1,
+      "p95_s": 23.3,
+      "max_s": 63.5,
+      "mean_share_of_run": 0.188,
+      "mean_tokens": 1324.0
+    },
+    {
+      "agent": "Safety Validator (Re-check)",
+      "calls": 328,
+      "mean_s": 10.9,
+      "p95_s": 20.9,
+      "max_s": 110.9,
+      "mean_share_of_run": 0.125,
+      "mean_tokens": 1321.0
+    },
+    {
+      "agent": "HITL Simulator",
+      "calls": 900,
+      "mean_s": 9.8,
+      "p95_s": 20.3,
+      "max_s": 65.9,
+      "mean_share_of_run": 0.17,
+      "mean_tokens": 1489.0
+    },
+    {
+      "agent": "Research Agent",
+      "calls": 1800,
+      "mean_s": 7.2,
+      "p95_s": 15.4,
+      "max_s": 99.5,
+      "mean_share_of_run": 0.166,
+      "mean_tokens": 697.0
+    },
+    {
+      "agent": "Consistency Checker",
+      "calls": 600,
+      "mean_s": 5.3,
+      "p95_s": 12.1,
+      "max_s": 54.6,
+      "mean_share_of_run": 0.069,
+      "mean_tokens": 1040.0
+    }
+  ],
+  "strata": {
+    "dataset": [
+      {
+        "dataset": "medqa",
+        "cases": 300,
+        "cases_valid_gold": 300,
+        "accuracy_valid_gold": 0.43,
+        "diagnosis_parse_failure_rate": 0.01
+      }
+    ],
+    "specialty": [
+      {
+        "specialty": "USMLE Step 1",
+        "cases": 162,
+        "cases_valid_gold": 162,
+        "accuracy_valid_gold": 0.377,
+        "diagnosis_parse_failure_rate": 0.0
+      },
+      {
+        "specialty": "USMLE Step 2 & 3",
+        "cases": 138,
+        "cases_valid_gold": 138,
+        "accuracy_valid_gold": 0.493,
+        "diagnosis_parse_failure_rate": 0.022
+      }
+    ],
+    "difficulty": [
+      {
+        "difficulty": "step1",
+        "cases": 162,
+        "cases_valid_gold": 162,
+        "accuracy_valid_gold": 0.377,
+        "diagnosis_parse_failure_rate": 0.0
+      },
+      {
+        "difficulty": "step2&3",
+        "cases": 138,
+        "cases_valid_gold": 138,
+        "accuracy_valid_gold": 0.493,
+        "diagnosis_parse_failure_rate": 0.022
+      }
+    ]
+  },
+  "failure_taxonomy": {
+    "misdiagnosed_cases_v1": 171,
+    "flagged_by_any_variant": {
+      "verifier": 92,
+      "safety_high": 83,
+      "hitl": 147
+    },
+    "missed_by_all_governance": 19,
+    "confident_wrong_ge_0_7": 20,
+    "examples": [
+      {
+        "case_id": "medqa_test_0013",
+        "gold": "A reduction in diastolic filling time",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_test_0016",
+        "gold": "IL-4",
+        "predicted": "IL-13"
+      },
+      {
+        "case_id": "medqa_test_0019",
+        "gold": "Benzodiazepine intoxication\n\"",
+        "predicted": "Ethanol intoxication"
+      },
+      {
+        "case_id": "medqa_test_0014",
+        "gold": "Rotavirus",
+        "predicted": "A"
+      },
+      {
+        "case_id": "medqa_test_0023",
+        "gold": "Staphylococcus aureus",
+        "predicted": "Streptococcus pneumoniae"
+      },
+      {
+        "case_id": "medqa_test_0001",
+        "gold": "Cross-linking of DNA",
+        "predicted": "Inhibition of proteasome"
+      },
+      {
+        "case_id": "medqa_test_0006",
+        "gold": "Common iliac artery aneurysm",
+        "predicted": "Renal artery stenosis"
+      },
+      {
+        "case_id": "medqa_test_0081",
+        "gold": "Caspase-9",
+        "predicted": "Cyclin-dependent kinase 4"
+      }
+    ]
+  },
+  "clinician_validation": {
+    "n_reviews": 0,
+    "n_reviewers": 0,
+    "n_items": 0,
+    "alert_precision_by_clinicians": null,
+    "n_alerts_rated": 0,
+    "auto_vs_clinician_agreement": null,
+    "auto_vs_clinician_kappa": null,
+    "inter_rater": {
+      "status": "insufficient_data",
+      "method": null,
+      "kappa": null
+    },
+    "status": "insufficient_data: no clinician reviews yet. Collect them in the Clinician Review page using the fixed set in benchmarks/clinician_protocol_50.json."
+  },
+  "jru_measurement": {
+    "n_runs_measured": 0,
+    "jru_source_counts": {
+      "grounding_proxy": 1800
+    },
+    "judge_models": [],
+    "mean_jru_by_variant": {},
+    "status": "not measured: no run was scored by a judge model different from the generator"
+  },
+  "limitations": [
+    "Single model (one provider); results may not transfer to other LLMs.",
+    "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
+    "Accuracy uses lenient string matching against gold labels; only non-templated labels are scored.",
+    "Governance outputs are not validated against clinicians until reviews are collected."
+  ],
+  "multiple_comparisons": {
+    "method": "holm-bonferroni",
+    "alpha": 0.05,
+    "family_size": 30,
+    "family": "all paired Wilcoxon tests (every metric x variant vs V1) and exact McNemar accuracy tests",
+    "significant_raw": 14,
+    "significant_after_holm": 14
+  },
+  "power_analysis": {
+    "method": "Connor (1987) normal approximation for the paired McNemar test",
+    "alpha": 0.05,
+    "target_power": 0.8,
+    "target_accuracy_diff": 0.05,
+    "per_comparison": [
+      {
+        "comparison": "V2-CL - V1",
+        "n_pairs": 300,
+        "discordance_rate": 0.2067,
+        "min_detectable_accuracy_diff": 0.0732,
+        "power_for_5pt_diff": 0.478,
+        "required_n_for_5pt_diff": 647
+      },
+      {
+        "comparison": "V3-CL - V1",
+        "n_pairs": 300,
+        "discordance_rate": 0.1733,
+        "min_detectable_accuracy_diff": 0.0671,
+        "power_for_5pt_diff": 0.548,
+        "required_n_for_5pt_diff": 542
+      },
+      {
+        "comparison": "V4-CL - V1",
+        "n_pairs": 300,
+        "discordance_rate": 0.18,
+        "min_detectable_accuracy_diff": 0.0684,
+        "power_for_5pt_diff": 0.533,
+        "required_n_for_5pt_diff": 563
+      },
+      {
+        "comparison": "V5 - V1",
+        "n_pairs": 300,
+        "discordance_rate": 0.0,
+        "min_detectable_accuracy_diff": null,
+        "power_for_5pt_diff": null,
+        "required_n_for_5pt_diff": null
+      },
+      {
+        "comparison": "V5-CL - V1",
+        "n_pairs": 300,
+        "discordance_rate": 0.28,
+        "min_detectable_accuracy_diff": 0.0853,
+        "power_for_5pt_diff": 0.373,
+        "required_n_for_5pt_diff": 877
+      }
+    ],
+    "pooled": {
+      "n_pairs": 300,
+      "discordance_rate": 0.21,
+      "min_detectable_accuracy_diff": 0.0738,
+      "power_for_5pt_diff": 0.472,
+      "required_n_for_5pt_diff": 657
+    },
+    "min_detectable_diff_at_observed_n_by_assumed_discordance": {
+      "0.10": 0.0509,
+      "0.20": 0.0721,
+      "0.30": 0.0882
+    },
+    "required_n_for_5pt_diff_by_assumed_discordance": {
+      "0.10": 312,
+      "0.20": 626,
+      "0.30": 940
+    },
+    "note": "Discordance = share of cases where exactly one of V1 / variant is correct. With zero observed discordance the test cannot reject; the assumed-discordance grid gives planning sample sizes."
+  },
+  "headline_findings": [
+    "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter clinical decisions.",
+    "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
+    "Exact McNemar on binary correctness vs V1: 0 of 5 comparisons significant after Holm-Bonferroni over 30 paired tests (smallest raw p 0.211609); accuracy differences range -0.0133 to 0.0333.",
+    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43; revision fixed 42 and broke 42 answers (exact McNemar p=1.0, Holm 1.0).",
+    "88-102% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
+    "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.497-0.555 (0.5 = chance).",
+    "The safety validator raised at least one alert on 100% of runs, so alert presence carries no information about whether the diagnosis is wrong.",
+    "Power: with 300 paired cases and 0.21 mean discordance, the smallest accuracy difference detectable at alpha 0.05 / power 0.8 is 0.0738; a 5-point difference needs 657 pairs (171 baseline misdiagnoses).",
+    "JRU is not reported as a measurement: no run was scored by a judge model different from the generator.",
+    "Model-reported diagnosis probability: ECE 0.2374, Brier 0.3021 (n=297).",
+    "Latency bottleneck: Diagnosis Agent (mean 16.8s, p95 32.8s)."
+  ]
+}

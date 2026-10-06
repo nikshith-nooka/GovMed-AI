@@ -1,0 +1,9 @@
+agent,calls,mean_s,p95_s,max_s,mean_share_of_run,mean_tokens
+Diagnosis Agent,2334,16.8,32.8,166.7,0.36,1612.0
+Verifier Agent,900,14.0,27.8,62.0,0.227,1423.0
+Verifier Agent (Re-check),341,13.7,24.5,65.3,0.154,1415.0
+Safety Validator,900,11.1,23.3,63.5,0.188,1324.0
+Safety Validator (Re-check),328,10.9,20.9,110.9,0.125,1321.0
+HITL Simulator,900,9.8,20.3,65.9,0.17,1489.0
+Research Agent,1800,7.2,15.4,99.5,0.166,697.0
+Consistency Checker,600,5.3,12.1,54.6,0.069,1040.0

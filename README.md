@@ -102,6 +102,7 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 | Why do governed variants score lower on quality? | 94–96% of the drop comes from the rubric penalising each variant's own detectors; the ungoverned baseline has none to be penalised by. |
 | Do the alerts identify wrong diagnoses? | Not yet: the safety validator raises at least one alert on every run, and each governance signal detects misdiagnosis at AUROC 0.40–0.56 (0.5 is chance). |
 | How accurate is the pipeline? | 0.29 overall and 0.38 on the 71 cases with a real diagnosis label, after correcting a substring-matching scorer that reported 0.74. |
+| Does closing the loop help? | Not overall. On 300 MedQA questions with the answer key, accuracy was 43.0% with no checks, with checks as warnings, and with checks feeding back a revision; revisions fixed 36 answers and broke 33. Only attending-simulator feedback showed a small, non-significant gain (46.3%, p = 0.21). |
 | Is the study powered? | No: variants disagree with the baseline on 1–2 of 71 cases (exact McNemar p ≥ 0.5, 1.0 after Holm correction). A 5-point difference needs 312–940 paired cases, which is why a 300-question MedQA benchmark with its answer key is included. |
 | Is the model's stated confidence reliable? | No: expected calibration error is 0.29. The interface presents likelihoods as a ranking, not a probability. |
 | What does governance cost? | Median end-to-end latency rises from 45 s (G0) to 111 s (G4) on the benchmark model; tokens rise from about 3,100 to 8,400 per case. |
@@ -111,9 +112,12 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 > `governance_efficiency_factor`, `hitl_minutes`) were populated by a post-hoc script rather than measured. The analysis
 > detects and excludes them. The original run database is kept as `results/benchmark_results.db.bak`.
 
+The closed-loop results (1,800 runs, `results/rigor_report_medqa.json`) come from Llama-3.2-11B on 300 MedQA-USMLE
+questions scored against the original answer key.
+
 These are negative and methodological findings: under open-loop governance and lenient automatic scoring, apparent
-safety and quality effects come largely from the evaluation itself. The closed-loop experiment and clinician validation
-described in the roadmap test whether governance can do better.
+safety and quality effects come largely from the evaluation itself, and feeding the checks back into the diagnosis does
+not help while those checks cannot tell right answers from wrong ones.
 
 ---
 
@@ -237,7 +241,7 @@ tests/             164 unit and integration tests, including a prompt-injection 
 
 **Current limitations**
 
-- A single model and provider was benchmarked.
+- A single model and provider was benchmarked, in both experiments.
 - 79 of the 150 gold labels are templated titles rather than diagnoses, so accuracy rests on 71 scorable cases.
 - No clinician validation has been collected yet.
 - The deterministic rules cover 14 common contraindications; they are a safety net, not a drug-interaction database.
@@ -245,10 +249,9 @@ tests/             164 unit and integration tests, including a prompt-injection 
 
 **Next steps** (detailed in [RESEARCH_ROADMAP.md](RESEARCH_ROADMAP.md))
 
-1. Rebuild the benchmark from the original MedQA questions with their answer key (300 or more cases).
-2. Run the open-loop versus closed-loop comparison on the same cases.
-3. Repeat on a second model to test generalisation.
-4. Collect ratings from at least three clinicians on the same 50 outputs.
+1. Repeat the MedQA open- and closed-loop experiment on a second, larger model.
+2. Test better-calibrated checks, starting from the attending simulator, the only one whose feedback trended positive.
+3. Collect ratings from at least three clinicians on the same 50 outputs.
 
 ---
 

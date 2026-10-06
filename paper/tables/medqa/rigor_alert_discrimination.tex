@@ -1,0 +1,24 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrrrrrr}
+\toprule
+signal & variant\_id & n & fire\_rate & sensitivity & false\_positive\_rate & precision & auroc \\
+\midrule
+hallucination\_flag & V2-CL & 300 & 0.357 & 0.368 & 0.341 & 0.589 & 0.514 \\
+hallucination\_flag & V5 & 300 & 0.353 & 0.351 & 0.357 & 0.566 & 0.497 \\
+hallucination\_flag & V5-CL & 300 & 0.380 & 0.427 & 0.318 & 0.640 & 0.555 \\
+safety\_alerts & V4-CL & 300 & 1.000 & 1.000 & 1.000 & 0.583 & 0.533 \\
+safety\_alerts & V5 & 300 & 1.000 & 1.000 & 1.000 & 0.570 & 0.507 \\
+safety\_alerts & V5-CL & 300 & 1.000 & 1.000 & 1.000 & 0.570 & 0.533 \\
+safety\_alerts\_high & V4-CL & 300 & 0.313 & 0.354 & 0.256 & 0.660 & 0.551 \\
+safety\_alerts\_high & V5 & 300 & 0.327 & 0.357 & 0.287 & 0.622 & 0.535 \\
+safety\_alerts\_high & V5-CL & 300 & 0.337 & 0.345 & 0.326 & 0.584 & 0.511 \\
+hitl\_decision & V3-CL & 300 & 0.330 & 0.379 & 0.273 & 0.616 & 0.553 \\
+hitl\_decision & V5 & 300 & 0.747 & 0.766 & 0.721 & 0.585 & 0.523 \\
+hitl\_decision & V5-CL & 300 & 0.750 & 0.789 & 0.698 & 0.600 & 0.546 \\
+\bottomrule
+\end{tabular}
+\caption{Governance signals as detectors of misdiagnosis (accuracy $<$ 0.5).}
+\label{tab:rigor_alert_discrimination}
+\end{table}

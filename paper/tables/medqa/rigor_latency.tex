@@ -1,0 +1,20 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrrrr}
+\toprule
+agent & calls & mean\_s & p95\_s & max\_s & mean\_share\_of\_run & mean\_tokens \\
+\midrule
+Diagnosis Agent & 2334 & 16.800 & 32.800 & 166.700 & 0.360 & 1612.000 \\
+Verifier Agent & 900 & 14.000 & 27.800 & 62.000 & 0.227 & 1423.000 \\
+Verifier Agent (Re-check) & 341 & 13.700 & 24.500 & 65.300 & 0.154 & 1415.000 \\
+Safety Validator & 900 & 11.100 & 23.300 & 63.500 & 0.188 & 1324.000 \\
+Safety Validator (Re-check) & 328 & 10.900 & 20.900 & 110.900 & 0.125 & 1321.000 \\
+HITL Simulator & 900 & 9.800 & 20.300 & 65.900 & 0.170 & 1489.000 \\
+Research Agent & 1800 & 7.200 & 15.400 & 99.500 & 0.166 & 697.000 \\
+Consistency Checker & 600 & 5.300 & 12.100 & 54.600 & 0.069 & 1040.000 \\
+\bottomrule
+\end{tabular}
+\caption{Per-agent latency (seconds) across all runs.}
+\label{tab:rigor_latency}
+\end{table}

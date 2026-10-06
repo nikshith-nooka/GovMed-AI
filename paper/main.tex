@@ -71,9 +71,14 @@ in at most 2.7\% of cases and did not change accuracy (paired Wilcoxon, all $p \
 of governed variants, previously called an ``Audit Paradox'', is 94--96\% a penalty the rubric applies to each
 variant's own detectors. No governance signal identified wrong diagnoses better than chance (AUROC 0.40--0.56):
 the safety validator raised an alert on every run. Stated diagnostic probabilities were poorly calibrated
-(ECE 0.29). Governance raised median latency from 45\,s to 111\,s. We release the harness, a closed-loop variant in
-which blocking findings trigger a bounded revision, a clinician-facing interface that reports what was and was not
-checked, and a blinded review tool for the clinician validation this study still lacks.
+(ECE 0.29). Governance raised median latency from 45\,s to 111\,s. We then tested whether closing the loop helps:
+on 300 MedQA questions scored against the original answer key (1,800 runs), blocking findings sent the diagnosis
+back for one revision. Accuracy was 43.0\% without checks, 43.0\% with all checks attached as warnings and 43.0\%
+with all checks closed-loop; the checks requested revision in 78\% of cases, and revisions fixed 36 answers while
+breaking 33. Only the simulated attending reviewer showed a non-significant gain (46.3\%, McNemar $p = 0.21$).
+Closing the loop does not help when the governance signal cannot tell right answers from wrong ones. We release
+the harness, a clinician-facing interface that reports what was and was not checked, and a blinded review tool for
+the clinician validation this study still lacks.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -105,6 +110,9 @@ Our contributions are:
   detectors, and six stored metric columns that were never measured. We quantify the effect of each.
   \item \textbf{Measured findings}: under open-loop governance the checks annotate but rarely change the diagnosis,
   their alerts do not discriminate wrong diagnoses from right ones, and model confidence is poorly calibrated.
+  \item \textbf{A closed-loop experiment} on 300 MedQA questions with an answer key, showing that revising the
+  diagnosis on governance feedback does not raise accuracy overall, and identifying which checker's feedback helps
+  or hurts.
   \item \textbf{A clinician-facing workbench} that shows which checks ran, presents likelihoods as a ranking rather
   than a probability, and includes a blinded review tool to collect the clinician ratings needed to validate the
   benchmark.
@@ -217,6 +225,14 @@ no fixed seed and at most 1{,}500 output tokens per call. Sampling is therefore 
 run once per variant (750 runs). Research and diagnosis outputs were generated once per case and reused by all
 variants, so differences between variants come from the checks alone. Variants ran concurrently against one
 endpoint, so latencies include contention.
+
+\textbf{Closed-loop experiment.} A second experiment used 300 questions sampled (seed 42) from the
+MedQA-USMLE four-option test set~\cite{jin2021medqa}, keeping the original options and answer key, so every answer
+is scored exactly as correct or incorrect. With the same model, we ran G0, G4 open-loop and four closed-loop
+configurations: G4 closed-loop and each single check closed-loop (verifier, attending simulator,
+safety validator), for 1,800 runs. The report agent was skipped (it does not affect the answer), eight questions
+ran concurrently, and a sampling seed was sent to the provider. Each closed-loop pass regenerates the first
+diagnosis, so we also score each revised run before and after its own revision.
 
 \textbf{Cost.} The trial endpoint did not bill. We report cost at an assumed rate of \$0.10 per million input and % numcheck:ignore
 \$0.20 per million output tokens, applied to measured token counts. % numcheck:ignore
@@ -376,6 +392,52 @@ Research & 750 & 11.1 & 28.5 & 612 \\
 \end{tabular}
 \end{table}
 
+\subsection{Does closing the loop help?}
+Table~\ref{tab:closed} and Fig.~\ref{fig:closed} report the MedQA experiment. With a real answer key the open-loop
+result is unchanged: G0 and G4 open-loop answered the same 129 of 300 questions correctly (43.0\%), because the
+checks never alter the answer. Closing the loop did not help either. G4 closed-loop also reached 43.0\%: the checks
+requested revision in 78\% of cases, and of the 233 revised runs that could be scored, the revision fixed 36 wrong
+answers and broke 33 right ones (sign test $p = 0.81$). Against G4 open-loop, closed-loop changed the outcome in 84
+questions, 42 in each direction (McNemar $p = 1.0$; 95\% CI of the difference $-6.0$ to $+6.3$ points). % numcheck:ignore
+
+Single checks differed. Feedback from the attending simulator gave the only gain, 46.3\% (fixed 14, broke 6), but
+it is not significant (McNemar $p = 0.21$, 1.0 after Holm; sign test $p = 0.12$). Verifier feedback was neutral
+(43.0\%; 15 fixed, 15 broken) and safety-validator feedback was slightly harmful (41.7\%; 11 fixed, 16 broken).
+The loop added cost: mean tokens rose from 2200.9 (G0) to 7570.4 (G4 open) and 11331.9 (G4 closed), and median
+latency from 21.2\,s to 60.7\,s and 91.7\,s. With 300 pairs the smallest detectable accuracy difference is 0.0738;
+a 5-point effect would need 657 pairs.
+
+\begin{table}[htbp]
+\centering
+\caption{Closed-loop experiment: 300 MedQA questions per configuration}
+\label{tab:closed}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Configuration} & \textbf{Accuracy} & \textbf{Revised} & \textbf{Fixed / broken} & \textbf{Tokens} & \textbf{p50 lat. (s)} \\
+\midrule
+G0, no checks & 0.430 & -- & -- & 2200.9 & 21.2 \\
+G4, open loop & 0.430 & -- & -- & 7570.4 & 60.7 \\
+Verifier, closed & 0.430 & 35.7\% & 15 / 15 & 4827.4 & 46.3 \\
+Attending, closed & 0.463 & 33.0\% & 14 / 6 & 4140.7 & 35.1 \\
+Safety, closed & 0.417 & 31.3\% & 11 / 16 & 4491.4 & 38.2 \\
+G4, closed loop & 0.430 & 78.0\% & 36 / 33 & 11331.9 & 91.7 \\
+\bottomrule
+\end{tabular}}
+\vspace{1mm}
+
+\footnotesize{Fixed / broken: revised runs whose own first answer was wrong and became right, or the reverse.
+Latency includes contention from eight concurrent questions.}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.86\linewidth]{figures/closed_loop.pdf}
+\caption{Closed-loop experiment on 300 MedQA questions. Left: accuracy per configuration (dashed: G0). Right:
+answers each closed-loop configuration fixed or broke when it revised its own first diagnosis.}
+\label{fig:closed}
+\end{figure*}
+
 % ============================================================
 \section{Discussion}
 % ============================================================
@@ -384,7 +446,11 @@ changes the diagnosis. It is therefore unsurprising that governance changed at m
 remaining change comes from run-to-run variation, not from feedback. Adding a check without a path back to the
 decision adds cost and alerts but not safety. A governance layer should be judged by whether its alerts are specific
 enough to act on and whether acting on them improves the decision. Here the alerts failed the first test: an alert on
-every run is not a usable signal.
+every run is not a usable signal. The closed-loop experiment shows the consequence of failing it. Feeding the
+findings back gave the model a path to act, but because the checks fire on most cases regardless of correctness,
+revisions moved answers in both directions about equally. The only check that came close to helping, the attending
+simulator, was also the most selective about what it sent back. Better-calibrated checks, not more loops, are the
+bottleneck.
 
 The audit also shows how easily a benchmark can report the wrong conclusion. Each artefact we found would pass a
 casual review. Substring matching looks lenient but harmless; a rubric that rewards the absence of warnings looks
@@ -404,21 +470,24 @@ effects; the absence of a significant difference is not evidence of equivalence.
 difference at $\alpha = 0.05$ and power 0.8 would need 312, 626 or 940 paired cases at a discordance of 10\%, 20\% or % numcheck:ignore
 30\%. We therefore built a 300-question MedQA benchmark that keeps the original options and answer key.
 
-\textbf{External validity.} One 11B model from one provider was tested, each case was run once, and sampling was not
-seeded. Results may differ for larger models or other providers.
+\textbf{External validity.} One 11B model from one provider was tested and each case was run once; sampling was not
+seeded in the first experiment. Results may differ for larger models or other providers.
 
-\textbf{Internal validity.} Concurrent variants shared one endpoint, which inflates latency. The closed-loop
-configuration is implemented but was not part of these runs.
+\textbf{Internal validity.} Concurrent variants shared one endpoint, which inflates latency. In the closed-loop
+experiment the first diagnosis was regenerated for each closed-loop pass; despite a provider seed it differed from the
+open-loop diagnosis in 101 of 300 questions, which is why we also report each run's own before-and-after change. The
+report agent was skipped there, so its latencies are not comparable with the first experiment.
 
 % ============================================================
 \section{Conclusion and Future Work}
 % ============================================================
 After a measurement audit, the governance gains reported for this multi-agent clinical pipeline disappear:
 accuracy is 0.293 rather than 0.739, governance does not change accuracy, its alerts do not discriminate wrong
-diagnoses, and the ``Audit Paradox'' is a property of the rubric. Next, we will rebuild the benchmark from the
-original MedQA questions with their answer key, compare open-loop and closed-loop governance on the same cases,
-repeat the study on a second, larger model, and collect blinded ratings from at least three clinicians on the same
-50 outputs.
+diagnoses, and the ``Audit Paradox'' is a property of the rubric. A closed-loop experiment on 300 MedQA questions
+with an answer key confirms that the problem is the signal, not the loop: revising on governance feedback left
+accuracy at 43.0\% while adding 50\% more tokens, and only the attending simulator showed a small, non-significant
+gain. Next, we will repeat the study on a second, larger model, test better-calibrated checks, and collect blinded
+ratings from at least three clinicians on the same 50 outputs.
 
 \textbf{Ethics and data.} All cases come from public research datasets and contain no identifiable patient data. The
 software is research decision support and is not intended for diagnosis or treatment.

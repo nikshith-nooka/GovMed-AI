@@ -1,5 +1,5 @@
 {
-  "generated_at": 1790682966.3438258,
+  "generated_at": 1791279993.115642,
   "db_path": "results/benchmark_results.db",
   "n_runs_analyzed": 750,
   "n_cases": 150,
@@ -493,6 +493,8 @@
       "mcnemar_exact_p_holm": 1.0
     }
   ],
+  "closed_loop_effect": [],
+  "revision_by_variant": [],
   "audit_paradox": [
     {
       "variant_id": "V2",

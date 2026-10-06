@@ -1,0 +1,37 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrrrrrrr}
+\toprule
+metric & comparison & n\_pairs & mean\_diff & ci95\_low & ci95\_high & wilcoxon\_p & wilcoxon\_p\_holm & rank\_biserial \\
+\midrule
+accuracy & V2-CL - V1 & 300 & 0.000 & -0.050 & 0.050 & 1.000 & 1.000 & 0.000 \\
+accuracy & V3-CL - V1 & 300 & 0.033 & -0.013 & 0.080 & 0.166 & 1.000 & 0.192 \\
+accuracy & V4-CL - V1 & 300 & -0.013 & -0.063 & 0.033 & 0.586 & 1.000 & -0.074 \\
+accuracy & V5 - V1 & 300 & 0.000 & 0.000 & 0.000 & 1.000 & 1.000 & -- \\
+accuracy & V5-CL - V1 & 300 & 0.000 & -0.060 & 0.060 & 1.000 & 1.000 & 0.000 \\
+detector\_neutral\_quality & V2-CL - V1 & 300 & -0.004 & -0.040 & 0.030 & 0.716 & 1.000 & -0.041 \\
+detector\_neutral\_quality & V3-CL - V1 & 300 & 0.024 & -0.009 & 0.056 & 0.168 & 1.000 & 0.169 \\
+detector\_neutral\_quality & V4-CL - V1 & 300 & -0.013 & -0.046 & 0.019 & 0.300 & 1.000 & -0.115 \\
+detector\_neutral\_quality & V5 - V1 & 300 & 0.000 & 0.000 & 0.000 & 1.000 & 1.000 & -- \\
+detector\_neutral\_quality & V5-CL - V1 & 300 & 0.004 & -0.039 & 0.044 & 0.872 & 1.000 & 0.017 \\
+reported\_quality & V2-CL - V1 & 300 & -0.031 & -0.053 & -0.010 & 0.000 & 0.001 & -0.375 \\
+reported\_quality & V3-CL - V1 & 300 & 0.014 & -0.005 & 0.034 & 0.170 & 1.000 & 0.168 \\
+reported\_quality & V4-CL - V1 & 300 & -0.128 & -0.148 & -0.108 & 0.000 & 0.000 & -0.710 \\
+reported\_quality & V5 - V1 & 300 & -0.148 & -0.155 & -0.141 & 0.000 & 0.000 & -1.000 \\
+reported\_quality & V5-CL - V1 & 300 & -0.151 & -0.178 & -0.126 & 0.000 & 0.000 & -0.618 \\
+tokens & V2-CL - V1 & 300 & 2626.430 & 2433.292 & 2824.911 & 0.000 & 0.000 & 1.000 \\
+tokens & V3-CL - V1 & 300 & 1939.740 & 1827.379 & 2055.110 & 0.000 & 0.000 & 1.000 \\
+tokens & V4-CL - V1 & 300 & 2290.427 & 2120.900 & 2462.161 & 0.000 & 0.000 & 1.000 \\
+tokens & V5 - V1 & 300 & 5369.453 & 5291.868 & 5456.093 & 0.000 & 0.000 & 1.000 \\
+tokens & V5-CL - V1 & 300 & 9130.937 & 8859.853 & 9391.072 & 0.000 & 0.000 & 1.000 \\
+e2e\_latency\_s & V2-CL - V1 & 300 & 26.401 & 23.405 & 29.567 & 0.000 & 0.000 & 0.918 \\
+e2e\_latency\_s & V3-CL - V1 & 300 & 16.716 & 14.302 & 19.342 & 0.000 & 0.000 & 0.830 \\
+e2e\_latency\_s & V4-CL - V1 & 300 & 20.696 & 17.915 & 23.567 & 0.000 & 0.000 & 0.872 \\
+e2e\_latency\_s & V5 - V1 & 300 & 40.469 & 38.742 & 42.297 & 0.000 & 0.000 & 1.000 \\
+e2e\_latency\_s & V5-CL - V1 & 300 & 69.750 & 66.271 & 73.423 & 0.000 & 0.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{Paired differences vs. V1 with bootstrap 95\% CI, Wilcoxon signed-rank p (raw and Holm-adjusted) and rank-biserial effect size.}
+\label{tab:rigor_paired_tests}
+\end{table}
