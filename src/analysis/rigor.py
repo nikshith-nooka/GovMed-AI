@@ -408,7 +408,29 @@ class RigorousAnalysis:
                         "mcnemar_exact_p": _r(test["p_value"], 6)})
         for row, adj in zip(out, holm_bonferroni([r["mcnemar_exact_p"] for r in out]), strict=True):
             row["mcnemar_exact_p_holm"] = _r(adj, 6)
+            row.update(self._within_run_revision(row["comparison"].split(" - ")[0]))
         return out
+
+    def _within_run_revision(self, cl_variant: str) -> Dict[str, Any]:
+        """Each revised closed-loop run scored before and after its revision: the cleanest revision effect,
+        free of sampling differences between the open- and closed-loop passes."""
+        raw = self.raw_runs[(self.raw_runs["variant_id"] == cl_variant)]
+        if "revision_applied" not in raw:
+            return {}
+        raw = raw[raw["revision_applied"].fillna(0).astype(bool)]
+        final = self.runs.set_index("run_id")["correct"]
+        fixed = broken = n = 0
+        for _, r in raw.iterrows():
+            case = self.cases.get(r["case_id"], {})
+            initial = str(r.get("initial_primary_diagnosis") or "")
+            if not initial or r["id"] not in final.index or not self.runs.loc[self.runs["run_id"] == r["id"], "gold_valid"].any():
+                continue
+            before = self.scorer.score_diagnosis(initial, [], case)["score"] >= CORRECT_THRESHOLD
+            after = bool(final.loc[r["id"]])
+            n += 1
+            fixed += (not before) and after
+            broken += before and (not after)
+        return {"revised_runs_scored": n, "within_run_fixed": int(fixed), "within_run_broken": int(broken)}
 
     @staticmethod
     def apply_holm(paired: List[Dict[str, Any]], acc_tests: List[Dict[str, Any]]) -> Dict[str, Any]:

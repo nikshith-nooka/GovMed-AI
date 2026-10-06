@@ -325,6 +325,7 @@ def test_closed_loop_effect_counts_fixes_and_breaks(tmp_path):
     assert (row["fixed_by_revision"], row["broken_by_revision"]) == (4, 1)
     assert row["accuracy_open"] == 0.25 and row["accuracy_closed"] == 0.625
     assert row["mcnemar_exact_p_holm"] >= row["mcnemar_exact_p"]
+    assert {"revised_runs_scored", "within_run_fixed", "within_run_broken"} <= set(row)
 
 
 # ---------------------------------------------------------------- paper number checker
