@@ -326,6 +326,8 @@ def test_closed_loop_effect_counts_fixes_and_breaks(tmp_path):
     assert row["accuracy_open"] == 0.25 and row["accuracy_closed"] == 0.625
     assert row["mcnemar_exact_p_holm"] >= row["mcnemar_exact_p"]
     assert {"revised_runs_scored", "within_run_fixed", "within_run_broken"} <= set(row)
+    (rev,) = RigorousAnalysis(str(tmp_path / "bench.db"), str(cases_path), reference_db_path=None).revision_by_variant()
+    assert rev["variant_id"] == "V5-CL" and "sign_test_p" in rev
 
 
 # ---------------------------------------------------------------- paper number checker

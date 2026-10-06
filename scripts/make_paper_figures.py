@@ -16,6 +16,7 @@ from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT = ROOT / "results" / "rigor_report.json"
+MEDQA_REPORT = ROOT / "results" / "rigor_report_medqa.json"
 OUT = ROOT / "paper" / "figures"
 
 plt.rcParams.update({
@@ -127,8 +128,35 @@ def calibration(r):
     _save(fig, "calibration")
 
 
+def closed_loop(r):
+    labels = {"V1": "G0\nnone", "V5": "G4\nopen", "V2-CL": "Verifier\nclosed", "V3-CL": "Attending\nclosed",
+              "V4-CL": "Safety\nclosed", "V5-CL": "G4\nclosed"}
+    acc = {v["variant_id"]: v["accuracy_valid_gold"] for v in r["variants"]}
+    order = [v for v in labels if v in acc]
+    rev = {t["variant_id"]: t for t in r["revision_by_variant"]}
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(7.0, 1.9), gridspec_kw={"width_ratios": [1.4, 1]})
+    ax1.bar(range(len(order)), [acc[v] for v in order],
+            color=[GREY if not v.endswith("-CL") else BLUE for v in order])
+    ax1.axhline(acc["V1"], color="#111827", lw=0.6, ls="--")
+    ax1.set_xticks(range(len(order)))
+    ax1.set_xticklabels([labels[v] for v in order], fontsize=6)
+    ax1.set_ylim(0, 0.6)
+    ax1.set_ylabel("Accuracy (MedQA, n=300)")
+    cl = [v for v in order if v in rev]
+    x = range(len(cl))
+    ax2.bar([i - 0.2 for i in x], [rev[v]["within_run_fixed"] for v in cl], 0.4, label="fixed", color=GREEN)
+    ax2.bar([i + 0.2 for i in x], [rev[v]["within_run_broken"] for v in cl], 0.4, label="broken", color=ORANGE)
+    ax2.set_xticks(list(x))
+    ax2.set_xticklabels([labels[v] for v in cl], fontsize=6)
+    ax2.set_ylabel("Answers changed by revision")
+    ax2.legend(frameon=False, fontsize=6)
+    _save(fig, "closed_loop")
+
+
 def main():
     report = json.loads(REPORT.read_text())
+    if MEDQA_REPORT.exists():
+        closed_loop(json.loads(MEDQA_REPORT.read_text()))
     architecture()
     audit_paradox(report)
     alert_auroc(report)

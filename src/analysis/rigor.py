@@ -411,6 +411,21 @@ class RigorousAnalysis:
             row.update(self._within_run_revision(row["comparison"].split(" - ")[0]))
         return out
 
+    def revision_by_variant(self) -> List[Dict[str, Any]]:
+        """Every closed-loop variant: how often it revised, and whether revisions fixed or broke answers
+        (exact two-sided sign test on fixed vs broken)."""
+        out = []
+        for cl in sorted(v for v in self.runs["variant_id"].unique() if str(v).endswith("-CL")):
+            raw = self.raw_runs[self.raw_runs["variant_id"] == cl]
+            row = {"variant_id": cl,
+                   "revision_rate": _r(raw["revision_applied"].fillna(0).astype(float).mean())
+                   if "revision_applied" in raw else None,
+                   **self._within_run_revision(cl)}
+            moved = row.get("within_run_fixed", 0) + row.get("within_run_broken", 0)
+            row["sign_test_p"] = _r(stats.binomtest(row["within_run_fixed"], moved).pvalue, 6) if moved else None
+            out.append(row)
+        return out
+
     def _within_run_revision(self, cl_variant: str) -> Dict[str, Any]:
         """Each revised closed-loop run scored before and after its revision: the cleanest revision effect,
         free of sampling differences between the open- and closed-loop passes."""
@@ -707,16 +722,21 @@ class RigorousAnalysis:
     def headline_findings(self, rep: Dict[str, Any]) -> List[str]:
         f: List[str] = []
         m = rep["measurement_validity"]
-        f.append(f"Reported accuracy {m['reported_accuracy_mean']} is inflated by substring matching: "
-                 f"{m['runs_with_unparsed_diagnosis']} runs with an unparsed (empty) diagnosis scored "
-                 f"{m['reported_accuracy_on_unparsed_runs']}, and {m['runs_with_option_letter_diagnosis']} runs whose "
-                 f"'diagnosis' is a bare option letter ({m['cases_total'] - m['cases_with_answer_key']}/{m['cases_total']} "
-                 f"cases contain no options, so a letter is a non-answer) scored "
-                 f"{m['reported_accuracy_on_option_letter_runs']}. With recovered outputs and whole-word matching, "
-                 f"accuracy is {m['corrected_accuracy_mean_all_cases']}.")
-        f.append(f"Only {m['cases_with_valid_gold']} of {m['cases_total']} gold labels are real diagnoses; the rest are "
-                 f"templated titles. On scorable cases accuracy is {m['corrected_accuracy_mean_valid_gold']}.")
-        changes = [v["diagnosis_changed_vs_v1_pct"] for v in rep["variants"] if v["variant_id"] != "V1"]
+        # The substring and templated-label findings only apply to free-text cases without an answer key.
+        if m["cases_with_answer_key"] < m["cases_total"]:
+            f.append(f"Reported accuracy {m['reported_accuracy_mean']} is inflated by substring matching: "
+                     f"{m['runs_with_unparsed_diagnosis']} runs with an unparsed (empty) diagnosis scored "
+                     f"{m['reported_accuracy_on_unparsed_runs']}, and {m['runs_with_option_letter_diagnosis']} runs whose "
+                     f"'diagnosis' is a bare option letter ({m['cases_total'] - m['cases_with_answer_key']}/{m['cases_total']} "
+                     f"cases contain no options, so a letter is a non-answer) scored "
+                     f"{m['reported_accuracy_on_option_letter_runs']}. With recovered outputs and whole-word matching, "
+                     f"accuracy is {m['corrected_accuracy_mean_all_cases']}.")
+        if m["cases_with_valid_gold"] < m["cases_total"]:
+            f.append(f"Only {m['cases_with_valid_gold']} of {m['cases_total']} gold labels are real diagnoses; the rest are "
+                     f"templated titles. On scorable cases accuracy is {m['corrected_accuracy_mean_valid_gold']}.")
+        # Closed-loop variants are meant to change the diagnosis; only open-loop ones test "annotate only".
+        changes = [v["diagnosis_changed_vs_v1_pct"] for v in rep["variants"]
+                   if v["variant_id"] != "V1" and not str(v["variant_id"]).endswith("-CL")]
         if changes:
             f.append(f"Open-loop governance changed the primary diagnosis in at most {max(changes)}% of cases: "
                      "the layers annotate but do not alter clinical decisions.")
@@ -797,6 +817,7 @@ class RigorousAnalysis:
             "paired_tests": self.paired_tests(),
             "accuracy_tests": self.accuracy_tests(),
             "closed_loop_effect": self.closed_loop_effect(),
+            "revision_by_variant": self.revision_by_variant(),
             "audit_paradox": self.audit_paradox(),
             "alert_discrimination": self.alert_discrimination(),
             "alert_reproducibility": self.alert_reproducibility(),

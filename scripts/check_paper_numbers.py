@@ -107,12 +107,14 @@ def check(tex: str, report: Any, integers: bool = False) -> List[Tuple[int, str,
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--tex", default="paper/main.tex")
-    parser.add_argument("--report", default="results/rigor_report.json")
+    parser.add_argument("--report", default="results/rigor_report.json,results/rigor_report_medqa.json",
+                        help="Comma-separated report files; a number may come from any of them")
     parser.add_argument("--integers", action="store_true", help="Also check plain integers >= 10 (not years)")
     args = parser.parse_args(argv)
 
     tex = Path(args.tex).read_text(encoding="utf-8")
-    report = json.loads(Path(args.report).read_text(encoding="utf-8"))
+    paths = [p for p in args.report.split(",") if p and Path(p).exists()]
+    report = {p: json.loads(Path(p).read_text(encoding="utf-8")) for p in paths}
     unmatched = check(tex, report, args.integers)
     total = sum(len(extract_numbers(line, args.integers)) for _, line in body_lines(tex))
     for no, shown, line in unmatched:
