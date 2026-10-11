@@ -65,7 +65,7 @@ def main():
     mdls_proc = subprocess.run(["mdls", "-name", "kMDItemNumberOfPages", str(dest_pdf)], capture_output=True, text=True)
     pages_info = mdls_proc.stdout.strip() if mdls_proc.returncode == 0 else ""
 
-    print(f"\n✓ Compilation Successful!")
+    print("\n✓ Compilation Successful!")
     print(f"  Destination: {dest_pdf}")
     print(f"  Size: {dest_pdf.stat().st_size / 1024:.1f} KiB")
     if pages_info:

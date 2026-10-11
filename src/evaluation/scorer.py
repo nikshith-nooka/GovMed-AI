@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import math
 import re
 from typing import Any, Dict, List, Optional
 from src.telemetry.metrics import PipelineRunResult
@@ -139,7 +138,7 @@ class ClinicalEvaluationScorer:
     ) -> float:
         """Scores diagnostic accuracy: 1.0 (primary match), 0.8 (top-3), 0.5 (top-5), 0.0 otherwise."""
         if not gold_diagnosis and not gold_answer_option:
-            return 0.8  # default baseline if no explicit gold answer
+            return 0.0  # no label, no credit; such runs are marked gold_label_valid=False and excluded
 
         norm_gold = self._normalize_text(gold_diagnosis or "")
         norm_pred = self._normalize_text(predicted_primary or "")

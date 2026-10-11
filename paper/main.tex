@@ -71,11 +71,12 @@ in at most 2.7\% of cases and did not change accuracy (paired Wilcoxon, all $p \
 of governed variants, previously called an ``Audit Paradox'', is 94--96\% a penalty the rubric applies to each
 variant's own detectors. No governance signal identified wrong diagnoses better than chance (AUROC 0.40--0.56):
 the safety validator raised an alert on every run. Stated diagnostic probabilities were poorly calibrated
-(ECE 0.29). Governance raised median latency from 45\,s to 111\,s. We then tested whether closing the loop helps:
+(ECE 0.29). Governance raised median summed agent-call latency from 45\,s to 111\,s. We then tested whether closing the loop helps:
 on 300 MedQA questions scored against the original answer key (1,800 runs), blocking findings sent the diagnosis
 back for one revision. Accuracy was 43.0\% without checks, 43.0\% with all checks attached as warnings and 43.0\%
 with all checks closed-loop; the checks requested revision in 78\% of cases, and revisions fixed 36 answers while
-breaking 33. Only the simulated attending reviewer showed a non-significant gain (46.3\%, McNemar $p = 0.21$).
+breaking 33. Only the simulated attending reviewer showed a non-significant gain (46.3\%, McNemar $p = 0.21$; within its own
+runs revision fixed 14 and broke 6, sign test $p = 0.12$).
 Closing the loop does not help when the governance signal cannot tell right answers from wrong ones. We release
 the harness, a clinician-facing interface that reports what was and was not checked, and a blinded review tool for
 the clinician validation this study still lacks.
@@ -320,7 +321,7 @@ V5 (G4) & 0.3711 & 0.5137 & 0.6739 & 8411.8 & 111.3 & 2.7\% \\
 \vspace{1mm}
 
 \footnotesize{$^a$On the 71 cases with a real diagnosis label. DN qual.: detector-neutral quality. Rep. qual.:
-originally reported rubric quality. Latency is end-to-end, including shared agents.}
+originally reported rubric quality. Latency is the sum of all agent calls, including shared agents; parallel checks are summed, so this bounds wall-clock time from above.}
 \end{table}
 
 \subsection{The ``Audit Paradox'' is a scoring artefact}
@@ -369,7 +370,7 @@ cases in each bin.}
 \end{figure}
 
 \subsection{Cost and latency}
-Governance increased mean tokens per case from 3104.4 (V1) to 8411.8 (V5) and median end-to-end latency from
+Governance increased mean tokens per case from 3104.4 (V1) to 8411.8 (V5) and median summed agent-call latency from
 45.1\,s to 111.3\,s (95th percentile 256.2\,s). At the assumed rate, cost per case rose from \$0.000411 to \$0.001065.
 Table~\ref{tab:latency} shows that the report and diagnosis agents dominate latency. The interactive application runs
 the checks in parallel and skips the report agent, which shortens the wait; that configuration was not benchmarked.

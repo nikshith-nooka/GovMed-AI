@@ -6,10 +6,10 @@ import sqlite3
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 import pandas as pd
 
-from src.telemetry.metrics import PipelineRunResult, AgentStepLog
+from src.telemetry.metrics import PipelineRunResult
 
 
 class BenchmarkDB:

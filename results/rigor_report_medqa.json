@@ -1,5 +1,5 @@
 {
-  "generated_at": 1791279994.377058,
+  "generated_at": 1791606192.3785212,
   "db_path": "results/medqa_fast.db",
   "n_runs_analyzed": 1800,
   "n_cases": 300,
@@ -61,7 +61,7 @@
       "text_contained": 1
     },
     "runs_with_unparseable_option_answer": 56,
-    "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; e2e_latency sums every agent step."
+    "latency_note": "Latency is the sum of every agent call in the run (e2e_latency_s), including the shared Research and Diagnosis steps. Checks that ran in parallel are counted one after another, so for multi-check variants this is an upper bound on wall-clock time. Runs stored before the 2026-10-10 fix have a total_latency_ms that omits the shared steps (about 0 s for V1)."
   },
   "variants": [
     {
@@ -94,7 +94,7 @@
       "e2e_latency_p95_s": 92.4,
       "hallucination_flag_rate": 0.3567,
       "safety_alerts_per_run": null,
-      "diagnosis_changed_vs_v1_pct": 43.3
+      "diagnosis_changed_vs_v1_pct": 30.0
     },
     {
       "variant_id": "V3-CL",
@@ -110,7 +110,7 @@
       "e2e_latency_p95_s": 79.9,
       "hallucination_flag_rate": null,
       "safety_alerts_per_run": null,
-      "diagnosis_changed_vs_v1_pct": 43.7
+      "diagnosis_changed_vs_v1_pct": 26.7
     },
     {
       "variant_id": "V4-CL",
@@ -126,7 +126,7 @@
       "e2e_latency_p95_s": 86.6,
       "hallucination_flag_rate": null,
       "safety_alerts_per_run": 1.72,
-      "diagnosis_changed_vs_v1_pct": 41.7
+      "diagnosis_changed_vs_v1_pct": 28.3
     },
     {
       "variant_id": "V5",
@@ -158,7 +158,7 @@
       "e2e_latency_p95_s": 149.5,
       "hallucination_flag_rate": 0.38,
       "safety_alerts_per_run": 1.7733,
-      "diagnosis_changed_vs_v1_pct": 64.7
+      "diagnosis_changed_vs_v1_pct": 45.0
     }
   ],
   "paired_tests": [
@@ -581,8 +581,9 @@
       "n_pairs": 300,
       "accuracy_open": 0.43,
       "accuracy_closed": 0.43,
-      "fixed_by_revision": 42,
-      "broken_by_revision": 42,
+      "only_closed_correct": 42,
+      "only_open_correct": 42,
+      "first_diagnosis_differs": 79,
       "revision_rate": 0.78,
       "accuracy_diff": 0.0,
       "accuracy_diff_ci95_low": -0.06,
@@ -626,6 +627,44 @@
       "within_run_fixed": 36,
       "within_run_broken": 33,
       "sign_test_p": 0.809949
+    }
+  ],
+  "resampling_stability": [
+    {
+      "resample": "V2-CL first diagnosis vs V1",
+      "n_pairs": 293,
+      "answer_agreement": 0.7884,
+      "accuracy_v1": 0.4266,
+      "accuracy_resample": 0.4369,
+      "correctness_flips": 41,
+      "mcnemar_exact_p": 0.755229
+    },
+    {
+      "resample": "V3-CL first diagnosis vs V1",
+      "n_pairs": 293,
+      "answer_agreement": 0.7884,
+      "accuracy_v1": 0.4266,
+      "accuracy_resample": 0.4369,
+      "correctness_flips": 41,
+      "mcnemar_exact_p": 0.755229
+    },
+    {
+      "resample": "V4-CL first diagnosis vs V1",
+      "n_pairs": 293,
+      "answer_agreement": 0.7884,
+      "accuracy_v1": 0.4266,
+      "accuracy_resample": 0.4369,
+      "correctness_flips": 41,
+      "mcnemar_exact_p": 0.755229
+    },
+    {
+      "resample": "V5-CL first diagnosis vs V1",
+      "n_pairs": 299,
+      "answer_agreement": 0.7358,
+      "accuracy_v1": 0.4314,
+      "accuracy_resample": 0.4181,
+      "correctness_flips": 48,
+      "mcnemar_exact_p": 0.665466
     }
   ],
   "audit_paradox": [
@@ -1107,9 +1146,10 @@
   },
   "limitations": [
     "Single model (one provider); results may not transfer to other LLMs.",
-    "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
-    "Accuracy uses lenient string matching against gold labels; only non-templated labels are scored.",
-    "Governance outputs are not validated against clinicians until reviews are collected."
+    "Several runs shared one provider endpoint concurrently, so per-call latency includes contention.",
+    "HITL review is simulated by a language model; review minutes are sampled from an assumed distribution, not measured.",
+    "Governance outputs are not validated against clinicians until reviews are collected.",
+    "Answer-key cases are scored by exact option; an answer that maps to no single option counts as wrong."
   ],
   "multiple_comparisons": {
     "method": "holm-bonferroni",
@@ -1186,10 +1226,11 @@
     "note": "Discordance = share of cases where exactly one of V1 / variant is correct. With zero observed discordance the test cannot reject; the assumed-discordance grid gives planning sample sizes."
   },
   "headline_findings": [
-    "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter clinical decisions.",
+    "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's diagnosis, so 0% is expected by design.",
     "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
     "Exact McNemar on binary correctness vs V1: 0 of 5 comparisons significant after Holm-Bonferroni over 30 paired tests (smallest raw p 0.211609); accuracy differences range -0.0133 to 0.0333.",
-    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43; revision fixed 42 and broke 42 answers (exact McNemar p=1.0, Holm 1.0).",
+    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43 (exact McNemar p=1.0, Holm 1.0). Within its own runs, revision fixed 36 and broke 33 answers; the first diagnosis was regenerated and differed from the open-loop answer in 79 cases, so between-pass differences mix revision with resampling.",
+    "Run-to-run stability: regenerating the same diagnosis gave the same answer in 0.7358-0.7884 of cases and flipped correctness in 41-48 of 293; governance effects smaller than this sampling noise cannot be attributed to governance from between-pass comparisons.",
     "88-102% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
     "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.497-0.555 (0.5 = chance).",
     "The safety validator raised at least one alert on 100% of runs, so alert presence carries no information about whether the diagnosis is wrong.",

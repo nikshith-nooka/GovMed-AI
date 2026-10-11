@@ -185,9 +185,9 @@ class RigorousAnalysis:
         case = self.cases.get(row["case_id"], {})
         parse_failed = [k for k, v in raw.items() if is_parse_failure(v)]
         diagnosis = _recover(raw.get("diagnosis", {}))
-        verifier = _recover(raw.get("verifier")) if "verifier" in raw else None
-        safety = _recover(raw.get("safety")) if "safety" in raw else None
-        hitl = _recover(raw.get("hitl")) if "hitl" in raw else None
+        # A check whose output cannot be recovered is missing (None), not "no alert" or "approved".
+        verifier, safety, hitl = (_recover(raw[k]) if k in raw and not is_parse_failure(_recover(raw[k])) else None
+                                  for k in ("verifier", "safety", "hitl"))
 
         primary = str(diagnosis.get("primary_diagnosis", "") or "")
         diffs = diagnosis.get("differential_diagnoses", []) or []
@@ -220,6 +220,7 @@ class RigorousAnalysis:
             "scoring_mode": scored["scoring_mode"],
             "option_parse_status": scored["parse_status"],
             "option_unparsed": bool(scored["flagged"]),
+            "option_choice": scored["choice"],
             "correct": bool(acc >= CORRECT_THRESHOLD),
             "model": row.get("model"),
             "jru_source": row.get("jru_source"),
@@ -315,16 +316,21 @@ class RigorousAnalysis:
             "option_parse_status_counts": df.loc[df["scoring_mode"] != SCORING_FREE_TEXT, "option_parse_status"]
             .value_counts().to_dict(),
             "runs_with_unparseable_option_answer": int(df["option_unparsed"].sum()),
-            "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; "
-                            "e2e_latency sums every agent step.",
+            "latency_note": "Latency is the sum of every agent call in the run (e2e_latency_s), including the shared "
+                            "Research and Diagnosis steps. Checks that ran in parallel are counted one after another, "
+                            "so for multi-check variants this is an upper bound on wall-clock time. Runs stored before "
+                            "the 2026-10-10 fix have a total_latency_ms that omits the shared steps (about 0 s for V1).",
         }
 
     def variant_summary(self) -> List[Dict[str, Any]]:
         df, out = self.runs, []
-        base = df[df["variant_id"] == "V1"].set_index("case_id")["primary_norm"]
+        # With an answer key compare the chosen option; rewording the same option is not a changed diagnosis.
+        answer = df["primary_norm"].where(df["scoring_mode"] == SCORING_FREE_TEXT, df["option_choice"].fillna(""))
+        df = df.assign(answer=answer)
+        base = df[df["variant_id"] == "V1"].set_index("case_id")["answer"]
         for vid, g in df.groupby("variant_id"):
             valid = g[g["gold_valid"]]
-            changed = g.set_index("case_id")["primary_norm"].reindex(base.index)
+            changed = g.set_index("case_id")["answer"].reindex(base.index)
             out.append({
                 "variant_id": vid,
                 "n_runs": int(len(g)),
@@ -402,13 +408,61 @@ class RigorousAnalysis:
             rev = revised.loc[[cl]] if revised is not None and cl in revised.index else pd.Series(dtype=float)
             out.append({"comparison": f"{cl} - {base}", "n_pairs": test["n_pairs"],
                         "accuracy_open": _r(a.mean()), "accuracy_closed": _r(b.mean()),
-                        "fixed_by_revision": test["only_b_correct"], "broken_by_revision": test["only_a_correct"],
+                        # Between passes: includes cases where the closed-loop pass started from a regenerated
+                        # first diagnosis, so these are not revision effects (see within_run_* for those).
+                        "only_closed_correct": test["only_b_correct"], "only_open_correct": test["only_a_correct"],
+                        "first_diagnosis_differs": self._first_diagnosis_differs(cl, base),
                         "revision_rate": _r(rev.fillna(0).astype(float).mean()) if len(rev) else None,
                         "accuracy_diff": _r(diff), "accuracy_diff_ci95_low": _r(lo), "accuracy_diff_ci95_high": _r(hi),
                         "mcnemar_exact_p": _r(test["p_value"], 6)})
         for row, adj in zip(out, holm_bonferroni([r["mcnemar_exact_p"] for r in out]), strict=True):
             row["mcnemar_exact_p_holm"] = _r(adj, 6)
             row.update(self._within_run_revision(row["comparison"].split(" - ")[0]))
+        return out
+
+    def _first_diagnosis_differs(self, cl_variant: str, open_variant: str) -> int:
+        """Cases where a closed-loop run's first (pre-revision) answer differs from the open-loop run's answer."""
+        first = self.resampling_pairs(cl_variant, open_variant)
+        return int((first["open_answer"] != first["first_answer"]).sum()) if len(first) else 0
+
+    def resampling_pairs(self, cl_variant: str, open_variant: str = "V1") -> pd.DataFrame:
+        """Per case: the open-loop answer and the closed-loop run's first answer, each scored.
+
+        When the closed-loop pass regenerated Research + Diagnosis, the two are independent samples of the same
+        pipeline, so their disagreement measures run-to-run stability, not governance."""
+        rows = []
+        raw = self.raw_runs[self.raw_runs["variant_id"] == cl_variant]
+        opened = self.runs[self.runs["variant_id"] == open_variant].set_index("case_id")
+        if "initial_primary_diagnosis" not in raw:
+            return pd.DataFrame()
+        for _, r in raw.iterrows():
+            case = self.cases.get(r["case_id"], {})
+            first = str(r.get("initial_primary_diagnosis") or "")
+            if not first or r["case_id"] not in opened.index or not opened.loc[r["case_id"], "gold_valid"]:
+                continue
+            scored = self.scorer.score_diagnosis(first, [], case)
+            o = opened.loc[r["case_id"]]
+            free = scored["scoring_mode"] == SCORING_FREE_TEXT
+            rows.append({"case_id": r["case_id"],
+                         "open_answer": o["primary_norm"] if free else (o["option_choice"] or ""),
+                         "first_answer": " ".join(first.lower().split()) if free else (scored["choice"] or ""),
+                         "open_correct": bool(o["correct"]), "first_correct": scored["score"] >= CORRECT_THRESHOLD})
+        return pd.DataFrame(rows)
+
+    def resampling_stability(self) -> List[Dict[str, Any]]:
+        """Repeated-run stability: V1 vs each closed-loop run's regenerated first diagnosis (same case, same model)."""
+        out = []
+        for cl in sorted(v for v in self.runs["variant_id"].unique() if str(v).endswith("-CL")):
+            pairs = self.resampling_pairs(cl)
+            if not len(pairs):
+                continue
+            test = mcnemar_exact(pairs["open_correct"].to_numpy(), pairs["first_correct"].to_numpy())
+            out.append({"resample": f"{cl} first diagnosis vs V1", "n_pairs": int(len(pairs)),
+                        "answer_agreement": _r((pairs["open_answer"] == pairs["first_answer"]).mean()),
+                        "accuracy_v1": _r(pairs["open_correct"].mean()),
+                        "accuracy_resample": _r(pairs["first_correct"].mean()),
+                        "correctness_flips": test["n_discordant"],
+                        "mcnemar_exact_p": _r(test["p_value"], 6)})
         return out
 
     def revision_by_variant(self) -> List[Dict[str, Any]]:
@@ -738,8 +792,10 @@ class RigorousAnalysis:
         changes = [v["diagnosis_changed_vs_v1_pct"] for v in rep["variants"]
                    if v["variant_id"] != "V1" and not str(v["variant_id"]).endswith("-CL")]
         if changes:
-            f.append(f"Open-loop governance changed the primary diagnosis in at most {max(changes)}% of cases: "
-                     "the layers annotate but do not alter clinical decisions.")
+            f.append(f"Open-loop governance changed the primary diagnosis in at most {max(changes)}% of cases: the layers "
+                     "annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's "
+                     "diagnosis, so " + ("0% is expected by design." if max(changes) == 0 else
+                                         "any nonzero share comes from runs that did not share it."))
         acc_tests = [t for t in rep["paired_tests"] if t["metric"] == "accuracy"]
         if acc_tests and all(t["wilcoxon_p"] >= 0.05 for t in acc_tests):
             f.append("No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).")
@@ -753,9 +809,18 @@ class RigorousAnalysis:
                      f"{max(t['accuracy_diff'] for t in mc)}.")
         for t in rep.get("closed_loop_effect") or []:
             f.append(f"Closed vs open loop ({t['comparison']}, n={t['n_pairs']}): accuracy {t['accuracy_open']} -> "
-                     f"{t['accuracy_closed']}; revision fixed {t['fixed_by_revision']} and broke "
-                     f"{t['broken_by_revision']} answers (exact McNemar p={t['mcnemar_exact_p']}, "
-                     f"Holm {t['mcnemar_exact_p_holm']}).")
+                     f"{t['accuracy_closed']} (exact McNemar p={t['mcnemar_exact_p']}, Holm {t['mcnemar_exact_p_holm']}). "
+                     f"Within its own runs, revision fixed {t.get('within_run_fixed')} and broke "
+                     f"{t.get('within_run_broken')} answers; the first diagnosis was regenerated and differed from the "
+                     f"open-loop answer in {t['first_diagnosis_differs']} cases, so between-pass differences mix "
+                     "revision with resampling.")
+        rs = rep.get("resampling_stability") or []
+        if rs:
+            f.append(f"Run-to-run stability: regenerating the same diagnosis gave the same answer in "
+                     f"{min(r['answer_agreement'] for r in rs)}-{max(r['answer_agreement'] for r in rs)} of cases and "
+                     f"flipped correctness in {min(r['correctness_flips'] for r in rs)}-"
+                     f"{max(r['correctness_flips'] for r in rs)} of {rs[0]['n_pairs']}; governance effects smaller than "
+                     "this sampling noise cannot be attributed to governance from between-pass comparisons.")
         shares = [a["share_of_drop_from_detector_penalties"] for a in rep["audit_paradox"]
                   if a["share_of_drop_from_detector_penalties"] is not None and a["reported_quality_drop"] > 0.01]
         if shares:
@@ -804,6 +869,21 @@ class RigorousAnalysis:
             f.append("Integrity: " + " ".join(rep["integrity"]["notes"]))
         return f
 
+    def limitations(self) -> List[str]:
+        models = self.raw_runs["model"].nunique()
+        modes = set(self.runs["scoring_mode"])
+        out = [f"{models} generator model(s); results may not transfer to other LLMs." if models > 1 else
+               "Single model (one provider); results may not transfer to other LLMs.",
+               "Several runs shared one provider endpoint concurrently, so per-call latency includes contention.",
+               "HITL review is simulated by a language model; review minutes are sampled from an assumed "
+               "distribution, not measured.",
+               "Governance outputs are not validated against clinicians until reviews are collected."]
+        if SCORING_FREE_TEXT in modes:
+            out.append("Free-text cases use whole-word matching against gold labels; only non-templated labels are scored.")
+        if modes - {SCORING_FREE_TEXT}:
+            out.append("Answer-key cases are scored by exact option; an answer that maps to no single option counts as wrong.")
+        return out
+
     def report(self) -> Dict[str, Any]:
         rep: Dict[str, Any] = {
             "generated_at": time.time(),
@@ -818,6 +898,7 @@ class RigorousAnalysis:
             "accuracy_tests": self.accuracy_tests(),
             "closed_loop_effect": self.closed_loop_effect(),
             "revision_by_variant": self.revision_by_variant(),
+            "resampling_stability": self.resampling_stability(),
             "audit_paradox": self.audit_paradox(),
             "alert_discrimination": self.alert_discrimination(),
             "alert_reproducibility": self.alert_reproducibility(),
@@ -828,12 +909,7 @@ class RigorousAnalysis:
             "failure_taxonomy": self.failure_taxonomy(),
             "clinician_validation": self.clinician_validation(),
             "jru_measurement": self.jru_measurement(),
-            "limitations": [
-                "Single model (one provider); results may not transfer to other LLMs.",
-                "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
-                "Accuracy uses lenient string matching against gold labels; only non-templated labels are scored.",
-                "Governance outputs are not validated against clinicians until reviews are collected.",
-            ],
+            "limitations": self.limitations(),
         }
         rep["multiple_comparisons"] = self.apply_holm(rep["paired_tests"], rep["accuracy_tests"])
         rep["power_analysis"] = self.power_analysis(rep["accuracy_tests"])

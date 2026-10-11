@@ -322,7 +322,8 @@ def test_closed_loop_effect_counts_fixes_and_breaks(tmp_path):
             db.log_run(scorer.score_run(result, case))
     (row,) = RigorousAnalysis(str(tmp_path / "bench.db"), str(cases_path), reference_db_path=None).closed_loop_effect()
     assert row["comparison"] == "V5-CL - V5" and row["n_pairs"] == 8
-    assert (row["fixed_by_revision"], row["broken_by_revision"]) == (4, 1)
+    assert (row["only_closed_correct"], row["only_open_correct"]) == (4, 1)
+    assert "first_diagnosis_differs" in row
     assert row["accuracy_open"] == 0.25 and row["accuracy_closed"] == 0.625
     assert row["mcnemar_exact_p_holm"] >= row["mcnemar_exact_p"]
     assert {"revised_runs_scored", "within_run_fixed", "within_run_broken"} <= set(row)

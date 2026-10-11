@@ -1,6 +1,5 @@
 """Unit tests for evaluation scoring, database logging, and statistics."""
 
-import os
 import pandas as pd
 import pytest
 from src.llm.client import UnifiedLLMClient

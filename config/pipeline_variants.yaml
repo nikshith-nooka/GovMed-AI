@@ -1,3 +1,5 @@
+# Descriptive only: the code does not read this file. The executed definition is
+# ClinicalGovernancePipeline.AVAILABLE_VARIANTS in src/pipeline/orchestrator.py; keep the two in sync.
 # Configuration of 5 Pipeline Variants for Governance Ablation
 
 variants:
@@ -54,15 +56,17 @@ variants:
   full_governance:
     id: "V5"
     name: "Full Governance (Defense-in-Depth)"
-    description: "All governance layers active: Verifier + Safety Validator + HITL Gate"
+    description: "All governance layers active: Consistency Checker + Verifier + Safety Validator + HITL Gate"
     agents:
       - "research_agent"
       - "diagnosis_agent"
+      - "consistency_checker"
       - "verifier_agent"
       - "safety_validator"
       - "hitl_simulator"
       - "report_agent"
     governance_layers:
+      - "consistency_checker"
       - "fact_verifier"
       - "safety_validator"
       - "hitl_approval_gate"

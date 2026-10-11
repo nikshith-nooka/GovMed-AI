@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import random
 from typing import Any, Dict, Tuple
-from src.agents.base import BaseClinicalAgent, wrap_case_data
+from src.agents.base import BaseClinicalAgent, is_parse_failure, wrap_case_data
 from src.llm.client import UnifiedLLMClient
 from src.telemetry.metrics import AgentStepLog
 from src.config.governance_economics import (
@@ -67,13 +67,14 @@ class HITLSimulatorAgent(BaseClinicalAgent):
         resp = self.llm_client.generate(messages, temperature=0.2)
         data = self.parse_json_response(resp.content)
 
-        decision = data.get("decision", "APPROVED")
+        # An unparseable review is a failed gate, never an approval.
+        decision = "PARSE_FAILURE" if is_parse_failure(data) else data.get("decision", "PARSE_FAILURE")
         flags = []
         if decision != "APPROVED":
             flags.append(f"HITL Intervention: {decision} - {str(data.get('critique', ''))[:80]}")
 
-        # Stochastic physician review time: sample from a normal distribution
-        # rather than trusting the LLM-provided value.
+        # SIMULATED, not measured: review minutes are drawn from an assumed distribution
+        # (src/config/governance_economics.py). No human reviewer took part.
         sampled_minutes = random.gauss(
             PHYSICIAN_REVIEW_MINUTES_MEAN,
             PHYSICIAN_REVIEW_MINUTES_STD,

@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-164%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-172%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -105,7 +105,7 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 | Does closing the loop help? | Not overall. On 300 MedQA questions with the answer key, accuracy was 43.0% with no checks, with checks as warnings, and with checks feeding back a revision; revisions fixed 36 answers and broke 33. Only attending-simulator feedback showed a small, non-significant gain (46.3%, p = 0.21). |
 | Is the study powered? | No: variants disagree with the baseline on 1–2 of 71 cases (exact McNemar p ≥ 0.5, 1.0 after Holm correction). A 5-point difference needs 312–940 paired cases, which is why a 300-question MedQA benchmark with its answer key is included. |
 | Is the model's stated confidence reliable? | No: expected calibration error is 0.29. The interface presents likelihoods as a ranking, not a probability. |
-| What does governance cost? | Median end-to-end latency rises from 45 s (G0) to 111 s (G4) on the benchmark model; tokens rise from about 3,100 to 8,400 per case. |
+| What does governance cost? | Median summed agent-call latency (parallel checks counted serially) rises from 45 s (G0) to 111 s (G4) on the benchmark model; tokens rise from about 3,100 to 8,400 per case. |
 
 > [!NOTE]
 > Several columns in `results/benchmark_results.db` (`uncertainty_jru`, `llm_judge_score`, `risk_adjusted_quality`,
@@ -232,7 +232,7 @@ scripts/           benchmark runner, re-analysis, load test, figures and exports
 benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
-tests/             164 unit and integration tests, including a prompt-injection set
+tests/             172 unit and integration tests, including a prompt-injection set
 ```
 
 ---

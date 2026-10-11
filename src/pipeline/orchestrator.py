@@ -123,7 +123,7 @@ class ClinicalGovernancePipeline:
             checks.append(("safety", "Safety Validator (Re-check)", self.safety_validator.execute))
         if not checks:
             return {"ran": False, "reason": "this level has no verifier or safety check to re-run"}
-        started = time.time()
+        started = time.perf_counter()
         with ThreadPoolExecutor(max_workers=len(checks)) as pool:
             futures = {
                 key: (name, pool.submit(self._named, timed, name, fn, clinical_case, revised))
@@ -134,7 +134,7 @@ class ClinicalGovernancePipeline:
                 output, step = future.result()
                 agent_steps.append(step)
                 outputs[key] = output
-        outputs.update(ran=True, latency_ms=round((time.time() - started) * 1000, 2))
+        outputs.update(ran=True, latency_ms=round((time.perf_counter() - started) * 1000, 2))
         return outputs
 
     @staticmethod
@@ -166,7 +166,10 @@ class ClinicalGovernancePipeline:
 
         v_info = self.AVAILABLE_VARIANTS[variant_key]
         case_id = str(clinical_case.get("id", clinical_case.get("case_id", "unknown_case")))
-        start_time = time.time()
+        start_time = time.perf_counter()
+        # Cached upstream steps ran before this call; their measured latency is added to the total below
+        # (otherwise a baseline run built on a cached diagnosis reports ~0 ms).
+        cached_upstream_ms = 0.0
 
         agent_steps: List[AgentStepLog] = []
         raw_outputs: Dict[str, Any] = {}
@@ -183,6 +186,7 @@ class ClinicalGovernancePipeline:
         # --- STEP 1: Research Agent (Universal across all variants, cached if available) ---
         if cached_research:
             findings, step1 = cached_research
+            cached_upstream_ms += step1.latency_ms
         else:
             findings, step1 = timed("Research Agent", self.research_agent.execute, clinical_case)
         agent_steps.append(step1)
@@ -191,12 +195,14 @@ class ClinicalGovernancePipeline:
         # --- STEP 2: Diagnosis Agent (Universal across all variants, cached if available) ---
         if cached_diagnosis:
             diagnosis_output, step2 = cached_diagnosis
+            cached_upstream_ms += step2.latency_ms
         else:
             options = clinical_case.get("options")
             diagnosis_output, step2 = timed("Diagnosis Agent", self.diagnosis_agent.execute, findings, options)
         agent_steps.append(step2)
         raw_outputs["diagnosis"] = diagnosis_output
 
+        governance_start = time.perf_counter()
         # Consistency, verifier and safety only read the case and diagnosis, so run them concurrently.
         parallel_checks = []
         if variant_key == "full_governance":
@@ -228,7 +234,9 @@ class ClinicalGovernancePipeline:
             raw_outputs["consistency"] = consistency_output
             governance_notes["consistency"] = consistency_output
             # Track the consistency audit outcome as a governance flag.
-            if consistency_output:
+            if is_parse_failure(consistency_output):
+                all_flags.append("Consistency Check FAILED: output could not be parsed (not a pass)")
+            elif consistency_output:
                 c_status = consistency_output.get("consistency_status", "CONSISTENT")
                 c_score = consistency_output.get("consistency_score", 1.0)
                 if consistency_output.get("inconsistencies_found"):
@@ -282,15 +290,18 @@ class ClinicalGovernancePipeline:
                     all_flags.append(f"Closed-loop revision: {initial_primary} -> {revised.get('primary_diagnosis')}")
                     raw_outputs["recheck"] = self._recheck(variant_key, clinical_case, revised, timed, agent_steps)
 
+        governance_ms = (time.perf_counter() - governance_start) * 1000
+
         # Deterministic contraindication rules: every variant, on the final diagnosis, no LLM call.
-        rules_start = time.time()
+        rules_start = time.perf_counter()
         rule_output = evaluate_rules(clinical_case, diagnosis_output)
-        rule_output["latency_ms"] = round((time.time() - rules_start) * 1000, 2)
+        rule_output["latency_ms"] = round((time.perf_counter() - rules_start) * 1000, 3)
         raw_outputs["rules"] = rule_output
         all_flags.extend(f"Rule [{a['severity']}]: {a['title']}" for a in rule_output["alerts"])
 
         # --- FINAL STEP: Report Agent (Synthesizes clinical note + governance inputs) ---
         report_output: Dict[str, Any] = {}
+        report_start = time.perf_counter()
         if include_report:
             report_output, step_rep = timed("Report Agent", self.report_agent.execute,
                                             findings, diagnosis_output, governance_notes)
@@ -298,7 +309,14 @@ class ClinicalGovernancePipeline:
             raw_outputs["report"] = report_output
 
         # Calculate totals
-        total_latency_ms = round((time.time() - start_time) * 1000, 2)
+        report_ms = (time.perf_counter() - report_start) * 1000
+        total_latency_ms = round((time.perf_counter() - start_time) * 1000 + cached_upstream_ms, 2)
+        raw_outputs["timing"] = {
+            "total_ms": total_latency_ms,
+            "upstream_cached_ms": round(cached_upstream_ms, 2),
+            "governance_ms": round(governance_ms, 2),  # checks, attending review, revision and re-check (wall clock)
+            "report_ms": round(report_ms, 2),
+        }
         total_prompt = sum(s.prompt_tokens for s in agent_steps)
         total_comp = sum(s.completion_tokens for s in agent_steps)
         total_tokens = total_prompt + total_comp
@@ -313,7 +331,7 @@ class ClinicalGovernancePipeline:
         # Count flags
         hallucinations = 1 if (verifier_output and verifier_output.get("hallucination_detected")) else 0
         safety_violations = len(safety_output.get("safety_flags", [])) if safety_output else 0
-        hitl_decision = hitl_output.get("decision", "APPROVED") if hitl_output else "N/A"
+        hitl_decision = hitl_output.get("decision", "PARSE_FAILURE") if hitl_output else "N/A"
 
         parse_failures = [name for name, output in raw_outputs.items() if is_parse_failure(output)]
         parse_failures += [f"recheck_{name}" for name, output in (raw_outputs.get("recheck") or {}).items()

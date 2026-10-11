@@ -174,7 +174,6 @@ class UnifiedLLMClient:
         if self.provider == "gemini":
             time.sleep(3.2)
 
-        start_time = time.time()
         # Round-robin across pooled keys; the cursor is process-wide so separate requests
         # (each with a fresh client) spread load instead of all starting on key 0.
         key_idx = 0
@@ -211,6 +210,8 @@ class UnifiedLLMClient:
 
         for attempt in range(max_retries):
             try:
+                # Timed per attempt: latency is the successful request only, not rate-limit or retry back-off.
+                start_time = time.perf_counter()
                 with httpx.Client(timeout=self.timeout_seconds) as client:
                     resp = client.post(self.base_url, headers=headers, json=payload)
                     if resp.status_code == 429:
@@ -240,12 +241,14 @@ class UnifiedLLMClient:
                     resp.raise_for_status()
                     data = resp.json()
 
-                latency_ms = round((time.time() - start_time) * 1000, 2)
+                latency_ms = round((time.perf_counter() - start_time) * 1000, 2)
                 choice = data["choices"][0]
                 content = choice["message"].get("content") or ""
                 if not content.strip():
                     raise RuntimeError(f"empty completion (finish_reason={choice.get('finish_reason')})")
                 usage = data.get("usage") or {}
+                if not usage.get("prompt_tokens") or not usage.get("completion_tokens"):
+                    logger.warning(f"{self.provider} returned no token usage; tokens for this call are estimated (chars/4).")
                 p_tokens = usage.get("prompt_tokens") or int(len(str(messages)) / 4)
                 c_tokens = usage.get("completion_tokens") or int(len(content) / 4)
                 t_tokens = usage.get("total_tokens") or p_tokens + c_tokens

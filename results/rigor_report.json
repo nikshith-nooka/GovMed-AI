@@ -1,5 +1,5 @@
 {
-  "generated_at": 1791279993.115642,
+  "generated_at": 1791606198.403937,
   "db_path": "results/benchmark_results.db",
   "n_runs_analyzed": 750,
   "n_cases": 150,
@@ -77,7 +77,7 @@
     },
     "option_parse_status_counts": {},
     "runs_with_unparseable_option_answer": 0,
-    "latency_note": "Reported total_latency_ms excludes the shared Research and Diagnosis steps; e2e_latency sums every agent step."
+    "latency_note": "Latency is the sum of every agent call in the run (e2e_latency_s), including the shared Research and Diagnosis steps. Checks that ran in parallel are counted one after another, so for multi-check variants this is an upper bound on wall-clock time. Runs stored before the 2026-10-10 fix have a total_latency_ms that omits the shared steps (about 0 s for V1)."
   },
   "variants": [
     {
@@ -495,6 +495,7 @@
   ],
   "closed_loop_effect": [],
   "revision_by_variant": [],
+  "resampling_stability": [],
   "audit_paradox": [
     {
       "variant_id": "V2",
@@ -951,9 +952,10 @@
   },
   "limitations": [
     "Single model (one provider); results may not transfer to other LLMs.",
-    "Variants ran concurrently against one endpoint, so per-call latency includes contention.",
-    "Accuracy uses lenient string matching against gold labels; only non-templated labels are scored.",
-    "Governance outputs are not validated against clinicians until reviews are collected."
+    "Several runs shared one provider endpoint concurrently, so per-call latency includes contention.",
+    "HITL review is simulated by a language model; review minutes are sampled from an assumed distribution, not measured.",
+    "Governance outputs are not validated against clinicians until reviews are collected.",
+    "Free-text cases use whole-word matching against gold labels; only non-templated labels are scored."
   ],
   "multiple_comparisons": {
     "method": "holm-bonferroni",
@@ -1024,7 +1026,7 @@
   "headline_findings": [
     "Reported accuracy 0.739 is inflated by substring matching: 216 runs with an unparsed (empty) diagnosis scored 1.0, and 395 runs whose 'diagnosis' is a bare option letter (150/150 cases contain no options, so a letter is a non-answer) scored 0.9. With recovered outputs and whole-word matching, accuracy is 0.293.",
     "Only 71 of 150 gold labels are real diagnoses; the rest are templated titles. On scorable cases accuracy is 0.38.",
-    "Open-loop governance changed the primary diagnosis in at most 2.7% of cases: the layers annotate but do not alter clinical decisions.",
+    "Open-loop governance changed the primary diagnosis in at most 2.7% of cases: the layers annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's diagnosis, so any nonzero share comes from runs that did not share it.",
     "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
     "Exact McNemar on binary correctness vs V1: 0 of 4 comparisons significant after Holm-Bonferroni over 24 paired tests (smallest raw p 0.5); accuracy differences range -0.0282 to -0.0141.",
     "94-96% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",

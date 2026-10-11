@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 import logging
 import os
 import random
@@ -40,6 +41,7 @@ from src.evaluation.scorer import ClinicalEvaluationScorer  # noqa: E402
 from src.llm.client import UnifiedLLMClient  # noqa: E402
 from src.pipeline.orchestrator import ClinicalGovernancePipeline  # noqa: E402
 from src.telemetry.db import BenchmarkDB  # noqa: E402
+from src.telemetry.metrics import AgentStepLog  # noqa: E402
 
 load_dotenv()
 
@@ -120,6 +122,36 @@ def is_already_completed(db_path: str, case_id: str, variant_id: str, model: Opt
         return False
 
 
+def load_shared_upstream(db_path: str, case_id: str, model: Optional[str]):
+    """Research + Diagnosis already stored for this case by an open-loop run (no revision), or None.
+
+    Separate invocations (e.g. a closed-loop pass run after the open-loop pass) reuse them, so every
+    variant of a case starts from the identical diagnosis and differences come from governance alone.
+    """
+    try:
+        with sqlite3.connect(db_path, timeout=30.0) as conn:
+            query = ("SELECT id, raw_outputs_json FROM runs WHERE case_id = ? AND COALESCE(closed_loop, 0) = 0"
+                     + (" AND model = ?" if model else "") + " ORDER BY id LIMIT 1")
+            row = conn.execute(query, [str(case_id)] + ([model] if model else [])).fetchone()
+            if not row:
+                return None
+            raw = json.loads(row[1] or "{}")
+            steps = {r[0]: r for r in conn.execute(
+                "SELECT agent_name, role, prompt_tokens, completion_tokens, total_tokens, latency_ms, cost_usd, "
+                "output_preview FROM agent_steps WHERE run_id = ? AND agent_name IN (?, ?)", (row[0], *SHARED_AGENTS))}
+    except (sqlite3.Error, json.JSONDecodeError):
+        return None
+    if not all(name in steps for name in SHARED_AGENTS) or "research" not in raw or "diagnosis" not in raw:
+        return None
+
+    def step(name: str) -> AgentStepLog:
+        _, role, p, c, t, lat, cost, preview = steps[name]
+        return AgentStepLog(agent_name=name, role=role, prompt_tokens=p or 0, completion_tokens=c or 0,
+                            total_tokens=t or 0, latency_ms=lat or 0.0, cost_usd=cost or 0.0, output_preview=preview or "")
+
+    return (raw["research"], step("Research Agent")), (raw["diagnosis"], step("Diagnosis Agent"))
+
+
 def variant_run_id(v_key: str, args) -> str:
     base = ClinicalGovernancePipeline.AVAILABLE_VARIANTS[v_key]["id"]
     return base + "-CL" if getattr(args, "closed_loop", False) and v_key != "baseline" else base
@@ -188,13 +220,15 @@ def process_case(case, c_idx, total_cases, variants, pipeline, scorer, judge, db
             counter_obj["skipped"] += len(variants)
         return
 
-    # Compute shared research & diagnosis once for this case
+    # Shared research & diagnosis: reuse what an earlier open-loop run stored for this case, else compute once.
     try:
-        findings, step1 = pipeline.research_agent.execute(case)
-        options = case.get("options")
-        diagnosis_output, step2 = pipeline.diagnosis_agent.execute(findings, case_options=options)
-        cached_res = (findings, step1)
-        cached_diag = (diagnosis_output, step2)
+        stored = load_shared_upstream(args.db_path, case_id, args.generator_model)
+        if stored:
+            cached_res, cached_diag = stored
+        else:
+            findings, step1 = pipeline.research_agent.execute(case)
+            diagnosis_output, step2 = pipeline.diagnosis_agent.execute(findings, case_options=case.get("options"))
+            cached_res, cached_diag = (findings, step1), (diagnosis_output, step2)
     except Exception as e:
         logger.error(f"Error generating baseline diagnosis for Case '{case_id}': {e}. Skipping case.")
         with lock:

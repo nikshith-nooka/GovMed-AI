@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import copy
 import hashlib
 import hmac
 import json
@@ -235,8 +236,9 @@ def get_historical_runs(limit: int = 100, offset: int = 0, variant: Optional[str
     cursor = conn.cursor()
     where, params = " WHERE 1=1", []
     if variant and variant != "All":
-        where += " AND (variant_name = ? OR variant_id = ? OR variant_id = ?)"
-        params.extend([variant, variant, f"{variant}-CL"])
+        # Exact match: V1 and V1-CL are different configurations and must not be mixed.
+        where += " AND (variant_name = ? OR variant_id = ?)"
+        params.extend([variant, variant])
     total = cursor.execute("SELECT COUNT(*) FROM runs" + where, params).fetchone()[0]
     rows = cursor.execute("SELECT * FROM runs" + where + " ORDER BY id DESC LIMIT ? OFFSET ?",
                           params + [limit, max(0, offset)]).fetchall()
@@ -467,12 +469,15 @@ def start_case_job(case_data: CustomCaseInput):
             entry = job["steps"].setdefault(agent, {"agent": agent, "status": "running", "started": time.time()})
             if event == "done":
                 entry.update(status="done", latency_s=round(step.latency_ms / 1000.0, 1), tokens=step.total_tokens)
-        _persist(job, keep_result)
+            # Parallel checks call this concurrently: persist a snapshot taken under the lock, not the live dict.
+            snapshot = copy.deepcopy(job)
+        _persist(snapshot, keep_result)
 
     def on_event(event: Dict[str, Any]) -> None:
         with _jobs_lock:
             job["events"] = (job["events"] + [event])[-MAX_JOB_EVENTS:]
-        _persist(job, keep_result)
+            snapshot = copy.deepcopy(job)
+        _persist(snapshot, keep_result)
 
     def work() -> None:
         try:
@@ -588,7 +593,9 @@ def run_experiment_case(inp: ExperimentCaseInput):
         raise HTTPException(status_code=400, detail=(
             f"The {DEMO_PROVIDER_LABEL} generator cannot be used for experiments: it is not a model and its output "
             "would contaminate the results. Choose a live provider."))
-    result, mode, provider_label, model_label = execute_pipeline(case, variant_key, choice, True, inp.closed_loop)
+    # Agents only read question/options today; strip the labels anyway so isolation does not rest on convention.
+    blinded = {k: v for k, v in case.items() if k not in ("gold_diagnosis", "answer", "answer_idx", "answer_text")}
+    result, mode, provider_label, model_label = execute_pipeline(blinded, variant_key, choice, True, inp.closed_loop)
     scored = _scorer.score_run(result, case)
     run_id = BenchmarkDB(str(EXPERIMENT_DB_PATH)).log_run(scored)
     support = build_case_response(scored, code, mode, provider_label, model_label)["decision_support"]
@@ -766,6 +773,8 @@ if FRONTEND_DIR.exists():
 
     @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def serve_spa(full_path: str):
+        if full_path.startswith("api/"):
+            raise HTTPException(status_code=404, detail=f"Unknown API endpoint: /{full_path}")
         file_path = (FRONTEND_DIR / full_path).resolve()
         if full_path and file_path.is_file() and frontend_root in file_path.parents:
             return FileResponse(file_path)
