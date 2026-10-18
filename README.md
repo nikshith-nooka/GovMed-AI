@@ -238,6 +238,7 @@ client/            React + Vite application
 scripts/           benchmark runner, re-analysis, load test, figures and exports
 benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
+docs/              experiment protocol, metric definitions, reproducibility; audit/ holds the audit trail
 paper/             manuscript draft and generated tables
 tests/             183 unit and integration tests, including a prompt-injection set
 client/src/__tests__/  17 UI tests (Vitest + Testing Library)
@@ -286,4 +287,4 @@ Department of Artificial Intelligence and Machine Learning, Malla Reddy Universi
 
 ## License
 
-Released under the MIT License, as declared in `pyproject.toml`.
+Released under the MIT License; see [LICENSE](LICENSE).

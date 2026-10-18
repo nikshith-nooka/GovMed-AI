@@ -27,7 +27,7 @@ const PATH_TO_PAGE = {
   '/dashboard': 'dashboard',
   '/clinician': 'clinician',
   '/review': 'review',
-  // Retired pages redirect to where their content now lives (see docs/UI_REDESIGN_SUMMARY.md).
+  // Retired pages redirect to where their content now lives (see docs/audit/UI_REDESIGN_SUMMARY.md).
   '/findings': 'results',
   '/run-case': 'clinician',
   '/clinical-cases': 'cases',

@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Backfill JRU uncertainty, risk-adjusted quality, and GEF in benchmark_results.db.
+"""WITHDRAWN - kept only for traceability; do not run.
+
+The values this script wrote are not measurements (docs/METRIC_DEFINITIONS.md). The
+analysis excludes them, and results/benchmark_results.db.bak holds the original data.
+
+Backfill JRU uncertainty, risk-adjusted quality, and GEF in benchmark_results.db.
 
 Calculates and updates missing metric columns for all existing benchmark runs
 using canonical formulas from src/evaluation/scorer.py and src/config/governance_economics.py.

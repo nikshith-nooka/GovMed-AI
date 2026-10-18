@@ -68,4 +68,4 @@ uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --loop-m
 ## Integrity guarantees
 - The runner only appends to raw databases, and the analysis only reads them.
   `results/benchmark_results.db.bak` is the original pre-backfill database.
-- Every number in `paper/main.tex` is checked against the reports (`check_paper_numbers.py`: 168/168 on 2026-10-18).
+- Every number in `paper/main.tex` is checked against the reports (`check_paper_numbers.py`: 169/169 on 2026-10-18).

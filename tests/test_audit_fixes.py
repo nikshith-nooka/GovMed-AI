@@ -1,4 +1,4 @@
-"""Regression tests for the 2026-10-10 audit fixes (docs/REPAIR_LOG.md)."""
+"""Regression tests for the 2026-10-10 audit fixes (docs/audit/REPAIR_LOG.md)."""
 
 from __future__ import annotations
 

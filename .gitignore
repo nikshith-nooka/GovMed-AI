@@ -36,6 +36,7 @@ Thumbs.db
 
 # Local tooling, caches and scratch work
 .claude/
+.agents/
 .kilo/
 graphify-out/
 scratch/
@@ -61,13 +62,10 @@ results/pilot_*.db
 
 # LaTeX build output
 paper_out/
-paper/*.aux
-paper/*.log
-paper/*.out
 !results/benchmark_results.db.bak
 
-# Unrelated documents
-62_Deep_Learning-Based_Detection_of_Plastic_Waste_in_Ocean_Images_for_Environmental_Monitoring.pdf
+# Stray documents in the repository root
+/*.pdf
 
 # Compiled manuscripts (rebuild with tectonic; submission copies go in paper_out/)
 paper/*.pdf

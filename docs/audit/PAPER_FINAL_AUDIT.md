@@ -5,7 +5,7 @@ already contains the Holm-scope wording in the rigor reports. **Nothing is commi
 Source: `paper/main_ncrtht2026.tex` · PDF: `paper_out/NCRTHT2026_submission.pdf` (a copy of
 `paper/main_ncrtht2026.pdf`) · Previous PDF: `paper_out/NCRTHT2026_submission_prev_2026-10-18.pdf`
 
-Companion documents: `docs/PAPER_NUMBER_VALIDATION.md` (every number) and `docs/PAPER_STYLE_CHANGES.md` (visual and
+Companion documents: `docs/audit/PAPER_NUMBER_VALIDATION.md` (every number) and `docs/audit/PAPER_STYLE_CHANGES.md` (visual and
 format changes).
 
 ## Verdict: READY AFTER AUTHOR CONFIRMATION

@@ -110,7 +110,7 @@ result should be read as exploratory. The within-run revision analysis was added
 
 ## 7. Known deviations from the brief
 
-- No 50-case / Llama 3.1 8B pilot exists. The stored experiments are listed in PROJECT_AUDIT §2.
+- No 50-case / Llama 3.1 8B pilot exists. The stored experiments are listed in `audit/PROJECT_AUDIT.md` §2.
 - Per-claim verification categories (SUPPORTED / UNSUPPORTED / CONTRADICTED / UNVERIFIABLE) are not implemented (AUD-20).
 - Human review is simulated, and its minutes are sampled from an assumed distribution, not measured.
 - Each case was run once per configuration, with no repeated runs. The resampling comparison above is the only stability
