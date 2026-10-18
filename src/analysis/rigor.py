@@ -819,8 +819,14 @@ class RigorousAnalysis:
                      f"{lo}); accuracy differences range {min(t['accuracy_diff'] for t in mc)} to "
                      f"{max(t['accuracy_diff'] for t in mc)}.")
         for t in rep.get("closed_loop_effect") or []:
+            # This Holm value corrects only across the closed-vs-open comparisons; quote the family-wide one too so a
+            # within-family pass is not read as significant after correcting for every paired test in the report.
+            family_p = next((a.get("mcnemar_exact_p_holm") for a in rep.get("accuracy_tests") or []
+                             if a.get("comparison") == f"{t['comparison'].split(' - ')[0]} - V1"), None)
+            family_note = f"; Holm over all paired tests {family_p}" if family_p is not None else ""
             f.append(f"Closed vs open loop ({t['comparison']}, n={t['n_pairs']}): accuracy {t['accuracy_open']} -> "
-                     f"{t['accuracy_closed']} (exact McNemar p={t['mcnemar_exact_p']}, Holm {t['mcnemar_exact_p_holm']}). "
+                     f"{t['accuracy_closed']} (exact McNemar p={t['mcnemar_exact_p']}, Holm within closed-loop "
+                     f"comparisons {t['mcnemar_exact_p_holm']}{family_note}). "
                      f"Within its own runs, revision fixed {t.get('within_run_fixed')} and broke "
                      f"{t.get('within_run_broken')} answers. "
                      + ("Both passes started from the same first diagnosis, so the comparison is paired."

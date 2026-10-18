@@ -1,5 +1,5 @@
 {
-  "generated_at": 1792316218.8748028,
+  "generated_at": 1792319275.914144,
   "db_path": "results/medqa_paired.db",
   "n_runs_analyzed": 1800,
   "n_cases": 300,
@@ -1244,7 +1244,7 @@
   "headline_findings": [
     "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's diagnosis, so 0% is expected by design.",
     "Exact McNemar on binary correctness vs V1: 0 of 5 comparisons significant after Holm-Bonferroni over 30 paired tests (smallest raw p 0.039617); accuracy differences range -0.0567 to 0.0167.",
-    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.3733 (exact McNemar p=0.039617, Holm 0.039617). Within its own runs, revision fixed 21 and broke 39 answers. Both passes started from the same first diagnosis, so the comparison is paired.",
+    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.3733 (exact McNemar p=0.039617, Holm within closed-loop comparisons 0.039617; Holm over all paired tests 0.554638). Within its own runs, revision fixed 21 and broke 39 answers. Both passes started from the same first diagnosis, so the comparison is paired.",
     "47-100% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
     "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.497-0.57 (0.5 = chance).",
     "The safety validator raised at least one alert on 100% of runs, so alert presence carries no information about whether the diagnosis is wrong.",

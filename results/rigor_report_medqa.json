@@ -1,5 +1,5 @@
 {
-  "generated_at": 1792316222.406153,
+  "generated_at": 1792319279.354485,
   "db_path": "results/medqa_fast.db",
   "n_runs_analyzed": 1800,
   "n_cases": 300,
@@ -1247,7 +1247,7 @@
     "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's diagnosis, so 0% is expected by design.",
     "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
     "Exact McNemar on binary correctness vs V1: 0 of 5 comparisons significant after Holm-Bonferroni over 30 paired tests (smallest raw p 0.211609); accuracy differences range -0.0133 to 0.0333.",
-    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43 (exact McNemar p=1.0, Holm 1.0). Within its own runs, revision fixed 36 and broke 33 answers. The first diagnosis was regenerated and differed from the open-loop answer in 76 cases, so between-pass differences mix revision with resampling.",
+    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43 (exact McNemar p=1.0, Holm within closed-loop comparisons 1.0; Holm over all paired tests 1.0). Within its own runs, revision fixed 36 and broke 33 answers. The first diagnosis was regenerated and differed from the open-loop answer in 76 cases, so between-pass differences mix revision with resampling.",
     "Run-to-run stability: regenerating the same diagnosis gave the same answer in 0.7458-0.7952 of cases and flipped correctness in 41-48 of 293; governance effects smaller than this sampling noise cannot be attributed to governance from between-pass comparisons.",
     "88-102% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
     "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.497-0.555 (0.5 = chance).",
