@@ -7,7 +7,10 @@ import {
   FileText,
   HeartPulse,
   ClipboardCheck,
-  FlaskConical
+  FlaskConical,
+  Stethoscope,
+  Database,
+  AlertTriangle
 } from 'lucide-react';
 
 export default function Sidebar({ currentPage, setCurrentPage, isOpen, onClose }) {
@@ -33,7 +36,7 @@ export default function Sidebar({ currentPage, setCurrentPage, isOpen, onClose }
       {isOpen && <div className="sidebar-backdrop" onClick={onClose} />}
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-brand">
-          <div className="brand-logo-icon">🩺</div>
+          <div className="brand-logo-icon"><Stethoscope size={18} aria-hidden="true" /></div>
           <div className="brand-text">
             <div className="brand-title">GovBench</div>
             <div className="brand-subtitle">Clinical AI Governance</div>
@@ -56,10 +59,10 @@ export default function Sidebar({ currentPage, setCurrentPage, isOpen, onClose }
         <div className="sidebar-footer">
           <div className="sidebar-footer-title">Datasets Ingested</div>
           <div className="sidebar-footer-item">
-            <span>📦</span> 150 cases: MedQA, PubMedQA, MedDialog (50 each)
+            <Database size={14} aria-hidden="true" /> 150 cases: MedQA, PubMedQA, MedDialog (50 each)
           </div>
           <div className="sidebar-footer-item">
-            <span>⚠️</span> Decision support only, not a diagnosis
+            <AlertTriangle size={14} aria-hidden="true" /> Decision support only, not a diagnosis
           </div>
           <div className="sidebar-quote">
             "Responsible AI for safer clinical decision-making."

@@ -1,5 +1,4 @@
 /* GovBench-Clinical: High-Fidelity React UI Style System */
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,600;1,400&display=swap');
 
 :root {
   --bg-primary: #F8F9FA;
@@ -14,9 +13,10 @@
   --pill-green-bg: #DCFCE7;
   --pill-green-txt: #15803D;
   --accent-amber: #E07A5F;
-  --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
-  --font-serif: 'Playfair Display', serif;
+  /* Platform system fonts: SF Pro on Apple devices (with optical sizing), Segoe UI / Roboto elsewhere. */
+  --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --font-serif: var(--font-main); /* the decorative serif is retired; one family, hierarchy from weight and size */
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
@@ -3249,3 +3249,96 @@ body {
 }
 
 
+
+/* =====================================================================
+   Apple design layer (WWDC "Designing Fluid Interfaces", "Details of UI
+   Typography", materials and accessibility guidance), applied on top of
+   the styles above. Remove this block to return to the previous look.
+   ===================================================================== */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);     /* critically damped feel: fast start, no overshoot */
+  --radius-card: 14px;
+  --radius-control: 10px;
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent-green) 45%, transparent);
+  --material-bar: color-mix(in srgb, var(--bg-card) 72%, transparent);
+}
+
+/* Typography: system font with optical sizing; tracking and leading change with size. */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  font-optical-sizing: auto;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  /* Ease light <-> dark instead of an abrupt brightness jump. */
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+h1, .cw-title { letter-spacing: -0.022em; line-height: 1.1; font-weight: 700; }
+h2 { letter-spacing: -0.018em; line-height: 1.15; }
+h3, h4 { letter-spacing: -0.01em; line-height: 1.25; }
+.cw-sub, p { line-height: 1.55; }
+code, pre, kbd { font-family: var(--font-mono); }
+/* Numbers keep the system font but use tabular digits, so columns and KPIs align. */
+.cw-num { font-variant-numeric: tabular-nums; }
+
+/* Response: feedback on press, not on release. Only transform/opacity/colour animate. */
+button, .nav-item, .cw-btn, .cw-tile, .btn, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;              /* no 300 ms tap delay */
+  transition: transform 0.1s var(--ease-out), background-color 0.2s ease, color 0.2s ease,
+              border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+button:active:not(:disabled), .nav-item:active, .cw-btn:active:not(:disabled),
+.btn:active:not(:disabled), [role="button"]:active { transform: scale(0.97); }
+.cw-tile:active { transform: scale(0.985); }   /* large surfaces compress less than small controls */
+.top-navbar, .search-bar, .mobile-menu-btn { transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+
+/* Keyboard focus is always visible, never on mouse click. */
+:focus { outline: none; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+/* Controls and surfaces: consistent radii, hairline borders, quiet shadows. */
+.cw-card { border-radius: var(--radius-card); }
+.cw-btn, .cw-input, .cw-select, .search-bar, .nav-item { border-radius: var(--radius-control); }
+.cw-tile { text-align: left; }
+.cw-tile:hover { box-shadow: var(--card-hover-shadow); }
+
+/* Materials: the top bar is a translucent layer that content scrolls beneath. */
+.top-navbar {
+  position: sticky;
+  top: 12px;
+  z-index: 30;
+  background: var(--material-bar);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
+}
+
+/* Sidebar footer icons sit on the text baseline like the nav icons. */
+.sidebar-footer-item { display: flex; align-items: flex-start; gap: 8px; }
+.sidebar-footer-item svg { flex-shrink: 0; margin-top: 2px; }
+.brand-logo-icon svg { display: block; }
+.sidebar-quote { font-style: italic; font-weight: 500; letter-spacing: 0; }
+
+/* Accessibility: three independent user preferences. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+  button, .nav-item, .cw-btn, .cw-tile, .btn, [role="button"] { transition: opacity 0.2s ease, background-color 0.2s ease; }
+  button:active, .nav-item:active, .cw-btn:active, .cw-tile:active, .btn:active, [role="button"]:active { transform: none; }
+  .spin { animation: none !important; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .top-navbar { background: var(--bg-card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+@media (prefers-contrast: more) {
+  :root { --border-color: #64748B; }
+  .top-navbar { background: var(--bg-card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .cw-muted, .text-muted { color: var(--text-secondary) !important; }
+}
+
+/* Let the sticky top bar follow the window scroll: `overflow-y: auto` made .main-content its scroll container. */
+.main-content { overflow-y: visible; overflow-x: clip; }

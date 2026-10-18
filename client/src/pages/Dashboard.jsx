@@ -27,7 +27,8 @@ export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
   const m = report?.measurement_validity;
 
   const chart = {
-    labels: variants.map((v) => VARIANT_LABELS[v.variant_id] || v.variant_id),
+    // "V2 · Grounding verifier" -> two lines, so labels stay horizontal and are never clipped.
+    labels: variants.map((v) => (VARIANT_LABELS[v.variant_id] || v.variant_id).split(' · ')),
     datasets: [
       { label: 'Reported quality (penalizes own detectors)', data: variants.map((v) => v.reported_quality), backgroundColor: '#CBD5E1' },
       { label: 'Detector-neutral quality', data: variants.map((v) => v.detector_neutral_quality), backgroundColor: '#2D6A4F' },
@@ -87,7 +88,7 @@ export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
             <div className="cw-card">
               <h3>Quality by variant</h3>
               <div style={{ height: 280 }}>
-                <Bar data={chart} options={{ maintainAspectRatio: false, scales: { y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }} />
+                <Bar data={chart} options={{ maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 0, autoSkip: false } }, y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }} />
               </div>
               <button className="cw-btn ghost small" style={{ marginTop: 10 }} onClick={() => setCurrentPage('results')}>Open Benchmark Analytics <ArrowRight size={14} /></button>
             </div>

@@ -32,7 +32,7 @@ function Table({ rows, cols }) {
 const barOptions = (yTitle, max) => ({
   maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom' } },
-  scales: { y: { beginAtZero: true, ...(max ? { max } : {}), title: { display: true, text: yTitle } } },
+  scales: { x: { ticks: { maxRotation: 0, autoSkip: false } }, y: { beginAtZero: true, ...(max ? { max } : {}), title: { display: true, text: yTitle } } },
 });
 
 export default function ResultsComparison() {
@@ -42,7 +42,7 @@ export default function ResultsComparison() {
   if (loading) return <div className="cw-page cw-empty"><Loader2 className="spin" /> Loading…</div>;
   if (error) return <div className="cw-page"><div className="cw-banner info"><FlaskConical size={18} /><div><strong>No analysis yet</strong>{error}</div></div></div>;
 
-  const labels = r.variants.map((v) => VARIANT_LABELS[v.variant_id] || v.variant_id);
+  const labels = r.variants.map((v) => (VARIANT_LABELS[v.variant_id] || v.variant_id).split(' · '));
   const signals = r.alert_discrimination;
 
   return (
