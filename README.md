@@ -144,7 +144,7 @@ not help while those checks cannot tell right answers from wrong ones.
 least one provider.
 
 ```bash
-git clone https://github.com/nikki-nooka/GovMed-AI.git
+git clone https://github.com/nikshith-nooka/GovMed-AI.git
 cd GovMed-AI
 
 uv sync --extra dev                       # Python dependencies
@@ -265,7 +265,7 @@ tests/             175 unit and integration tests, including a prompt-injection 
   title  = {Open-Loop Governance Is Not Governance: A Measurement Audit of Multi-Agent Clinical {LLM} Pipelines},
   year   = {2026},
   note   = {GovBench-Clinical software and manuscript},
-  url    = {https://github.com/nikki-nooka/GovMed-AI}
+  url    = {https://github.com/nikshith-nooka/GovMed-AI}
 }
 ```
 
