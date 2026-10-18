@@ -1,42 +1,38 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  FileText, 
-  Download, 
-  Copy, 
-  Check, 
-  ExternalLink, 
-  Sparkles, 
-  Table, 
-  Database, 
-  BookOpen,
-  CheckCircle2
-} from 'lucide-react';
-import { apiFetch } from '../lib/api';
+import React, { useEffect, useState } from 'react';
+import { Check, Copy, Database, FileText } from 'lucide-react';
+import { apiFetch, findingsPath, useApi, useExperiment } from '../lib/api';
+import './clinical.css';
+
+// Manuscripts in paper/ (titles are those of the LaTeX sources; neither has been peer reviewed).
+const MANUSCRIPTS = [
+  ['Full manuscript', 'paper/main.tex', 'Open-Loop Governance Is Not Governance: A Measurement Audit of Multi-Agent Clinical LLM Pipelines'],
+  ['NCRTHT 2026 version (4 pages)', 'paper/main_ncrtht2026.tex', 'Do Safety Checks Make AI Diagnosis Safer? A Paired Evaluation of Governed Multi-Agent Clinical Language Models'],
+];
 
 export default function Reports() {
-  const [latexCode, setLatexCode] = useState('');
+  const experiment = useExperiment();
+  const { data: summary } = useApi(findingsPath(experiment));
+  const [latex, setLatex] = useState({ text: '', error: null, loading: true });
   const [copied, setCopied] = useState(false);
-  const [loadError, setLoadError] = useState(null);
   const [copyError, setCopyError] = useState(false);
-  const [summary, setSummary] = useState(null);
+  const [csvError, setCsvError] = useState(null);
 
   useEffect(() => {
-    apiFetch('/api/reports/latex')
+    let alive = true;
+    apiFetch(`/api/reports/latex?experiment=${encodeURIComponent(experiment)}`)
       .then(async (res) => {
         if (!res.ok) throw new Error(`LaTeX table unavailable (${res.status})`);
-        setLatexCode(await res.text());
+        const text = await res.text();
+        if (alive) setLatex({ text, error: null, loading: false });
       })
-      .catch((err) => setLoadError(err.message));
-    apiFetch('/api/research/findings')
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setSummary)
-      .catch(() => {});
-  }, []);
+      .catch((err) => alive && setLatex({ text: '', error: err.message, loading: false }));
+    return () => { alive = false; };
+  }, [experiment]);
 
   const handleCopy = async () => {
-    if (!latexCode) return;
+    if (!latex.text) return;
     try {
-      await navigator.clipboard.writeText(latexCode);
+      await navigator.clipboard.writeText(latex.text);
       setCopied(true);
       setCopyError(false);
       setTimeout(() => setCopied(false), 2000);
@@ -45,183 +41,86 @@ export default function Reports() {
     }
   };
 
-  const alertsTotal = summary?.variants?.reduce((sum, v) => sum + (v.safety_alerts_total || 0), 0);
-
   // Fetched (not navigated) so the optional API token header is sent when GOVBENCH_AUTH_ALL=1.
   const handleDownloadCsv = async () => {
+    setCsvError(null);
     try {
-      const res = await apiFetch('/api/reports/csv');
+      const res = await apiFetch(`/api/reports/csv?experiment=${encodeURIComponent(experiment)}`);
       if (!res.ok) throw new Error(`CSV export unavailable (${res.status})`);
       const url = URL.createObjectURL(await res.blob());
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'govbench_benchmark_runs.csv';
+      a.download = `govbench_runs_${experiment}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setLoadError(err.message);
+      setCsvError(err.message);
     }
   };
 
+  const alertsTotal = summary?.variants?.reduce((sum, v) => sum + (v.safety_alerts_total || 0), 0);
+
   return (
-    <div style={{ maxWidth: '1080px', margin: '0 auto', padding: '16px 20px 80px' }}>
-      
-      {/* 1. HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '22px' }}>
+    <div className="cw-page">
+      <div className="cw-header">
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#EAF4EE', border: '1px solid #D1E7DD', padding: '4px 12px', borderRadius: '9999px', marginBottom: '8px' }}>
-            <Sparkles size={13} color="#1B4332" />
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B4332', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Academic Publication Suite
-            </span>
-            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>· measured results only</span>
-          </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-            Reports & Research Publication Export
-          </h2>
-          <p style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '4px', marginBottom: 0 }}>
-            Export LaTeX summary tables, download raw SQLite benchmark datasets, and audit publication metrics.
-          </p>
+          <div className="cw-eyebrow"><FileText size={14} aria-hidden="true" /> Measured results only</div>
+          <h2 className="cw-title">Reports & Exports</h2>
+          <p className="cw-sub">LaTeX tables generated by the analysis, the manuscripts they feed, and a CSV of the stored benchmark runs.</p>
         </div>
-
-        {/* Quick Action Buttons */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={handleDownloadCsv}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: '1px solid #CBD5E1',
-              background: '#FFFFFF',
-              color: '#0F172A',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-            }}
-          >
-            <Database size={14} color="#1B4332" />
-            <span>Download CSV (all stored runs)</span>
-          </button>
-
-          <button
-            onClick={handleCopy}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '8px',
-              border: 'none',
-              background: '#1B4332',
-              color: '#FFFFFF',
-              fontWeight: 700,
-              fontSize: '0.8rem',
-              cursor: 'pointer',
-              boxShadow: '0 2px 6px rgba(27,67,50,0.2)'
-            }}
-          >
-            {copied ? <Check size={14} /> : <Copy size={14} />}
-            <span>{copied ? 'Copied LaTeX!' : 'Copy LaTeX Table'}</span>
+        <div className="cw-toolbar">
+          <button className="cw-btn ghost" onClick={handleDownloadCsv}><Database size={16} aria-hidden="true" /> Download this experiment's runs (CSV)</button>
+          <button className="cw-btn" onClick={handleCopy} disabled={!latex.text}>
+            {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />} {copied ? 'Copied' : 'Copy LaTeX table'}
           </button>
         </div>
       </div>
 
-      {/* 2. PAPER METADATA CARD */}
-      <div className="card" style={{ padding: '20px', borderRadius: '14px', marginBottom: '20px', border: '1px solid #E2E8F0', background: '#FAFBF9' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-          <div>
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B4332', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Manuscript tables
-            </span>
-            <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0F172A', marginTop: '2px' }}>
-              Draft, not yet submitted or peer reviewed
+      {csvError && <div className="cw-banner error" role="alert" style={{ marginBottom: 16 }}><div><strong>Export failed</strong>{csvError}</div></div>}
+
+      <div className="cw-card">
+        <h3>Manuscripts <span className="cw-muted">· drafts, not yet peer reviewed</span></h3>
+        {MANUSCRIPTS.map(([label, path, title]) => (
+          <div key={path} className="cw-finding">
+            <div>
+              <div className="cw-section-label" style={{ margin: 0 }}>{label} · <code>{path}</code></div>
+              <div style={{ fontWeight: 600 }}>{title}</div>
             </div>
-            <p style={{ fontSize: '0.82rem', color: '#475569', margin: '4px 0 0' }}>
-              <i>GovBench-Clinical: Quantifying Safety, Accuracy, and Compute Trade-Offs in Multi-Agent Clinical LLM Governance.</i>
-            </p>
           </div>
-
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#EAF4EE', color: '#15803D' }}>
-              IEEEtran LaTeX
-            </span>
-            <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '3px 8px', borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8' }}>
-              Generated by run_rigor_analysis
-            </span>
-          </div>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', paddingTop: '12px', borderTop: '1px solid #E2E8F0', fontSize: '0.8rem' }}>
-          <div>
-            <span style={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>Total Empirical Runs</span>
-            <b>{summary?.n_runs_analyzed ?? '…'} runs, {summary?.n_cases ?? '…'} cases</b>
-          </div>
-          <div>
-            <span style={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>Curated Datasets</span>
-            <b>MedQA, PubMedQA, MedDialog</b>
-          </div>
-          <div>
-            <span style={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>Primary LLM Engine</span>
-            <b>{summary?.models?.join(', ') ?? '…'}</b>
-          </div>
-          <div>
-            <span style={{ color: '#64748B', display: 'block', fontSize: '0.72rem' }}>Safety alerts raised (not validated)</span>
-            <b>{alertsTotal ?? '…'} alerts</b>
-          </div>
-        </div>
+        ))}
       </div>
 
-      {/* 3. LATEX CODE VIEWER */}
-      <div className="card" style={{ padding: '20px', borderRadius: '14px', border: '1px solid #E2E8F0' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+      <div className="cw-card">
+        <h3>Selected experiment</h3>
+        <dl className="cw-kv">
+          <div><dt>Runs analysed</dt><dd className="cw-num">{summary ? `${summary.n_runs_analyzed} runs, ${summary.n_cases} cases` : '—'}</dd></div>
+          <div><dt>Model</dt><dd>{summary?.models?.join(', ') || '—'}</dd></div>
+          <div><dt>Configurations</dt><dd>{summary?.variants?.map((v) => v.variant_id).join(', ') || '—'}</dd></div>
+          <div><dt>Safety alerts raised (not validated)</dt><dd className="cw-num">{alertsTotal ?? '—'}</dd></div>
+        </dl>
+        <p className="cw-muted" style={{ marginTop: 12, marginBottom: 0 }}>
+          Change the experiment in the top bar. The table and the CSV export both come from the selected experiment;
+          the CSV omits the metric columns that were never measured.
+        </p>
+      </div>
+
+      <div className="cw-card">
+        <div className="cw-toolbar" style={{ justifyContent: 'space-between', marginBottom: 10 }}>
           <div>
-            <div style={{ fontSize: '0.94rem', fontWeight: 800, color: '#0F172A' }}>
-              Table I: Multi-Agent Clinical Governance Summary (LaTeX Source)
-            </div>
-            <div style={{ fontSize: '0.74rem', color: '#64748B' }}>
-              Served from <code>paper/tables/rigor_variants.tex</code> (regenerate with <code>uv run govbench-rigor</code>){copyError ? ' · copy failed: select the text manually' : ''}
+            <h3 style={{ margin: 0 }}>Variant summary table (LaTeX)</h3>
+            <div className="cw-muted">
+              From <code>rigor_variants.tex</code> for the selected experiment; regenerate with <code>uv run govbench-rigor</code>
+              {copyError ? ' · copying failed: select the text manually' : ''}
             </div>
           </div>
-
-          <button
-            onClick={handleCopy}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '4px 10px',
-              borderRadius: '6px',
-              border: '1px solid #CBD5E1',
-              background: '#F8FAFC',
-              fontSize: '0.74rem',
-              fontWeight: 700,
-              cursor: 'pointer'
-            }}
-          >
-            {copied ? <Check size={12} color="#15803D" /> : <Copy size={12} />}
-            <span>{copied ? 'Copied' : 'Copy'}</span>
+          <button className="cw-btn ghost small" onClick={handleCopy} disabled={!latex.text}>
+            {copied ? <Check size={14} aria-hidden="true" /> : <Copy size={14} aria-hidden="true" />} {copied ? 'Copied' : 'Copy'}
           </button>
         </div>
-
-        <pre style={{
-          background: '#0F172A',
-          color: '#E2E8F0',
-          padding: '16px',
-          borderRadius: '8px',
-          fontSize: '0.78rem',
-          fontFamily: 'monospace',
-          overflowX: 'auto',
-          lineHeight: 1.5,
-          margin: 0
-        }}>
-          {loadError ? `% ${loadError}` : (latexCode || '% Loading LaTeX table...')}
-        </pre>
+        {latex.error
+          ? <div className="cw-banner error" role="alert"><div><strong>Table unavailable</strong>{latex.error}</div></div>
+          : <pre className="cw-code" aria-busy={latex.loading}>{latex.loading ? 'Loading…' : latex.text}</pre>}
       </div>
-
     </div>
   );
 }

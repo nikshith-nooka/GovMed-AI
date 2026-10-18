@@ -186,3 +186,200 @@ def test_model_calls_and_governance_latency_per_run(tmp_path):
     # Every stub call takes 7 ms, so governance latency = 7 ms x non-shared calls.
     assert runs.loc["V1", "governance_latency_s"] == 0.0
     assert abs(runs.loc["V5", "governance_latency_s"] - 4 * 0.007) < 1e-9
+
+
+def test_experiment_registry_lists_known_reports_and_rejects_anything_else():
+    from fastapi.testclient import TestClient
+
+    from src.api.server import app
+
+    client = TestClient(app)
+    listing = client.get("/api/research/experiments").json()
+    keys = {e["key"] for e in listing["experiments"]}
+    assert {"open150", "medqa_paired", "medqa_unpaired"} <= keys and listing["default"] == "open150"
+    for bad in ("../../etc/passwd", "rigor_report", "MEDQA_PAIRED"):
+        assert client.get("/api/research/findings", params={"experiment": bad}).status_code == 400
+        assert client.get("/api/reports/latex", params={"experiment": bad}).status_code == 400
+
+
+def test_each_experiment_serves_its_own_report():
+    from fastapi.testclient import TestClient
+
+    from src.api.server import EXPERIMENTS, app, report_path
+
+    client = TestClient(app)
+    for key in EXPERIMENTS:
+        path = report_path(key)
+        if not path.exists():
+            continue
+        expected = json.loads(path.read_text(encoding="utf-8"))
+        served = client.get("/api/research/findings", params={"experiment": key}).json()
+        assert served["n_runs_analyzed"] == expected["n_runs_analyzed"]
+        assert [v["variant_id"] for v in served["variants"]] == [v["variant_id"] for v in expected["variants"]]
+    # No parameter keeps the original behaviour (the 150-case report), so existing clients are unaffected.
+    assert client.get("/api/research/findings").json()["n_runs_analyzed"] == json.loads(
+        report_path("open150").read_text(encoding="utf-8"))["n_runs_analyzed"]
+
+
+# ---------------------------------------------------------------- experiment-aware stats and CSV export
+def _fixture_experiment(tmp_path, name, variants, cases=2):
+    """A synthetic run database with known contents: `cases` x `variants`, stub model, no real data."""
+    db_file = tmp_path / f"{name}.db"
+    db = BenchmarkDB(str(db_file))
+    pipeline = ClinicalGovernancePipeline(StubClient())
+    for i in range(cases):
+        case = {**CASE, "id": f"{name}_{i}"}
+        for variant in variants:
+            db.log_run(ClinicalEvaluationScorer().score_run(pipeline.run(dict(case), variant, include_report=False), case))
+    return db_file
+
+
+def _csv_rows(text):
+    import csv
+    import io
+
+    return list(csv.DictReader(io.StringIO(text)))
+
+
+def test_stats_and_csv_follow_the_selected_experiment(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import src.api.server as server
+
+    small = _fixture_experiment(tmp_path, "small", ["baseline"], cases=2)
+    large = _fixture_experiment(tmp_path, "large", ["baseline", "verifier", "full_governance"], cases=3)
+    registry = {
+        "open150": {**server.EXPERIMENTS["open150"], "db": small, "report": tmp_path / "none.json"},
+        "fixture_large": {"label": "fixture", "status": "test", "db": large, "report": tmp_path / "none.json",
+                          "tables": tmp_path},
+    }
+    monkeypatch.setattr(server, "EXPERIMENTS", registry)
+    client = TestClient(server.app)
+
+    s_small = client.get("/api/stats", params={"experiment": "open150"}).json()
+    s_large = client.get("/api/stats", params={"experiment": "fixture_large"}).json()
+    assert (s_small["experiment"], s_small["total_runs"], s_small["total_cases"]) == ("open150", 2, 2)
+    assert (s_large["experiment"], s_large["total_runs"], s_large["total_cases"]) == ("fixture_large", 9, 3)
+    assert {v["variant_id"] for v in s_large["variant_breakdown"]} == {"V1", "V2", "V5"}
+    # No report for this fixture, so accuracy says it came from the stored scores, not from another experiment.
+    assert s_large["accuracy_source"] == "stored scores"
+
+    rows = _csv_rows(client.get("/api/reports/csv", params={"experiment": "fixture_large"}).text)
+    assert len(rows) == 9 and {r["variant_id"] for r in rows} == {"V1", "V2", "V5"}
+    assert {r["case_id"] for r in rows} == {"large_0", "large_1", "large_2"}
+    assert not set(server.SYNTHETIC_COLUMNS) & set(rows[0])          # unmeasured columns stay out of exports
+    disposition = client.get("/api/reports/csv", params={"experiment": "fixture_large"}).headers["content-disposition"]
+    assert "govbench_runs_fixture_large.csv" in disposition
+
+
+def test_stats_and_csv_reject_unknown_experiments():
+    from fastapi.testclient import TestClient
+
+    from src.api.server import app
+
+    client = TestClient(app)
+    for bad in ("../../etc/passwd", "results/benchmark_results.db", "OPEN150", "x" * 300):
+        assert client.get("/api/stats", params={"experiment": bad}).status_code == 400
+        assert client.get("/api/reports/csv", params={"experiment": bad}).status_code == 400
+
+
+def test_superseded_runs_are_exported_but_not_counted(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import src.api.server as server
+
+    db_file = _fixture_experiment(tmp_path, "rerun", ["baseline"], cases=2)
+    db = BenchmarkDB(str(db_file))
+    rerun = {**CASE, "id": "rerun_0"}
+    db.log_run(ClinicalEvaluationScorer().score_run(
+        ClinicalGovernancePipeline(StubClient()).run(dict(rerun), "baseline", include_report=False), rerun))
+    monkeypatch.setattr(server, "DB_PATH", db_file)
+    client = TestClient(server.app)
+    stats = client.get("/api/stats").json()
+    assert (stats["stored_runs"], stats["total_runs"], stats["superseded_runs"], stats["total_cases"]) == (3, 2, 1, 2)
+    rows = _csv_rows(client.get("/api/reports/csv").text)
+    assert len(rows) == 3 and sorted(r["superseded"] for r in rows) == ["0", "0", "1"]
+    old = next(r for r in rows if r["superseded"] == "1")
+    assert old["case_id"] == "rerun_0" and int(old["id"]) == min(int(r["id"]) for r in rows if r["case_id"] == "rerun_0")
+
+
+def test_default_stats_and_csv_are_unchanged(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import src.api.server as server
+
+    default_db = _fixture_experiment(tmp_path, "default", ["baseline", "verifier"], cases=2)
+    monkeypatch.setattr(server, "DB_PATH", default_db)          # what the server used before experiments existed
+    client = TestClient(server.app)
+    plain = client.get("/api/stats").json()
+    explicit = client.get("/api/stats", params={"experiment": "open150"}).json()
+    assert plain["total_runs"] == explicit["total_runs"] == 4 and plain["experiment"] == "open150"
+    response = client.get("/api/reports/csv")
+    assert "filename=govbench_benchmark_runs.csv" in response.headers["content-disposition"]   # old filename kept
+    assert len(_csv_rows(response.text)) == 4
+
+
+def test_empty_and_missing_experiments_are_safe(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    import src.api.server as server
+
+    empty = tmp_path / "empty.db"
+    BenchmarkDB(str(empty))
+    registry = {**server.EXPERIMENTS,
+                "empty": {"label": "empty", "status": "test", "db": empty, "report": tmp_path / "none.json", "tables": tmp_path},
+                "missing": {"label": "missing", "status": "test", "db": tmp_path / "nope.db",
+                            "report": tmp_path / "none.json", "tables": tmp_path}}
+    monkeypatch.setattr(server, "EXPERIMENTS", registry)
+    client = TestClient(server.app)
+    body = client.get("/api/stats", params={"experiment": "empty"}).json()
+    assert body["has_data"] is False and body["total_runs"] == 0 and body["experiment"] == "empty"
+    assert _csv_rows(client.get("/api/reports/csv", params={"experiment": "empty"}).text) == []
+    for path in ("/api/stats", "/api/reports/csv"):
+        r = client.get(path, params={"experiment": "missing"})
+        assert r.status_code == 503 and "not found" in r.json()["detail"]
+    listing = {e["key"]: e for e in client.get("/api/research/experiments").json()["experiments"]}
+    assert listing["missing"]["runs_available"] is False and listing["empty"]["runs_available"] is True
+
+
+def test_real_experiments_charts_and_exports_agree_with_source_records():
+    """Read-only check on the stored experiments: every number the dashboard chart and the CSV show comes from the
+    experiment's own database."""
+    import sqlite3
+    from pathlib import Path
+
+    import pytest
+    from fastapi.testclient import TestClient
+
+    from src.api.server import EXPERIMENTS, app, db_path, report_path
+
+    client = TestClient(app)
+    checked = 0
+    for key in EXPERIMENTS:
+        if not (db_path(key).exists() and report_path(key).exists()):
+            continue
+        with sqlite3.connect(db_path(key)) as conn:
+            counts = dict(conn.execute("SELECT variant_id, COUNT(*) FROM runs GROUP BY variant_id").fetchall())
+            n_runs = sum(counts.values())
+        stats = client.get("/api/stats", params={"experiment": key}).json()
+        rows = _csv_rows(client.get("/api/reports/csv", params={"experiment": key}).text)
+        assert len(rows) == n_runs == stats["stored_runs"]           # every raw record is exported
+        current = [r for r in rows if r["superseded"] == "0"]
+        assert stats["total_runs"] == len(current) and stats["superseded_runs"] == n_runs - len(current)
+        # The chart draws report["variants"]: one bar group per variant, sized by its latest-run count, which must
+        # equal the export's non-superseded rows, so chart and CSV describe the same population.
+        report = client.get("/api/research/findings", params={"experiment": key}).json()
+        latest = {v: sum(r["variant_id"] == v for r in current) for v in counts}
+        assert {v["variant_id"]: v["n_runs"] for v in report["variants"]} == latest
+        assert stats["total_runs"] == report["n_runs_analyzed"]
+        checked += 1
+    if not checked:
+        pytest.skip("no stored experiment databases in this checkout")
+    # The paired MedQA experiment is scored exactly against the answer key, so the chart's accuracy equals the
+    # stored per-variant mean of the exact-match score.
+    if Path(db_path("medqa_paired")).exists():
+        with sqlite3.connect(db_path("medqa_paired")) as conn:
+            stored = dict(conn.execute("SELECT variant_id, AVG(diagnostic_accuracy_score) FROM runs GROUP BY variant_id").fetchall())
+        report = client.get("/api/research/findings", params={"experiment": "medqa_paired"}).json()
+        for v in report["variants"]:
+            assert abs(v["accuracy_valid_gold"] - stored[v["variant_id"]]) < 5e-5

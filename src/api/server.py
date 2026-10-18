@@ -111,10 +111,11 @@ DEMO_NOTICE = (
 )
 
 
-def get_db_connection():
-    if not DB_PATH.exists():
-        raise HTTPException(status_code=503, detail=f"Benchmark database not found at {DB_PATH.name}")
-    conn = sqlite3.connect(str(DB_PATH))
+def get_db_connection(path: Optional[Path] = None):
+    path = path or DB_PATH
+    if not path.exists():
+        raise HTTPException(status_code=503, detail=f"Benchmark database not found at {path.name}")
+    conn = sqlite3.connect(str(path))
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -125,16 +126,46 @@ def _load_cases() -> List[Dict[str, Any]]:
     return json.loads(CURATED_PATH.read_text(encoding="utf-8"))
 
 
-_report_cache: Dict[str, Any] = {"mtime": None, "data": None}
+# Analysed experiments the UI can show. Keys are a whitelist: no path ever comes from the request.
+EXPERIMENTS: Dict[str, Dict[str, Any]] = {
+    # report/db None = the server defaults (RIGOR_REPORT_PATH / DB_PATH), read at call time so env overrides apply.
+    "open150": {"label": "150 mixed cases · open loop", "report": None, "db": None,
+                "tables": BASE_DIR / "paper" / "tables", "status": "first experiment"},
+    "medqa_paired": {"label": "300 MedQA · paired closed loop", "report": BASE_DIR / "results" / "rigor_report_medqa_paired.json",
+                     "db": BASE_DIR / "results" / "medqa_paired.db",
+                     "tables": BASE_DIR / "paper" / "tables" / "medqa_paired", "status": "reported in the paper"},
+    "medqa_unpaired": {"label": "300 MedQA · unpaired (superseded)", "report": BASE_DIR / "results" / "rigor_report_medqa.json",
+                       "db": BASE_DIR / "results" / "medqa_fast.db",
+                       "tables": BASE_DIR / "paper" / "tables" / "medqa", "status": "superseded: first diagnosis was regenerated"},
+}
+DEFAULT_EXPERIMENT = "open150"
+_report_cache: Dict[str, Dict[str, Any]] = {}
 
 
-def load_rigor_report() -> Optional[Dict[str, Any]]:
-    if not RIGOR_REPORT_PATH.exists():
+def experiment_or_400(key: Optional[str]) -> Dict[str, Any]:
+    key = key or DEFAULT_EXPERIMENT
+    if key not in EXPERIMENTS:
+        raise HTTPException(status_code=400, detail=f"Unknown experiment '{key}'. Choose one of {sorted(EXPERIMENTS)}.")
+    return EXPERIMENTS[key]
+
+
+def report_path(experiment: str) -> Path:
+    return EXPERIMENTS[experiment]["report"] or RIGOR_REPORT_PATH
+
+
+def db_path(experiment: str) -> Path:
+    return EXPERIMENTS[experiment].get("db") or DB_PATH
+
+
+def load_rigor_report(experiment: str = DEFAULT_EXPERIMENT) -> Optional[Dict[str, Any]]:
+    path = report_path(experiment)
+    if not path.exists():
         return None
-    mtime = RIGOR_REPORT_PATH.stat().st_mtime
-    if _report_cache["mtime"] != mtime:
-        _report_cache.update(mtime=mtime, data=json.loads(RIGOR_REPORT_PATH.read_text(encoding="utf-8")))
-    return _report_cache["data"]
+    mtime = path.stat().st_mtime
+    cached = _report_cache.get(experiment)
+    if not cached or cached["mtime"] != mtime:
+        cached = _report_cache[experiment] = {"mtime": mtime, "data": json.loads(path.read_text(encoding="utf-8"))}
+    return cached["data"]
 
 
 @app.get("/api/health")
@@ -170,14 +201,24 @@ def get_providers():
 
 
 @app.get("/api/stats")
-def get_benchmark_stats():
-    """Aggregated benchmark KPIs. Returns zeros (not illustrative numbers) when there is no data."""
-    conn = get_db_connection()
+def get_benchmark_stats(experiment: Optional[str] = None):
+    """Aggregated KPIs of one experiment's run database (default: the 150-case experiment, as before).
+
+    Returns zeros with has_data=False (not illustrative numbers) when that database has no runs."""
+    experiment_or_400(experiment)
+    key = experiment or DEFAULT_EXPERIMENT
+    conn = get_db_connection(db_path(key))
     cursor = conn.cursor()
-    total_runs = cursor.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+    # Same population as the analysis: the latest run per (case, variant). An earlier run of the same pair, kept in
+    # the database as a raw record, is counted as stored but superseded, never averaged in.
+    cursor.execute("CREATE TEMP VIEW analysed AS SELECT * FROM runs WHERE id IN "
+                   "(SELECT MAX(id) FROM runs GROUP BY case_id, variant_id)")
+    stored_runs = cursor.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
+    total_runs = cursor.execute("SELECT COUNT(*) FROM analysed").fetchone()[0]
     if total_runs == 0:
         conn.close()
-        return {"has_data": False, "total_runs": 0, "total_cases": 0, "total_pool": 0, "completed_experiments": 0,
+        return {"has_data": False, "experiment": key, "total_runs": 0, "stored_runs": stored_runs, "superseded_runs": 0,
+                "total_cases": 0, "total_pool": 0, "completed_experiments": 0,
                 "avg_diagnostic_quality": 0, "avg_token_cost": 0, "avg_latency": 0, "verification_rate": 0,
                 "total_cost_usd": 0, "contraindications_blocked": 0, "hallucinations_caught": 0,
                 "variant_breakdown": []}
@@ -185,33 +226,36 @@ def get_benchmark_stats():
     # Accuracy only where a real gold label exists; latency as summed agent-call time (stored total_latency_ms
     # omits cached shared steps in runs made before 2026-10-10); verification only on variants that run a verifier.
     # Stored accuracy in older runs came from a substring scorer that over-credited answers; prefer the re-scored
-    # value from the analysis report and say which source was used.
-    report = load_rigor_report()
+    # value from the same experiment's report (never another experiment's) and say which source was used.
+    report = load_rigor_report(key)
     measured = ((report or {}).get("measurement_validity") or {}).get("corrected_accuracy_mean_valid_gold")
     accuracy_source = "rigor_report (re-scored from raw outputs)" if measured is not None else "stored scores"
     avg_accuracy = measured if measured is not None else (
-        cursor.execute("SELECT AVG(diagnostic_accuracy_score) FROM runs "
+        cursor.execute("SELECT AVG(diagnostic_accuracy_score) FROM analysed "
                        "WHERE COALESCE(gold_label_valid, 1) = 1").fetchone()[0] or 0)
-    avg_tokens = cursor.execute("SELECT AVG(total_tokens) FROM runs").fetchone()[0] or 0
+    avg_tokens = cursor.execute("SELECT AVG(total_tokens) FROM analysed").fetchone()[0] or 0
     avg_latency = cursor.execute("SELECT AVG(s) / 1000.0 FROM (SELECT SUM(latency_ms) AS s FROM agent_steps "
-                                 "GROUP BY run_id)").fetchone()[0] or 0
-    total_cases = cursor.execute("SELECT COUNT(DISTINCT case_id) FROM runs").fetchone()[0] or 0
-    verified = cursor.execute("SELECT COUNT(*), COALESCE(SUM(hallucinations_detected = 0), 0) FROM runs "
+                                 "WHERE run_id IN (SELECT id FROM analysed) GROUP BY run_id)").fetchone()[0] or 0
+    total_cases = cursor.execute("SELECT COUNT(DISTINCT case_id) FROM analysed").fetchone()[0] or 0
+    verified = cursor.execute("SELECT COUNT(*), COALESCE(SUM(hallucinations_detected = 0), 0) FROM analysed "
                               "WHERE variant_id LIKE 'V2%' OR variant_id LIKE 'V5%'").fetchone()
     verification_rate = (verified[1] / verified[0] * 100.0) if verified[0] else 0.0
-    total_cost_usd = cursor.execute("SELECT COALESCE(SUM(total_cost_usd), 0) FROM runs").fetchone()[0] or 0.0
-    safety_alerts = cursor.execute("SELECT COALESCE(SUM(safety_violations_detected), 0) FROM runs").fetchone()[0] or 0
-    hallucinations = cursor.execute("SELECT COALESCE(SUM(hallucinations_detected), 0) FROM runs").fetchone()[0] or 0
+    total_cost_usd = cursor.execute("SELECT COALESCE(SUM(total_cost_usd), 0) FROM analysed").fetchone()[0] or 0.0
+    safety_alerts = cursor.execute("SELECT COALESCE(SUM(safety_violations_detected), 0) FROM analysed").fetchone()[0] or 0
+    hallucinations = cursor.execute("SELECT COALESCE(SUM(hallucinations_detected), 0) FROM analysed").fetchone()[0] or 0
     variants = cursor.execute("""
         SELECT variant_name as variant, variant_id, COUNT(*) as runs,
                AVG(diagnostic_accuracy_score) as avg_acc, AVG(overall_quality_score) as avg_quality,
                AVG(total_tokens) as avg_tokens, AVG(total_latency_ms) / 1000.0 as avg_latency
-        FROM runs GROUP BY variant_id, variant_name
+        FROM analysed GROUP BY variant_id, variant_name
     """).fetchall()
     conn.close()
     return {
         "has_data": True,
+        "experiment": key,
         "total_runs": total_runs,
+        "stored_runs": stored_runs,
+        "superseded_runs": stored_runs - total_runs,
         "total_cases": total_cases,
         "total_pool": total_cases,
         "completed_experiments": total_runs,
@@ -288,9 +332,19 @@ def measured_run(row: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
     return out
 
 
+@app.get("/api/research/experiments")
+def list_experiments():
+    """Analysed experiments, so the UI labels which one it shows instead of mixing them silently."""
+    return {"default": DEFAULT_EXPERIMENT,
+            "experiments": [{"key": k, "label": e["label"], "status": e["status"],
+                             "available": report_path(k).exists(), "runs_available": db_path(k).exists()}
+                            for k, e in EXPERIMENTS.items()]}
+
+
 @app.get("/api/research/findings")
-def get_research_findings():
-    report = load_rigor_report()
+def get_research_findings(experiment: Optional[str] = None):
+    experiment_or_400(experiment)
+    report = load_rigor_report(experiment or DEFAULT_EXPERIMENT)
     if report is None:
         raise HTTPException(status_code=404, detail="No analysis yet. Run: uv run python -m scripts.run_rigor_analysis")
     return report
@@ -762,24 +816,32 @@ def review_summary():
 
 # ---------------------------------------------------------------- reports
 @app.get("/api/reports/latex")
-def get_latex_report():
-    tex_path = BASE_DIR / "paper" / "tables" / "rigor_variants.tex"
+def get_latex_report(experiment: Optional[str] = None):
+    tex_path = experiment_or_400(experiment)["tables"] / "rigor_variants.tex"
     if tex_path.exists():
         return PlainTextResponse(tex_path.read_text(encoding="utf-8"), media_type="text/plain")
     return PlainTextResponse("% LaTeX table not generated yet", media_type="text/plain")
 
 
 @app.get("/api/reports/csv")
-def get_csv_report():
+def get_csv_report(experiment: Optional[str] = None):
+    """Every stored run of one experiment (default: the 150-case experiment, as before), unmeasured columns removed."""
     import pandas as pd
 
-    conn = get_db_connection()
+    experiment_or_400(experiment)
+    key = experiment or DEFAULT_EXPERIMENT
+    conn = get_db_connection(db_path(key))
     df = pd.read_sql_query("SELECT * FROM runs", conn)
     conn.close()
+    # Every stored row is exported (raw records are never dropped); a run replaced by a later run of the same
+    # (case, variant) is marked, because the analysis and the charts use only the latest one.
+    latest = df.groupby(["case_id", "variant_id"])["id"].transform("max") if len(df) else df.get("id")
+    df["superseded"] = (df["id"] != latest).astype(int) if len(df) else []
     # Columns written by a post-hoc script were never measured; they are not exported.
     df = df.drop(columns=[c for c in SYNTHETIC_COLUMNS if c in df.columns])
     return PlainTextResponse(df.to_csv(index=False), media_type="text/csv",
-                             headers={"Content-Disposition": "attachment; filename=govbench_benchmark_runs.csv"})
+                             headers={"Content-Disposition": "attachment; filename="
+                                      + ("govbench_benchmark_runs.csv" if experiment is None else f"govbench_runs_{key}.csv")})
 
 
 if FRONTEND_DIR.exists():

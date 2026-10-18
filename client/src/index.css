@@ -1,41 +1,65 @@
 /* GovBench-Clinical: High-Fidelity React UI Style System */
 
 :root {
-  --bg-primary: #F8F9FA;
+  /* Palette: neutral surfaces, one accent, three semantic colours. Legacy names below map onto it. */
+  --bg-primary: #F5F5F7;
   --bg-card: #FFFFFF;
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #64748B;
-  --border-color: #E2E8F0;
-  --primary-green: #1B4332;
-  --accent-green: #2D6A4F;
-  --light-green: #EAF4EE;
-  --pill-green-bg: #DCFCE7;
-  --pill-green-txt: #15803D;
-  --accent-amber: #E07A5F;
+  --text-primary: #1D1D1F;
+  --text-secondary: #424245;
+  --text-muted: #6E6E73;
+  --border-color: #D2D2D7;
+  --separator: #E5E5EA;
+  --fill: #E8E8ED;            /* segmented-control track, hovered rows */
+  --fill-subtle: #F2F2F5;
+  --accent: #0071E3;
+  --accent-hover: #0077ED;
+  --accent-tint: #E8F1FC;
+  --success: #248A3D;
+  --success-tint: #E5F3E8;
+  --warning: #B86E00;
+  --warning-tint: #FDF2E1;
+  --error: #D70015;
+  --error-tint: #FCE9EB;
+  --on-accent: #FFFFFF;
+  --sidebar-bg: rgba(242, 242, 245, 0.86);
+  /* Legacy names (older components): now the accent / semantic palette, not green. */
+  --primary-green: var(--accent);
+  --accent-green: var(--accent);
+  --light-green: var(--accent-tint);
+  --pill-green-bg: var(--success-tint);
+  --pill-green-txt: var(--success);
+  --accent-amber: var(--warning);
   /* Platform system fonts: SF Pro on Apple devices (with optical sizing), Segoe UI / Roboto elsewhere. */
   --font-main: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   --font-serif: var(--font-main); /* the decorative serif is retired; one family, hierarchy from weight and size */
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.02);
+  --card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 [data-theme="dark"], .dark {
-  --bg-primary: #090D16;
-  --bg-card: #111827;
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #94A3B8;
-  --border-color: #1E293B;
-  --primary-green: #22C55E;
-  --accent-green: #16A34A;
-  --light-green: #064E3B;
-  --pill-green-bg: #064E3B;
-  --pill-green-txt: #86EFAC;
-  --accent-amber: #FB923C;
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  --card-hover-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  --bg-primary: #111113;
+  --bg-card: #1C1C1E;
+  --text-primary: #F5F5F7;
+  --text-secondary: #D1D1D6;
+  --text-muted: #98989D;
+  --border-color: #38383A;
+  --separator: #2C2C2E;
+  --fill: #2C2C2E;
+  --fill-subtle: #232325;
+  --accent: #2997FF;
+  --accent-hover: #47A6FF;
+  --accent-tint: rgba(41, 151, 255, 0.16);
+  --success: #30D158;
+  --success-tint: rgba(48, 209, 88, 0.15);
+  --warning: #FF9F0A;
+  --warning-tint: rgba(255, 159, 10, 0.15);
+  --error: #FF453A;
+  --error-tint: rgba(255, 69, 58, 0.15);
+  --on-accent: #FFFFFF;
+  --sidebar-bg: rgba(28, 28, 30, 0.86);
+  --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --card-hover-shadow: 0 6px 20px rgba(0, 0, 0, 0.55);
 }
 
 * {
@@ -2776,40 +2800,7 @@ body {
   color: var(--text-primary);
 }
 
-[data-theme="dark"] .sidebar,
-.dark .sidebar {
-  background: var(--bg-card);
-  border-right-color: var(--border-color);
-}
-
-[data-theme="dark"] .nav-item,
-.dark .nav-item {
-  color: var(--text-secondary);
-}
-
-[data-theme="dark"] .nav-item:hover,
-.dark .nav-item:hover {
-  background: #1E293B;
-  color: var(--text-primary);
-}
-
-[data-theme="dark"] .nav-item.active,
-.dark .nav-item.active {
-  background: #064E3B;
-  color: #86EFAC;
-}
-
-[data-theme="dark"] .nav-item.active::before,
-.dark .nav-item.active::before {
-  background: #22C55E;
-}
-
-[data-theme="dark"] .sidebar-quote,
-.dark .sidebar-quote {
-  background: #064E3B;
-  color: #86EFAC;
-  border-left-color: #22C55E;
-}
+/* Dark sidebar now follows the shared tokens (see the app-shell section at the end of this file). */
 
 [data-theme="dark"] .hero-box,
 .dark .hero-box {
@@ -3251,94 +3242,99 @@ body {
 
 
 /* =====================================================================
-   Apple design layer (WWDC "Designing Fluid Interfaces", "Details of UI
-   Typography", materials and accessibility guidance), applied on top of
-   the styles above. Remove this block to return to the previous look.
+   App shell (sidebar, top bar) and global behaviour, following Apple's HIG:
+   system type, translucent chrome, instant press feedback, accessibility
+   preferences. Page components live in pages/clinical.css.
    ===================================================================== */
 
-:root {
-  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);     /* critically damped feel: fast start, no overshoot */
-  --radius-card: 14px;
-  --radius-control: 10px;
-  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent-green) 45%, transparent);
-  --material-bar: color-mix(in srgb, var(--bg-card) 72%, transparent);
-}
+:root { --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1); --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 40%, transparent); }
 
 /* Typography: system font with optical sizing; tracking and leading change with size. */
 html { -webkit-text-size-adjust: 100%; }
-body {
-  font-optical-sizing: auto;
-  line-height: 1.5;
-  text-rendering: optimizeLegibility;
-  /* Ease light <-> dark instead of an abrupt brightness jump. */
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-h1, .cw-title { letter-spacing: -0.022em; line-height: 1.1; font-weight: 700; }
+body { font-optical-sizing: auto; line-height: 1.5; text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease; }   /* ease theme changes, no brightness jump */
+h1 { letter-spacing: -0.022em; line-height: 1.1; }
 h2 { letter-spacing: -0.018em; line-height: 1.15; }
 h3, h4 { letter-spacing: -0.01em; line-height: 1.25; }
-.cw-sub, p { line-height: 1.55; }
 code, pre, kbd { font-family: var(--font-mono); }
-/* Numbers keep the system font but use tabular digits, so columns and KPIs align. */
-.cw-num { font-variant-numeric: tabular-nums; }
 
-/* Response: feedback on press, not on release. Only transform/opacity/colour animate. */
-button, .nav-item, .cw-btn, .cw-tile, .btn, [role="button"] {
-  -webkit-tap-highlight-color: transparent;
-  touch-action: manipulation;              /* no 300 ms tap delay */
-  transition: transform 0.1s var(--ease-out), background-color 0.2s ease, color 0.2s ease,
-              border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-}
-button:active:not(:disabled), .nav-item:active, .cw-btn:active:not(:disabled),
-.btn:active:not(:disabled), [role="button"]:active { transform: scale(0.97); }
-.cw-tile:active { transform: scale(0.985); }   /* large surfaces compress less than small controls */
-.top-navbar, .search-bar, .mobile-menu-btn { transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+/* Response: feedback on press, not on release. Only transform / opacity / colour animate. */
+button, .nav-item, [role="button"] { -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  transition: transform 0.1s var(--ease-out), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease; }
+button:active:not(:disabled), .nav-item:active, [role="button"]:active { transform: scale(0.97); }
+.cw-tile:active, .cw-row-item:active { transform: scale(0.99); }   /* large surfaces compress less */
 
-/* Keyboard focus is always visible, never on mouse click. */
+/* Keyboard focus always visible; never on mouse click. */
 :focus { outline: none; }
 :focus-visible { outline: none; box-shadow: var(--focus-ring); }
 
-/* Controls and surfaces: consistent radii, hairline borders, quiet shadows. */
-.cw-card { border-radius: var(--radius-card); }
-.cw-btn, .cw-input, .cw-select, .search-bar, .nav-item { border-radius: var(--radius-control); }
-.cw-tile { text-align: left; }
-.cw-tile:hover { box-shadow: var(--card-hover-shadow); }
+/* Layout: the page scrolls the window, so the top bar can stay pinned. */
+.main-content { padding: 16px 28px 40px; overflow-y: visible; overflow-x: clip; }
 
-/* Materials: the top bar is a translucent layer that content scrolls beneath. */
-.top-navbar {
-  position: sticky;
-  top: 12px;
-  z-index: 30;
-  background: var(--material-bar);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  backdrop-filter: blur(20px) saturate(180%);
-  border-color: color-mix(in srgb, var(--border-color) 70%, transparent);
-}
-
-/* Sidebar footer icons sit on the text baseline like the nav icons. */
-.sidebar-footer-item { display: flex; align-items: flex-start; gap: 8px; }
-.sidebar-footer-item svg { flex-shrink: 0; margin-top: 2px; }
+/* Sidebar: a light structural material (macOS source list), not a dark green block. */
+.sidebar { background: var(--sidebar-bg); -webkit-backdrop-filter: blur(24px) saturate(180%); backdrop-filter: blur(24px) saturate(180%);
+  border-right: 1px solid var(--separator); color: var(--text-primary); }
+.brand-logo-icon { background: var(--accent); border: 0; color: var(--on-accent); border-radius: 9px; }
 .brand-logo-icon svg { display: block; }
-.sidebar-quote { font-style: italic; font-weight: 500; letter-spacing: 0; }
+.brand-title { color: var(--text-primary); font-weight: 700; letter-spacing: -0.015em; }
+.brand-subtitle { color: var(--text-muted); font-weight: 500; letter-spacing: 0; }
+.nav-section-title, .sidebar-footer-title { color: var(--text-muted); font-weight: 600; letter-spacing: 0.02em; text-transform: none; font-size: 0.74rem; }
+.nav-item { color: var(--text-primary); font-weight: 500; border-radius: 8px; padding: 8px 10px; }
+.nav-item .nav-icon { color: var(--accent); display: inline-flex; }
+.nav-item:hover { background: var(--fill); color: var(--text-primary); }
+.nav-item.active { background: var(--accent); color: var(--on-accent); font-weight: 600; box-shadow: none; }
+.nav-item.active .nav-icon { color: var(--on-accent); }
+.nav-item.active::before { display: none; }
+.sidebar-footer { border-top: 1px solid var(--separator); color: var(--text-muted); }
+.sidebar-footer-item { color: var(--text-secondary); display: flex; align-items: flex-start; gap: 8px; }
+.sidebar-footer-item svg { flex-shrink: 0; margin-top: 2px; color: var(--text-muted); }
+.sidebar-quote { background: none; border: 0; color: var(--text-muted); font-style: normal; font-weight: 400; padding: 0; margin-top: 10px; font-size: 0.74rem; }
+.sidebar-backdrop { background: rgba(0, 0, 0, 0.3); }
+
+/* Top bar: translucent material that content scrolls beneath. */
+.top-navbar { position: sticky; top: 12px; z-index: 30; border-radius: 14px;
+  background: color-mix(in srgb, var(--bg-card) 72%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(180%); backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--separator); box-shadow: var(--card-shadow);
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease; }
+.search-bar { background: var(--fill); border: 1px solid transparent; border-radius: 10px; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+.search-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); background: var(--bg-card); }
+.cmd-k { background: var(--bg-card); border-color: var(--separator); }
+.icon-btn { color: var(--text-secondary); border-radius: 8px; }
+.icon-btn:hover { background: var(--fill); border-color: transparent; color: var(--text-primary); }
+.theme-icon.sun, .theme-icon.moon { color: var(--text-secondary); }
+.avatar-circle { background: var(--fill); color: var(--text-secondary); font-weight: 600; }
+.notification-badge { background: var(--error); }
+.nav-right { gap: 6px; }
+
+/* Experiment picker: names which analysed experiment the results pages show. */
+.experiment-picker { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); background: var(--fill);
+  border-radius: 10px; padding: 0 4px 0 10px; height: 34px; margin-right: 4px; }
+.experiment-picker select { border: 0; background: transparent; color: var(--text-primary); font: inherit; font-size: 0.82rem;
+  font-weight: 500; padding: 6px 4px; cursor: pointer; max-width: 240px; }
+@media (max-width: 900px) { .experiment-picker select { max-width: 130px; } }
 
 /* Accessibility: three independent user preferences. */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
-  }
-  button, .nav-item, .cw-btn, .cw-tile, .btn, [role="button"] { transition: opacity 0.2s ease, background-color 0.2s ease; }
-  button:active, .nav-item:active, .cw-btn:active, .cw-tile:active, .btn:active, [role="button"]:active { transform: none; }
-  .spin { animation: none !important; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+  button, .nav-item, [role="button"] { transition: opacity 0.2s ease, background-color 0.2s ease; }
+  button:active, .nav-item:active, [role="button"]:active, .cw-tile:active, .cw-row-item:active { transform: none; }
 }
 @media (prefers-reduced-transparency: reduce) {
   .top-navbar { background: var(--bg-card); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .sidebar { background: var(--bg-primary); -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 @media (prefers-contrast: more) {
-  :root { --border-color: #64748B; }
+  :root { --border-color: #6E6E73; --separator: #8E8E93; }
   .top-navbar { background: var(--bg-card); -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .cw-muted, .text-muted { color: var(--text-secondary) !important; }
 }
 
-/* Let the sticky top bar follow the window scroll: `overflow-y: auto` made .main-content its scroll container. */
-.main-content { overflow-y: visible; overflow-x: clip; }
+/* Phone width: the top bar keeps menu, experiment and theme; secondary icons and the profile name step back. */
+@media (max-width: 600px) {
+  .top-navbar { padding: 6px 8px; }
+  .nav-right { gap: 2px; }
+  .user-profile, .user-info, .nav-right .notification-btn { display: none; }
+  .experiment-picker { margin-right: 0; padding-left: 8px; min-width: 0; flex: 1 1 auto; }
+  .experiment-picker select { max-width: none; width: 100%; min-width: 0; }
+  .nav-left-group { flex: 0 0 auto; }
+}

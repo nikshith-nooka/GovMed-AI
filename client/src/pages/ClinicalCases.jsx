@@ -1,338 +1,133 @@
 import React, { useEffect, useState } from 'react';
 import './clinical.css';
-import { 
-  Search, 
-  Filter, 
-  Stethoscope, 
-  BookOpen, 
-  CheckCircle2, 
-  ArrowRight, 
-  FileText, 
-  Tag, 
-  Layers, 
-  HelpCircle,
-  ExternalLink,
-  Database,
-  Sparkles
-} from 'lucide-react';
+import { Database, Search, Stethoscope } from 'lucide-react';
 
 const isScorable = (c) => !!c.gold_diagnosis && !c.gold_diagnosis.toLowerCase().startsWith('clinical diagnostic note');
+const DATASETS = [['All', 'All'], ['MedQA', 'MedQA'], ['PubMedQA', 'PubMedQA'], ['MedDialog', 'MedDialog']];
+const inDataset = (c, key) => key === 'All' || c.id?.startsWith(key.toLowerCase());
 
 export default function ClinicalCases({ cases = [], error = null, initialQuery = '', openInWorkspace }) {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   useEffect(() => { setSearchQuery(initialQuery); }, [initialQuery]);
-  const [selectedDataset, setSelectedDataset] = useState('All');
-  const [selectedSpecialty, setSelectedSpecialty] = useState('All');
+  const [dataset, setDataset] = useState('All');
+  const [specialty, setSpecialty] = useState('All');
+  const [activeId, setActiveId] = useState(null);
 
-  const pool = cases && cases.length > 0 ? cases : [];
-
-  // Filter logic across 150 cases
-  const filteredCases = pool.filter((c) => {
-    const matchesSearch = !searchQuery || 
-      (c.question && c.question.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.gold_diagnosis && c.gold_diagnosis.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.id && c.id.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesDataset = selectedDataset === 'All' || 
-      (c.dataset && c.dataset.toLowerCase().includes(selectedDataset.toLowerCase())) ||
-      (selectedDataset === 'MedQA' && c.id?.startsWith('medqa')) ||
-      (selectedDataset === 'PubMedQA' && c.id?.startsWith('pubmedqa')) ||
-      (selectedDataset === 'MedDialog' && c.id?.startsWith('meddialog'));
-
-    const matchesSpecialty = selectedSpecialty === 'All' || 
-      (c.specialty && c.specialty.toLowerCase().includes(selectedSpecialty.toLowerCase()));
-
-    return matchesSearch && matchesDataset && matchesSpecialty;
-  });
-
-  const matchesExceptSpecialty = (c) => {
-    const q = searchQuery.toLowerCase();
-    const inSearch = !q || [c.question, c.gold_diagnosis, c.id].some((f) => f && f.toLowerCase().includes(q));
-    const inDataset = selectedDataset === 'All' || c.id?.startsWith(selectedDataset.toLowerCase());
-    return inSearch && inDataset;
-  };
-  const specialtyCount = (spec) => pool.filter((c) => matchesExceptSpecialty(c) && (spec === 'All' || c.specialty === spec)).length;
-  const activeFilters = [searchQuery && `search "${searchQuery}"`, selectedDataset !== 'All' && selectedDataset, selectedSpecialty !== 'All' && selectedSpecialty].filter(Boolean);
-  const clearFilters = () => { setSearchQuery(''); setSelectedDataset('All'); setSelectedSpecialty('All'); };
-
-  const [activeCase, setActiveCase] = useState(filteredCases[0] || pool[0] || null);
-
-  const datasets = [
-    { key: 'All', label: 'All Datasets', count: pool.length },
-    { key: 'MedQA', label: 'MedQA (USMLE)', count: pool.filter(c => c.id?.startsWith('medqa')).length },
-    { key: 'PubMedQA', label: 'PubMedQA', count: pool.filter(c => c.id?.startsWith('pubmedqa')).length },
-    { key: 'MedDialog', label: 'MedDialog', count: pool.filter(c => c.id?.startsWith('meddialog')).length },
-  ];
-
+  const pool = cases || [];
+  const q = searchQuery.toLowerCase();
+  const inSearch = (c) => !q || [c.question, c.gold_diagnosis, c.id].some((f) => f && f.toLowerCase().includes(q));
+  const filtered = pool.filter((c) => inSearch(c) && inDataset(c, dataset) && (specialty === 'All' || c.specialty === specialty));
+  const specialtyCount = (s) => pool.filter((c) => inSearch(c) && inDataset(c, dataset) && (s === 'All' || c.specialty === s)).length;
   const specialties = ['All', ...Array.from(new Set(pool.map((c) => c.specialty).filter(Boolean))).sort()];
-
-  const currentDisplayCase = (activeCase && filteredCases.includes(activeCase)) ? activeCase : filteredCases[0];
+  const activeFilters = [searchQuery && `search "${searchQuery}"`, dataset !== 'All' && dataset, specialty !== 'All' && specialty].filter(Boolean);
+  const clearFilters = () => { setSearchQuery(''); setDataset('All'); setSpecialty('All'); };
+  const current = filtered.find((c) => c.id === activeId) || filtered[0] || null;
 
   return (
-    <div style={{ maxWidth: '1180px', margin: '0 auto', padding: '16px 20px 80px' }}>
-      
-      {/* 1. HEADER */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
+    <div className="cw-page">
+      <div className="cw-header">
         <div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: '#EAF4EE', border: '1px solid #D1E7DD', padding: '4px 12px', borderRadius: '9999px', marginBottom: '8px' }}>
-            <Database size={13} color="#1B4332" />
-            <span style={{ fontSize: '0.72rem', fontWeight: 800, color: '#1B4332', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Full Knowledge Base & Dataset Pool
-            </span>
-            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>· {pool.length} cases · {pool.filter(isScorable).length} with a real diagnosis label</span>
-          </div>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#0F172A', letterSpacing: '-0.02em', margin: 0 }}>
-            Clinical Cases Dataset Explorer
-          </h2>
-          <p style={{ fontSize: '0.86rem', color: '#64748B', marginTop: '4px', marginBottom: 0 }}>
-            Browse the {pool.length} benchmark cases (MedQA, PubMedQA, MedDialog). Cases marked "not scorable" have a templated gold label, not a diagnosis.{error ? ` Could not load cases: ${error}` : ''}
+          <div className="cw-eyebrow"><Database size={14} aria-hidden="true" /> Benchmark dataset · {pool.length} cases · {pool.filter(isScorable).length} with a real diagnosis label</div>
+          <h2 className="cw-title">Clinical Case Library</h2>
+          <p className="cw-sub">
+            The {pool.length} cases of the mixed benchmark (MedQA, PubMedQA, MedDialog). Cases marked "not scorable" have a
+            templated gold label rather than a diagnosis and are excluded from accuracy.
           </p>
         </div>
-
-        {/* Dataset Filter Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', background: '#F1F5F9', padding: '4px', borderRadius: '8px', gap: '4px' }}>
-          {datasets.map((d) => (
-            <button
-              key={d.key}
-              onClick={() => setSelectedDataset(d.key)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '6px',
-                border: 'none',
-                background: selectedDataset === d.key ? '#FFFFFF' : 'transparent',
-                color: selectedDataset === d.key ? '#1B4332' : '#64748B',
-                fontWeight: 800,
-                fontSize: '0.78rem',
-                cursor: 'pointer',
-                boxShadow: selectedDataset === d.key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              {d.label} ({d.count})
+        <div className="cw-seg" role="group" aria-label="Dataset">
+          {DATASETS.map(([key, label]) => (
+            <button key={key} aria-pressed={dataset === key} onClick={() => setDataset(key)}>
+              {label} <span className="cw-num cw-muted">{pool.filter((c) => inDataset(c, key)).length}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* 2. SEARCH & SPECIALTY FILTER BAR */}
-      <div className="card" style={{ padding: '14px 18px', borderRadius: '12px', marginBottom: '18px', border: '1px solid #E2E8F0', boxShadow: '0 2px 6px rgba(0,0,0,0.02)' }}>
-        <div style={{ display: 'flex', gap: '14px', alignItems: 'center', flexWrap: 'wrap' }}>
-          
-          {/* Search Box */}
-          <div style={{ position: 'relative', flex: '1', minWidth: '240px' }}>
-            <Search size={15} style={{ position: 'absolute', left: '10px', top: '11px', color: '#94A3B8' }} />
-            <input 
-              type="search"
-              aria-label="Search cases"
-              placeholder="Search by diagnosis, symptoms, or case ID..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '8px 10px 8px 32px',
-                borderRadius: '8px',
-                border: '1px solid #CBD5E1',
-                fontSize: '0.82rem',
-                outline: 'none'
-              }}
-            />
-          </div>
+      {error && <div className="cw-banner error" role="alert" style={{ marginBottom: 16 }}><div><strong>Could not load cases</strong>{error}</div></div>}
 
-          {/* Specialty Filter Pills */}
-          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', padding: '2px 0' }}>
-            {specialties.map((spec) => (
-              <button
-                key={spec}
-                onClick={() => setSelectedSpecialty(spec)}
-                style={{
-                  padding: '5px 12px',
-                  borderRadius: '6px',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  border: selectedSpecialty === spec ? '1px solid #1B4332' : '1px solid #E2E8F0',
-                  background: selectedSpecialty === spec ? '#1B4332' : '#F8FAFC',
-                  color: selectedSpecialty === spec ? '#FFFFFF' : '#475569',
-                  cursor: 'pointer',
-                  transition: 'all 0.15s ease',
-                  whiteSpace: 'nowrap'
-                }}
-              >
-                {spec} ({specialtyCount(spec)})
-              </button>
-            ))}
-          </div>
+      <div className="cw-card" style={{ marginBottom: 16 }}>
+        <div className="cw-search" style={{ marginBottom: 12 }}>
+          <Search size={15} aria-hidden="true" />
+          <input className="cw-input" type="search" aria-label="Search cases" placeholder="Search by diagnosis, symptoms or case ID"
+            value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        </div>
+        <div className="cw-chips" role="group" aria-label="Specialty">
+          {specialties.map((s) => (
+            <button key={s} className="cw-chip" aria-pressed={specialty === s} onClick={() => setSpecialty(s)}>
+              {s} <span className="cw-num">{specialtyCount(s)}</span>
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* 3. 2-COLUMN VIEW: FULL 150 CASE LIST (LEFT) & FULL EHR INSPECTOR (RIGHT) */}
-      <div className="cases-split" style={{ display: 'grid', gap: '18px', alignItems: 'start' }}>
-        
-        {/* LEFT COLUMN: LIST OF ALL CASES (PAGINATED SCROLLABLE) */}
-        <div className="card" style={{ padding: '14px', borderRadius: '12px', border: '1px solid #E2E8F0', maxHeight: '720px', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', paddingBottom: '8px', borderBottom: '1px solid #F1F5F9' }}>
-            <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#0F172A' }}>
-              {filteredCases.length} Clinical Cases{activeFilters.length > 0 && <button onClick={clearFilters} style={{ marginLeft: '8px', border: 0, background: 'none', color: '#2D6A4F', fontWeight: 700, fontSize: '0.72rem', cursor: 'pointer' }}>Clear filters</button>}
-            </span>
-            <span style={{ fontSize: '0.72rem', color: '#64748B' }}>
-              Select case to inspect
-            </span>
+      <div className="cases-split">
+        <div className="cw-card cw-list-scroll" style={{ marginTop: 0 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8 }}>
+            <h3>{filtered.length} case{filtered.length === 1 ? '' : 's'}</h3>
+            {activeFilters.length > 0 && <button className="cw-link" onClick={clearFilters}>Clear filters</button>}
           </div>
-
-          {filteredCases.length === 0 && (
-            <div style={{ padding: '18px 6px', fontSize: '0.84rem', color: '#475569' }}>
+          {filtered.length === 0 ? (
+            <div className="cw-empty" style={{ padding: '24px 8px' }}>
               No cases match {activeFilters.join(' + ') || 'the current filters'}.
-              <div style={{ marginTop: '10px' }}>
-                <button className="btn btn-primary" onClick={clearFilters} style={{ padding: '6px 12px', fontSize: '0.78rem', borderRadius: '6px', cursor: 'pointer' }}>Clear all filters</button>
-              </div>
+              <div style={{ marginTop: 12 }}><button className="cw-btn ghost small" onClick={clearFilters}>Clear all filters</button></div>
+            </div>
+          ) : (
+            <div className="cw-rows">
+              {filtered.map((c) => (
+                <button key={c.id} className="cw-row-item" aria-current={current?.id === c.id} onClick={() => setActiveId(c.id)}>
+                  <div className="head">
+                    <span className="id">{c.id}</span>
+                    <span style={{ display: 'flex', gap: 4 }}>
+                      <span className="cw-pill pill-accent">{c.dataset ? c.dataset.split(' ')[0] : c.id?.split('_')[0]}</span>
+                      {c.specialty && <span className="cw-pill">{c.specialty}</span>}
+                    </span>
+                  </div>
+                  <div className="title">{c.gold_diagnosis || 'No gold label'}{!isScorable(c) && <span className="cw-muted"> · not scorable</span>}</div>
+                  <p className="snippet">{c.question}</p>
+                </button>
+              ))}
             </div>
           )}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {filteredCases.map((c, idx) => {
-              const isSelected = (currentDisplayCase?.id) === (c.id);
-              return (
-                <div 
-                  key={c.id || idx}
-                  onClick={() => setActiveCase(c)}
-                  style={{
-                    padding: '12px',
-                    borderRadius: '8px',
-                    border: isSelected ? '2px solid #1B4332' : '1px solid #E2E8F0',
-                    background: isSelected ? '#F4F8F5' : '#FFFFFF',
-                    cursor: 'pointer',
-                    transition: 'all 0.15s ease'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                    <span style={{ fontSize: '0.78rem', fontWeight: 800, color: isSelected ? '#1B4332' : '#0F172A' }}>
-                      {c.id}
-                    </span>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      <span style={{ 
-                        fontSize: '0.65rem', 
-                        fontWeight: 700, 
-                        padding: '1px 5px', 
-                        borderRadius: '3px',
-                        background: '#EFF6FF',
-                        color: '#1D4ED8'
-                      }}>
-                        {c.dataset ? c.dataset.split(' ')[0] : 'MedQA'}
-                      </span>
-                      <span style={{ 
-                        fontSize: '0.65rem', 
-                        fontWeight: 700, 
-                        padding: '1px 5px', 
-                        borderRadius: '3px',
-                        background: '#EAF4EE',
-                        color: '#15803D'
-                      }}>
-                        {c.specialty || 'General Med'}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#1E293B', marginBottom: '4px', lineHeight: 1.3 }}>
-                    {c.gold_diagnosis || 'No gold label'}{!isScorable(c) && ' · not scorable'}
-                  </div>
-
-                  <p style={{ fontSize: '0.74rem', color: '#64748B', margin: 0, lineHeight: 1.35, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {c.question}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
         </div>
 
-        {/* RIGHT COLUMN: DETAILED CASE RECORD & COPILOT ACTION */}
-        {currentDisplayCase ? (
-          <div className="card" style={{ padding: '22px', borderRadius: '12px', border: '1px solid #E2E8F0', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
-            
-            {/* Case Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', paddingBottom: '12px', borderBottom: '1px solid #F1F5F9' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                  <span style={{ fontSize: '0.88rem', fontWeight: 800, color: '#1B4332' }}>
-                    {currentDisplayCase.id}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#EFF6FF', color: '#1D4ED8' }}>
-                    {currentDisplayCase.dataset || 'MedQA (USMLE)'}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#F1F5F9', color: '#475569' }}>
-                    {currentDisplayCase.specialty || 'Internal Medicine'}
-                  </span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', background: '#FEF3C7', color: '#92400E' }}>
-                    {currentDisplayCase.difficulty ? `${currentDisplayCase.difficulty} Complexity` : 'Standard'}
-                  </span>
-                </div>
-                <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#0F172A', margin: 0 }}>
-                  {currentDisplayCase.gold_diagnosis || 'No gold label'}{!isScorable(currentDisplayCase) && ' (templated label, not scorable)'}
-                </h3>
-              </div>
+        {current ? (
+          <div className="cw-card" style={{ marginTop: 0 }}>
+            <div className="cw-toolbar" style={{ marginBottom: 6 }}>
+              <span className="cw-muted cw-num">{current.id}</span>
+              <span className="cw-pill pill-accent">{current.dataset || current.id?.split('_')[0]}</span>
+              {current.specialty && <span className="cw-pill">{current.specialty}</span>}
+              {current.difficulty && <span className="cw-pill pill-warning">{current.difficulty} complexity</span>}
             </div>
+            <h3 className="cw-dx" style={{ fontSize: '1.3rem' }}>
+              {current.gold_diagnosis || 'No gold label'}
+              {!isScorable(current) && <span className="cw-muted" style={{ fontWeight: 400 }}> (templated label, not scorable)</span>}
+            </h3>
+            <p className="cw-muted" style={{ marginTop: 0 }}>Gold label shown for browsing only; it is never sent to the agents.</p>
 
-            {/* Clinical Vignette Text */}
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
-                Patient Presentation & Clinical Record:
-              </div>
-              <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '14px 16px', fontSize: '0.86rem', color: '#1E293B', lineHeight: 1.6 }}>
-                {currentDisplayCase.question}
-              </div>
-            </div>
+            <div className="cw-section-label" style={{ marginTop: 16 }}>Case text (what the agents receive)</div>
+            <div className="cw-case-text">{current.question}</div>
 
-            {/* Recommended Treatment Plan */}
-            {currentDisplayCase.recommended_plan && (
-              <div style={{ marginBottom: '18px' }}>
-                <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
-                  Standard Therapeutic Regimen / Action Plan:
-                </div>
-                <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: '8px', padding: '12px 14px', fontSize: '0.82rem', color: '#334155', lineHeight: 1.5 }}>
-                  {currentDisplayCase.recommended_plan}
-                </div>
-              </div>
-            )}
+            {current.recommended_plan && (<>
+              <div className="cw-section-label" style={{ marginTop: 16 }}>Reference plan from the dataset</div>
+              <div className="cw-case-text">{current.recommended_plan}</div>
+            </>)}
 
-            {/* Clinical Rationale & Grounding */}
-            <div style={{ marginBottom: '22px' }}>
-              <div style={{ fontSize: '0.75rem', fontWeight: 800, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '6px' }}>
-                Diagnostic Assessment & Multi-Agent Deliberation Note:
-              </div>
-              <div style={{ background: '#EAF4EE', border: '1px solid #D1E7DD', borderRadius: '8px', padding: '12px 16px', fontSize: '0.82rem', color: '#1B4332', lineHeight: 1.5 }}>
-                <b>Dataset rationale: </b>
-                {currentDisplayCase.clinical_rationale || 'No rationale recorded for this case.'}
-              </div>
-            </div>
+            <div className="cw-section-label" style={{ marginTop: 16 }}>Dataset rationale (from the source dataset, not generated by the agents)</div>
+            <div className="cw-case-text">{current.clinical_rationale || 'No rationale recorded for this case.'}</div>
 
-            {/* Action Bar: Test in Case Runner */}
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button 
-                className="btn btn-primary"
-                onClick={() => openInWorkspace?.({
-                  chief_complaint: currentDisplayCase.question.split(/(?<=[.?!])\s/)[0].slice(0, 160),
-                  hpi: currentDisplayCase.question.slice(0, 8000),
-                })}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  background: '#1B4332',
-                  padding: '9px 18px',
-                  fontSize: '0.84rem',
-                  fontWeight: 800,
-                  borderRadius: '8px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Stethoscope size={15} />
-                <span>Open in Clinician Workspace →</span>
+            <div className="cw-toolbar" style={{ justifyContent: 'flex-end', marginTop: 18 }}>
+              <button className="cw-btn" onClick={() => openInWorkspace?.({
+                chief_complaint: current.question.split(/(?<=[.?!])\s/)[0].slice(0, 160),
+                hpi: current.question.slice(0, 8000),
+              })}>
+                <Stethoscope size={16} aria-hidden="true" /> Open in Clinician Workspace
               </button>
             </div>
-
           </div>
-        ) : null}
-
+        ) : (
+          <div className="cw-card cw-empty" style={{ marginTop: 0 }}>{pool.length ? 'Select a case to inspect it.' : 'No cases loaded.'}</div>
+        )}
       </div>
-
     </div>
   );
 }

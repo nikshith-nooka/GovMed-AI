@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 
 // ---------------------------------------------------------------- API token (optional server auth)
 const TOKEN_KEY = 'govbench.apiToken';
@@ -99,7 +99,48 @@ export const pct = (v, digits = 1) => (v == null ? '—' : `${(v * 100).toFixed(
 export const VARIANT_LABELS = {
   V1: 'V1 · No checks', V2: 'V2 · Grounding verifier', V3: 'V3 · Simulated attending',
   V4: 'V4 · Safety validator', V5: 'V5 · All checks',
+  // Short second lines so six configurations fit under a chart without overlapping.
+  'V2-CL': 'V2-CL · Verifier (CL)', 'V3-CL': 'V3-CL · Attending (CL)',
+  'V4-CL': 'V4-CL · Safety (CL)', 'V5-CL': 'V5-CL · All checks (CL)',
 };
+
+// ---------------------------------------------------------------- selected experiment
+// Which analysed experiment the results pages show. Shared across pages and remembered per browser;
+// the server whitelists the keys (GET /api/research/experiments).
+const EXPERIMENT_KEY = 'govbench.experiment';
+const experimentListeners = new Set();
+export const DEFAULT_EXPERIMENT = 'open150';
+
+export function getExperiment() {
+  try { return window.localStorage.getItem(EXPERIMENT_KEY) || DEFAULT_EXPERIMENT; } catch { return DEFAULT_EXPERIMENT; }
+}
+
+export function setExperiment(key) {
+  try { window.localStorage.setItem(EXPERIMENT_KEY, key); } catch { /* storage blocked: lasts for this page */ }
+  experimentListeners.forEach((fn) => fn());
+}
+
+export function useExperiment() {
+  return useSyncExternalStore((fn) => { experimentListeners.add(fn); return () => experimentListeners.delete(fn); },
+    getExperiment, () => DEFAULT_EXPERIMENT);
+}
+
+// Chart palette: one accent for the primary measure, greys for context. Readable on light and dark.
+export const CHART = { primary: '#0A84FF', secondary: '#8E8E93', muted: '#C7C7CC' };
+
+// Category ticks for variant charts: two horizontal lines ("V2-CL" / "Verifier (CL)") on wide charts, only the short
+// ID on narrow ones (phones), where the second line would collide. Full names stay in the table under each chart.
+export const variantTicks = {
+  maxRotation: 0,
+  autoSkip: false,
+  callback(value) {
+    const label = this.getLabelForValue(value);
+    // Narrow: the ID alone, stacked at the hyphen ("V2" over "CL") so six configurations fit side by side.
+    return this.chart.width < 560 && Array.isArray(label) ? label[0].split('-') : label;
+  },
+};
+
+export const findingsPath = (experiment) => `/api/research/findings?experiment=${encodeURIComponent(experiment)}`;
 
 export const EXAMPLE_CASES = [
   {

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { AlertTriangle, FlaskConical, Loader2 } from 'lucide-react';
 import './clinical.css';
-import { apiFetch } from '../lib/api';
+import { findingsPath, useApi, useExperiment } from '../lib/api';
 
 const fmt = (v, d = 3) => (v == null ? '—' : typeof v === 'number' ? v.toFixed(d) : String(v));
 
@@ -29,7 +29,7 @@ function AurocBar({ value }) {
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{ position: 'relative', width: 120, height: 8, background: 'var(--border-color)', borderRadius: 9999 }}>
         <div style={{ position: 'absolute', left: '50%', top: -3, width: 1, height: 14, background: 'var(--text-muted)' }} />
-        <div style={{ position: 'absolute', left: `${value >= 0.5 ? 50 : left}%`, width: `${width}%`, height: 8, borderRadius: 9999, background: value >= 0.6 ? 'var(--accent-green)' : '#EA580C' }} />
+        <div style={{ position: 'absolute', left: `${value >= 0.5 ? 50 : left}%`, width: `${width}%`, height: 8, borderRadius: 9999, background: value >= 0.6 ? 'var(--accent)' : 'var(--text-muted)' }} />
       </div>
       <span className="cw-num">{value.toFixed(3)}</span>
     </div>
@@ -37,18 +37,8 @@ function AurocBar({ value }) {
 }
 
 export default function ResearchFindings() {
-  const [report, setReport] = useState(null);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    apiFetch('/api/research/findings')
-      .then(async (r) => {
-        const body = await r.json();
-        if (!r.ok) throw new Error(body.detail || 'Report unavailable');
-        setReport(body);
-      })
-      .catch((e) => setError(e.message));
-  }, []);
+  const experiment = useExperiment();
+  const { data: report, error } = useApi(findingsPath(experiment));
 
   if (error) {
     return <div className="cw-page"><div className="cw-banner info"><FlaskConical size={18} /><div><strong>No analysis yet</strong>{error}</div></div></div>;

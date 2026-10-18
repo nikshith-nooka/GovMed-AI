@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-175%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-183%20Python%20%2B%209%20UI%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -130,11 +130,14 @@ not help while those checks cannot tell right answers from wrong ones.
 | **Clinician Workspace** | Enter a patient and choose a check level. The physician view shows the differential, alerts by severity, what was and was not checked and what the checks changed; the assistant view shows an escalation list, an SBAR handoff and a task checklist. Progress is shown agent by agent. |
 | **Clinician Review** | Blinded rating of stored outputs: diagnosis verdict, quality on a 1–5 scale and whether each alert is a real concern. |
 | **Research Findings** | The measured analysis, the data-integrity audit and the limitations. |
-| **Benchmark Analytics** | Variant comparison, cost and latency, governance-signal AUROC and paired statistics. |
+| **Benchmark Results** | Variant comparison, cost and latency, governance-signal AUROC, closed-loop revision outcomes and paired statistics with Holm-adjusted p-values. |
 | **Experiments** | Run benchmark cases at selected check levels through the real pipeline, scored against their gold labels, with CSV export. |
-| **Clinical Cases Dataset** | Browse and filter the 150 cases and open any of them in the workspace. |
-| **Agent Pipeline** | The agents at each level, with measured latency and token use. |
-| **Reports** | LaTeX tables generated from the measured analysis and a CSV export of stored runs. |
+| **Case Library** | Browse and filter the 150 mixed cases and open any of them in the workspace. |
+| **Governance Pipeline** | The agents at each level, with measured latency, governance-only latency, model calls and token use. |
+| **Reports & Exports** | Both manuscripts, and the LaTeX table and CSV of stored runs for the selected experiment (superseded re-runs marked). |
+
+An **experiment picker** in the top bar chooses which analysed experiment the results pages show: the 150-case
+open-loop study, the paired 300-question MedQA study reported in the paper, or the superseded unpaired MedQA pass.
 
 ---
 
@@ -190,6 +193,7 @@ uv run python -m scripts.run_injection_eval --provider groq
 
 # Tests and a concurrency smoke test
 uv run pytest
+(cd client && npm test)                   # UI tests: mocked API, no model calls
 uv run python -m scripts.load_test --requests 200 --concurrency 16
 ```
 
@@ -213,7 +217,8 @@ sets how long interactive results and stored case text are kept.
 | `GET /api/research/findings` | The measured analysis report |
 | `GET /api/reviews/queue` · `POST /api/reviews` · `GET /api/reviews/summary` | Blinded clinician review |
 | `GET /api/runs` · `/api/cases` · `/api/stats` · `/api/providers` · `/api/health` | Data and status |
-| `GET /api/reports/latex` · `/api/reports/csv` | Exports |
+| `GET /api/research/experiments` | Analysed experiments the UI can show |
+| `GET /api/reports/latex` · `/api/reports/csv` · `/api/stats` | Exports and summary statistics; optional `?experiment=` (default: the 150-case study) |
 
 ---
 
@@ -234,7 +239,8 @@ scripts/           benchmark runner, re-analysis, load test, figures and exports
 benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
-tests/             175 unit and integration tests, including a prompt-injection set
+tests/             183 unit and integration tests, including a prompt-injection set
+client/src/__tests__/  9 UI tests (Vitest + Testing Library)
 ```
 
 ---

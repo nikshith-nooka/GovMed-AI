@@ -1,7 +1,26 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Search, Sun, Moon, Bell, Menu, X, KeyRound } from 'lucide-react';
+import { Search, Sun, Moon, Bell, Menu, X, KeyRound, FlaskConical } from 'lucide-react';
 import ApiTokenDialog from './ApiTokenDialog';
-import { apiFetch, AUTH_EVENT, getApiToken, useTokenVersion } from '../lib/api';
+import { apiFetch, AUTH_EVENT, getApiToken, setExperiment, useApi, useExperiment, useTokenVersion } from '../lib/api';
+
+/** Which analysed experiment the results pages show; listed by the server, never a free-form path. */
+function ExperimentPicker() {
+  const experiment = useExperiment();
+  const { data } = useApi('/api/research/experiments');
+  const options = (data?.experiments || []).filter((e) => e.available);
+  if (!options.length) return null;
+  const current = options.find((e) => e.key === experiment);
+  return (
+    <label className="experiment-picker" title={current ? `Showing: ${current.label} (${current.status})` : 'Choose an experiment'}>
+      <FlaskConical size={15} aria-hidden="true" />
+      <span className="visually-hidden">Experiment shown on results pages</span>
+      <select value={current ? experiment : ''} onChange={(e) => setExperiment(e.target.value)}>
+        {!current && <option value="" disabled>Choose experiment</option>}
+        {options.map((e) => <option key={e.key} value={e.key}>{e.label}</option>)}
+      </select>
+    </label>
+  );
+}
 
 function readStorage(key) {
   try { return window.localStorage.getItem(key); } catch { return null; }
@@ -92,6 +111,7 @@ export default function TopNavbar({ onToggleSidebar, isSidebarOpen, onSearch, on
       </div>
 
       <div className="nav-right">
+        <ExperimentPicker />
         <button
           className="icon-btn theme-toggle-btn"
           onClick={() => setDarkMode((prev) => !prev)}

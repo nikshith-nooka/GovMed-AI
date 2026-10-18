@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { FlaskConical, Loader2 } from 'lucide-react';
-import { VARIANT_LABELS, fmt, useApi } from '../lib/api';
+import { CHART, VARIANT_LABELS, findingsPath, fmt, useApi, useExperiment, variantTicks } from '../lib/api';
 import './clinical.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -11,8 +11,11 @@ const TABS = [
   ['variants', 'Variant comparison'],
   ['cost', 'Cost & latency'],
   ['signals', 'Governance signals'],
+  ['closed', 'Closed-loop revision'],
   ['stats', 'Paired statistics'],
 ];
+const pval = (v) => (v == null ? '—' : v < 0.001 ? '<0.001' : v.toFixed(3));
+const pctOf = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`);
 
 function Table({ rows, cols }) {
   return (
@@ -29,15 +32,16 @@ function Table({ rows, cols }) {
   );
 }
 
-const barOptions = (yTitle, max) => ({
+const barOptions = (yTitle, max, xTicks = variantTicks) => ({
   maintainAspectRatio: false,
   plugins: { legend: { position: 'bottom' } },
-  scales: { x: { ticks: { maxRotation: 0, autoSkip: false } }, y: { beginAtZero: true, ...(max ? { max } : {}), title: { display: true, text: yTitle } } },
+  scales: { x: { ticks: xTicks }, y: { beginAtZero: true, ...(max ? { max } : {}), title: { display: true, text: yTitle } } },
 });
 
 export default function ResultsComparison() {
   const [tab, setTab] = useState('variants');
-  const { data: r, error, loading } = useApi('/api/research/findings');
+  const experiment = useExperiment();
+  const { data: r, error, loading } = useApi(findingsPath(experiment));
 
   if (loading) return <div className="cw-page cw-empty"><Loader2 className="spin" /> Loading…</div>;
   if (error) return <div className="cw-page"><div className="cw-banner info"><FlaskConical size={18} /><div><strong>No analysis yet</strong>{error}</div></div></div>;
@@ -49,12 +53,12 @@ export default function ResultsComparison() {
     <div className="cw-page">
       <div className="cw-header">
         <div>
-          <h2 className="cw-title">Benchmark Analytics</h2>
-          <p className="cw-sub">{r.n_runs_analyzed} runs, {r.n_cases} cases, {(r.models || []).join(', ')}. Accuracy is computed on the {r.measurement_validity.cases_with_valid_gold} cases with a real diagnosis label.</p>
+          <h2 className="cw-title">Benchmark Results</h2>
+          <p className="cw-sub">{r.n_runs_analyzed} runs, {r.n_cases} cases, {(r.models || []).join(', ')}. Accuracy is computed on the {r.measurement_validity.cases_with_valid_gold} cases with a scorable gold label{r.measurement_validity.cases_with_answer_key === r.measurement_validity.cases_total ? ' (exact answer key)' : ''}.</p>
         </div>
       </div>
       <div className="cw-tabs cw-seg" role="tablist" style={{ display: 'inline-flex' }}>
-        {TABS.map(([id, label]) => <button key={id} role="tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+        {TABS.filter(([id]) => id !== 'closed' || r.revision_by_variant?.length).map(([id, label]) => <button key={id} role="tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
       </div>
 
       {tab === 'variants' && (
@@ -63,9 +67,9 @@ export default function ResultsComparison() {
             <h3>Quality by variant</h3>
             <div style={{ height: 300 }}>
               <Bar options={barOptions('Score (0-1)', 1)} data={{ labels, datasets: [
-                { label: 'Accuracy (scorable cases)', data: r.variants.map((v) => v.accuracy_valid_gold), backgroundColor: '#E07A5F' },
-                { label: 'Detector-neutral quality', data: r.variants.map((v) => v.detector_neutral_quality), backgroundColor: '#2D6A4F' },
-                { label: 'Reported quality', data: r.variants.map((v) => v.reported_quality), backgroundColor: '#CBD5E1' },
+                { label: 'Accuracy (scorable cases)', data: r.variants.map((v) => v.accuracy_valid_gold), backgroundColor: CHART.primary },
+                { label: 'Detector-neutral quality', data: r.variants.map((v) => v.detector_neutral_quality), backgroundColor: CHART.secondary },
+                { label: 'Reported quality', data: r.variants.map((v) => v.reported_quality), backgroundColor: CHART.muted },
               ] }} />
             </div>
             <p className="cw-muted" style={{ marginTop: 8 }}>Reported quality subtracts points for flags raised by a variant's own detectors, so it falls as checks are added even when the diagnosis is unchanged.</p>
@@ -87,9 +91,9 @@ export default function ResultsComparison() {
             <div className="cw-card">
               <h3>End-to-end latency (seconds)</h3>
               <div style={{ height: 280 }}>
-                <Bar options={barOptions('Seconds')} data={{ labels, datasets: [
-                  { label: 'Median', data: r.variants.map((v) => v.e2e_latency_p50_s), backgroundColor: '#2D6A4F' },
-                  { label: '95th percentile', data: r.variants.map((v) => v.e2e_latency_p95_s), backgroundColor: '#E07A5F' },
+                <Bar options={barOptions('Summed agent-call time (s)')} data={{ labels, datasets: [
+                  { label: 'Median', data: r.variants.map((v) => v.e2e_latency_p50_s), backgroundColor: CHART.primary },
+                  { label: '95th percentile', data: r.variants.map((v) => v.e2e_latency_p95_s), backgroundColor: CHART.secondary },
                 ] }} />
               </div>
             </div>
@@ -116,9 +120,9 @@ export default function ResultsComparison() {
           <div className="cw-card">
             <h3>How well each governance signal detects a wrong diagnosis (AUROC, 0.5 = chance)</h3>
             <div style={{ height: 280 }}>
-              <Bar options={barOptions('AUROC', 1)} data={{
+              <Bar options={barOptions('AUROC', 1, { autoSkip: false })} data={{
                 labels: signals.map((s) => `${s.signal} · ${s.variant_id}`),
-                datasets: [{ label: 'AUROC', data: signals.map((s) => s.auroc), backgroundColor: signals.map((s) => ((s.auroc ?? 0) >= 0.65 ? '#2D6A4F' : '#E07A5F')) }],
+                datasets: [{ label: 'AUROC', data: signals.map((s) => s.auroc), backgroundColor: signals.map((s) => ((s.auroc ?? 0) >= 0.65 ? CHART.primary : CHART.secondary)) }],
               }} />
             </div>
           </div>
@@ -132,14 +136,66 @@ export default function ResultsComparison() {
         </>
       )}
 
+      {tab === 'closed' && r.revision_by_variant?.length > 0 && (
+        <>
+          <div className="cw-card">
+            <h3>What revision did, within each run <span className="cw-muted">· first answer vs. revised answer, same question</span></h3>
+            <Table rows={r.revision_by_variant} cols={[
+              ['variant_id', 'Configuration', 0, (v) => VARIANT_LABELS[v] || v], ['revision_rate', 'Revised', 0, pctOf],
+              ['revised_runs_scored', 'Scored revisions', 0], ['within_run_fixed', 'Fixed', 0], ['within_run_broken', 'Broken', 0],
+              ['sign_test_p', 'Sign test p', 0, pval],
+            ]} />
+            <p className="cw-muted" style={{ marginBottom: 0 }}>Fixed: the first answer was wrong and the revision made it right. Broken: the reverse. Exact two-sided sign test on fixed vs. broken.</p>
+          </div>
+          {r.closed_loop_effect?.length > 0 && (
+            <div className="cw-card">
+              <h3>Closed vs. open loop <span className="cw-muted">· same questions</span></h3>
+              <Table rows={r.closed_loop_effect} cols={[
+                ['comparison', 'Comparison'], ['n_pairs', 'n', 0], ['accuracy_open', 'Open', 3], ['accuracy_closed', 'Closed', 3],
+                ['accuracy_diff', 'Difference', 3], ['accuracy_diff_ci95_low', '95% CI low', 3], ['accuracy_diff_ci95_high', '95% CI high', 3],
+                ['mcnemar_exact_p', 'McNemar p', 0, pval], ['first_diagnosis_differs', 'First diagnosis differs', 0],
+              ]} />
+              <p className="cw-muted" style={{ marginBottom: 0 }}>"First diagnosis differs" counts questions where the closed-loop run did not start from the open-loop answer; above zero, the comparison mixes revision with resampling.</p>
+            </div>
+          )}
+          {r.resampling_stability?.some((x) => x.answer_agreement < 1) && (
+            <div className="cw-card">
+              <h3>Run-to-run stability <span className="cw-muted">· regenerated first diagnosis vs. V1</span></h3>
+              <Table rows={r.resampling_stability} cols={[
+                ['resample', 'Resample'], ['n_pairs', 'n', 0], ['answer_agreement', 'Same answer', 0, pctOf],
+                ['correctness_flips', 'Correctness flips', 0], ['accuracy_v1', 'V1 accuracy', 3], ['accuracy_resample', 'Resample accuracy', 3],
+              ]} />
+            </div>
+          )}
+        </>
+      )}
+
       {tab === 'stats' && (
-        <div className="cw-card">
-          <h3>Paired differences vs. V1 on the same cases (bootstrap 95% CI, Wilcoxon signed-rank)</h3>
-          <Table rows={r.paired_tests} cols={[
-            ['metric', 'Metric'], ['comparison', 'Comparison'], ['n_pairs', 'n', 0], ['mean_diff', 'Mean diff'],
-            ['ci95_low', 'CI low'], ['ci95_high', 'CI high'], ['wilcoxon_p', 'p', 4],
-          ]} />
-        </div>
+        <>
+          {r.accuracy_tests?.length > 0 && (
+            <div className="cw-card">
+              <h3>Accuracy vs. V1 on the same cases <span className="cw-muted">· exact McNemar, bootstrap 95% CI, Holm-adjusted p</span></h3>
+              <Table rows={r.accuracy_tests} cols={[
+                ['comparison', 'Comparison'], ['n_pairs', 'n', 0], ['accuracy_v1', 'V1', 3], ['accuracy_variant', 'Variant', 3],
+                ['accuracy_diff', 'Difference', 3], ['accuracy_diff_ci95_low', 'CI low', 3], ['accuracy_diff_ci95_high', 'CI high', 3],
+                ['mcnemar_exact_p', 'p', 0, pval], ['mcnemar_exact_p_holm', 'Holm p', 0, pval],
+              ]} />
+            </div>
+          )}
+          <div className="cw-card">
+            <h3>Paired differences vs. V1 <span className="cw-muted">· bootstrap 95% CI, Wilcoxon signed-rank, Holm-adjusted p</span></h3>
+            <Table rows={r.paired_tests} cols={[
+              ['metric', 'Metric'], ['comparison', 'Comparison'], ['n_pairs', 'n', 0], ['mean_diff', 'Mean diff'],
+              ['ci95_low', 'CI low'], ['ci95_high', 'CI high'], ['wilcoxon_p', 'p', 0, pval], ['wilcoxon_p_holm', 'Holm p', 0, pval],
+            ]} />
+            {r.multiple_comparisons && (
+              <p className="cw-muted" style={{ marginBottom: 0 }}>
+                Holm–Bonferroni over {r.multiple_comparisons.family_size} paired tests: {r.multiple_comparisons.significant_raw} significant before
+                correction, {r.multiple_comparisons.significant_after_holm} after.
+              </p>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

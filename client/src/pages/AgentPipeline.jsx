@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { fmt, useApi } from '../lib/api';
+import { findingsPath, fmt, useApi, useExperiment } from '../lib/api';
 import './clinical.css';
 
 const AGENTS = {
@@ -24,9 +24,12 @@ const LEVELS = [
 export default function AgentPipeline() {
   const [levelCode, setLevelCode] = useState('G4');
   const [agent, setAgent] = useState('Diagnosis Agent');
-  const { data: report, loading } = useApi('/api/research/findings');
+  const experiment = useExperiment();
+  const { data: report, loading } = useApi(findingsPath(experiment));
   const level = LEVELS.find((l) => l.code === levelCode);
-  const variant = report?.variants.find((v) => v.variant_id === level.variant);
+  // The paired MedQA experiment has only closed-loop forms of G1-G3; show that one, labelled, rather than nothing.
+  const variant = report?.variants.find((v) => v.variant_id === level.variant)
+    || report?.variants.find((v) => v.variant_id === `${level.variant}-CL`);
   const agentStats = Object.fromEntries((report?.latency_by_agent || []).map((a) => [a.agent, a]));
   const selectedStats = agentStats[agent];
 
@@ -34,8 +37,8 @@ export default function AgentPipeline() {
     <div className="cw-page">
       <div className="cw-header">
         <div>
-          <h2 className="cw-title">Agent Pipeline & Governance Levels</h2>
-          <p className="cw-sub">Which agents run at each check level, in order, with latency and tokens measured on the benchmark model. Research and Diagnosis always run; checks are added on top.</p>
+          <h2 className="cw-title">Governance Pipeline</h2>
+          <p className="cw-sub">Which agents run at each governance level, in order, with latency and tokens measured in the selected experiment. Research and Diagnosis always run; G1–G3 each add one check, G4 adds all of them plus the consistency checker.</p>
         </div>
       </div>
 
@@ -48,9 +51,9 @@ export default function AgentPipeline() {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
           {level.layers.map((name, i) => (
             <React.Fragment key={name}>
-              <button className="cw-card cw-tile" style={{ marginTop: 0, padding: '10px 12px', borderColor: agent === name ? 'var(--accent-green)' : undefined }} onClick={() => setAgent(name)}>
+              <button className="cw-card cw-tile" aria-pressed={agent === name} style={{ marginTop: 0, padding: '10px 14px', width: 'auto', borderColor: agent === name ? 'var(--accent)' : undefined, background: agent === name ? 'var(--accent-tint)' : undefined }} onClick={() => setAgent(name)}>
                 <strong style={{ fontSize: '0.84rem' }}>{name}</strong>
-                <div className="cw-muted">{agentStats[name] ? `${fmt(agentStats[name].mean_s, 1)} s mean` : ''}</div>
+                <div className="cw-muted">{agentStats[name] ? `${fmt(agentStats[name].mean_s, 1)} s mean` : 'not run in this experiment'}</div>
               </button>
               {i < level.layers.length - 1 && <ArrowRight size={16} className="cw-muted" />}
             </React.Fragment>
@@ -76,17 +79,19 @@ export default function AgentPipeline() {
           ) : <p className="cw-muted">Not measured in the stored benchmark.</p>}
         </div>
         <div className="cw-card">
-          <h3>{level.code} measured outcome</h3>
+          <h3>{level.code} measured outcome{variant && variant.variant_id !== level.variant ? <span className="cw-muted"> · {variant.variant_id}, closed loop</span> : ''}</h3>
           {variant ? (
             <div className="cw-checks">
               <div><span>Accuracy (scorable cases)</span><strong className="cw-num">{fmt(variant.accuracy_valid_gold)}</strong></div>
               <div><span>Diagnosis changed vs. no checks</span><strong className="cw-num">{fmt(variant.diagnosis_changed_vs_v1_pct, 1)}%</strong></div>
-              <div><span>Median / p95 latency</span><strong className="cw-num">{fmt(variant.e2e_latency_p50_s, 0)} / {fmt(variant.e2e_latency_p95_s, 0)} s</strong></div>
+              <div><span>Median / p95 summed latency</span><strong className="cw-num">{fmt(variant.e2e_latency_p50_s, 0)} / {fmt(variant.e2e_latency_p95_s, 0)} s</strong></div>
+              {variant.governance_latency_p50_s != null && <div><span>Median governance-only latency</span><strong className="cw-num">{fmt(variant.governance_latency_p50_s, 1)} s</strong></div>}
+              {variant.model_calls_mean != null && <div><span>Model calls per case</span><strong className="cw-num">{fmt(variant.model_calls_mean, 2)}</strong></div>}
               <div><span>Tokens per case</span><strong className="cw-num">{fmt(variant.tokens_mean, 0)}</strong></div>
               <div><span>Cost per case</span><strong className="cw-num">${fmt(variant.cost_mean_usd, 5)}</strong></div>
               <div><span>Safety alerts / hallucination flags</span><strong className="cw-num">{variant.safety_alerts_total} / {variant.hallucination_flags_total}</strong></div>
             </div>
-          ) : <p className="cw-muted">{loading ? 'Loading…' : 'Run the analysis to see measured outcomes.'}</p>}
+          ) : <p className="cw-muted">{loading ? 'Loading…' : `${level.variant} was not run in the selected experiment.`}</p>}
           <p className="cw-muted" style={{ marginTop: 10 }}>In open-loop configurations the checks annotate the output but never change the diagnosis; closed-loop (-CL) configurations can revise it once.</p>
         </div>
       </div>

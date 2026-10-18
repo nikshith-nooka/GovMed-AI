@@ -64,7 +64,7 @@ class ErrorBoundary extends React.Component {
     if (this.state.hasError) {
       return (
         <div className="card" style={{ padding: '30px', margin: '20px', textAlign: 'center' }}>
-          <h3 style={{ color: '#dc2626', marginBottom: '10px' }}>This page hit an error</h3>
+          <h3 style={{ color: 'var(--error)', marginBottom: '10px' }}>This page hit an error</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{this.state.error?.message || 'An unexpected rendering error occurred.'}</p>
           <button className="btn btn-primary" onClick={() => { window.location.href = '/'; }}>Return to Dashboard</button>
         </div>
@@ -76,7 +76,6 @@ class ErrorBoundary extends React.Component {
 
 export default function App() {
   const [currentPage, setCurrentPageState] = useState(pageFromLocation);
-  const [stats, setStats] = useState(null);
   const [cases, setCases] = useState([]);
   const [casesError, setCasesError] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -109,11 +108,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    apiFetch('/api/stats')
-      .then((res) => (res.ok ? res.json() : null))
-      .then(setStats)
-      .catch(() => setStats(null));
-
     apiFetch('/api/cases')
       .then(async (res) => {
         if (!res.ok) throw new Error(`Could not load cases (${res.status})`);
@@ -142,7 +136,7 @@ export default function App() {
       case 'reports':
         return <Reports />;
       default:
-        return <Dashboard setCurrentPage={setCurrentPage} stats={stats} openInWorkspace={openInWorkspace} />;
+        return <Dashboard setCurrentPage={setCurrentPage} openInWorkspace={openInWorkspace} />;
     }
   };
 

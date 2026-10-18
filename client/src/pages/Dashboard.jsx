@@ -2,7 +2,7 @@ import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { AlertTriangle, ArrowRight, ClipboardCheck, FlaskConical, HeartPulse, Loader2 } from 'lucide-react';
-import { EXAMPLE_CASES, VARIANT_LABELS, fmt, useApi } from '../lib/api';
+import { CHART, EXAMPLE_CASES, VARIANT_LABELS, findingsPath, fmt, useApi, useExperiment, variantTicks } from '../lib/api';
 import './clinical.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -10,15 +10,16 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
 function Kpi({ label, value, note }) {
   return (
     <div className="cw-card">
-      <div className="cw-muted" style={{ fontWeight: 700, textTransform: 'uppercase', fontSize: '0.7rem', letterSpacing: '0.04em' }}>{label}</div>
-      <div className="cw-num" style={{ fontSize: '1.6rem', fontWeight: 800, margin: '4px 0' }}>{value}</div>
+      <div className="cw-section-label" style={{ margin: 0 }}>{label}</div>
+      <div className="cw-num" style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.1, margin: '6px 0 4px' }}>{value}</div>
       <div className="cw-muted">{note}</div>
     </div>
   );
 }
 
-export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
-  const { data: report, error, loading } = useApi('/api/research/findings');
+export default function Dashboard({ setCurrentPage, openInWorkspace }) {
+  const experiment = useExperiment();
+  const { data: report, error, loading } = useApi(findingsPath(experiment));
   const reviews = useApi('/api/reviews/summary');
 
   const variants = report?.variants || [];
@@ -30,9 +31,9 @@ export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
     // "V2 · Grounding verifier" -> two lines, so labels stay horizontal and are never clipped.
     labels: variants.map((v) => (VARIANT_LABELS[v.variant_id] || v.variant_id).split(' · ')),
     datasets: [
-      { label: 'Reported quality (penalizes own detectors)', data: variants.map((v) => v.reported_quality), backgroundColor: '#CBD5E1' },
-      { label: 'Detector-neutral quality', data: variants.map((v) => v.detector_neutral_quality), backgroundColor: '#2D6A4F' },
-      { label: 'Accuracy (scorable cases)', data: variants.map((v) => v.accuracy_valid_gold), backgroundColor: '#E07A5F' },
+      { label: 'Reported quality (penalizes own detectors)', data: variants.map((v) => v.reported_quality), backgroundColor: CHART.muted },
+      { label: 'Detector-neutral quality', data: variants.map((v) => v.detector_neutral_quality), backgroundColor: CHART.secondary },
+      { label: 'Accuracy (scorable cases)', data: variants.map((v) => v.accuracy_valid_gold), backgroundColor: CHART.primary },
     ],
   };
 
@@ -78,19 +79,21 @@ export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
             </div>
           )}
           <div className="cw-cols-4" style={{ marginTop: 14 }}>
-            <Kpi label="Runs analyzed" value={report.n_runs_analyzed} note={`${report.n_cases} cases × ${report.variants?.length ?? '—'} configurations · ${stats?.total_runs ?? '—'} rows stored`} />
-            <Kpi label="Scorable cases" value={`${m.cases_with_valid_gold}/${m.cases_total}`} note="The rest have templated gold labels" />
-            <Kpi label="Baseline accuracy" value={fmt(v1?.accuracy_valid_gold, 3)} note={`Reported ${fmt(m.reported_accuracy_mean, 3)} before scoring fixes`} />
-            <Kpi label="Median latency" value={`${fmt(v1?.e2e_latency_p50_s, 0)}–${fmt(v5?.e2e_latency_p50_s, 0)} s`} note="V1 to V5, summed agent-call time, benchmark model" />
+            <Kpi label="Runs analyzed" value={report.n_runs_analyzed} note={`${report.n_cases} cases × ${report.variants?.length ?? '—'} configurations`} />
+            <Kpi label="Scorable cases" value={`${m.cases_with_valid_gold}/${m.cases_total}`} note={m.cases_with_valid_gold < m.cases_total ? 'The rest have templated gold labels' : 'Every case has an answer key'} />
+            <Kpi label="Baseline accuracy" value={fmt(v1?.accuracy_valid_gold, 3)} note={m.cases_with_answer_key < m.cases_total
+              ? `All runs: ${fmt(m.reported_accuracy_mean, 3)} as first reported, ${fmt(m.corrected_accuracy_mean_all_cases, 3)} re-scored`
+              : 'Scored exactly against the answer key'} />
+            <Kpi label="Median latency" value={`${fmt(v1?.e2e_latency_p50_s, 0)}–${fmt(v5?.e2e_latency_p50_s, 0)} s`} note="V1 to V5 · summed agent-call time" />
           </div>
 
           <div className="cw-cols-32" style={{ marginTop: 14 }}>
             <div className="cw-card">
               <h3>Quality by variant</h3>
               <div style={{ height: 280 }}>
-                <Bar data={chart} options={{ maintainAspectRatio: false, scales: { x: { ticks: { maxRotation: 0, autoSkip: false } }, y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }} />
+                <Bar data={chart} options={{ maintainAspectRatio: false, scales: { x: { ticks: variantTicks }, y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }} />
               </div>
-              <button className="cw-btn ghost small" style={{ marginTop: 10 }} onClick={() => setCurrentPage('results')}>Open Benchmark Analytics <ArrowRight size={14} /></button>
+              <button className="cw-btn ghost small" style={{ marginTop: 10 }} onClick={() => setCurrentPage('results')}>Open Benchmark Results <ArrowRight size={14} /></button>
             </div>
             <div className="cw-card">
               <h3>Key findings</h3>
