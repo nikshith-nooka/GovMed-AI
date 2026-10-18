@@ -19,7 +19,7 @@
 
 \begin{document}
 
-\title{Do Safety Checks Make AI Diagnosis Safer? A Paired Evaluation of Governed Multi-Agent Clinical Language Models}
+\title{Do Governance Checks Improve Clinical Question-Answering Accuracy? A Paired Evaluation of Multi-Agent Language Models}
 
 \author{\IEEEauthorblockN{Areddy Divya Reddy}
 \IEEEauthorblockA{\textit{Dept. of AI and Machine Learning} \\
@@ -49,23 +49,23 @@ sujithashree3105@gmail.com}
 \maketitle
 
 \begin{abstract}
-Language-model decision support is most attractive where clinicians are scarce, and in exactly those settings an
-unnoticed error is most costly. A common safeguard is to surround the model with further agents that verify, check
-safety and review its answer. We test whether such governance improves answers. Using GovBench-Clinical, an open
+A common safeguard for language-model decision support is to surround the model with further agents that verify,
+check safety and review its answer. We test whether such governance improves the accuracy of the final answer. Using GovBench-Clinical, an open
 harness, we ran 300 MedQA-USMLE questions with their original answer key through a baseline (G0), all checks attached
 as warnings (G4 open loop), and four closed-loop configurations in which a blocking finding sends the diagnosis back
 for one revision. Every configuration started from the same first diagnosis, so differences come from governance
 alone. Accuracy was 43.0 percent without checks and with checks as warnings, but fell to 37.3 percent when all
-checks could trigger revision: revisions fixed 21 answers and broke 39, an exploratory result that is not significant
-after correction for multiple comparisons. No single check improved accuracy significantly. The checks did not
-separate right from wrong answers, with an area under the receiver operating characteristic curve of 0.497 to 0.57,
-and the safety validator raised an alert on every run. Governance raised mean tokens per question from 2200.9
-to 11362.7. We also show that an unpaired design, which regenerates the first diagnosis, creates spurious gains. Safety
-layers need validated, discriminating signals before they are trusted in under-resourced care.
+checks could trigger revision: revisions fixed 21 answers and broke 39. This exploratory drop is significant only
+before correction (McNemar p = 0.040) and not after Holm correction across 30 paired tests (p = 0.55). No single
+check improved accuracy significantly. The checks did not separate right from wrong answers, with an area under the
+receiver operating characteristic curve of 0.497 to 0.57, and the safety validator raised an alert on every run of
+each configuration that included it. Governance raised mean tokens per question from 2200.9 to 11362.7. An earlier
+unpaired pass, which regenerated the first diagnosis, showed apparent gains that disappeared under pairing.
+Governance signals need validation on paired data before revision is built on them.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Clinical decision support, large language models, multi-agent systems, AI safety, healthcare applications,
+Clinical decision support, large language models, multi-agent systems, AI governance, healthcare applications,
 evaluation methodology.
 \end{IEEEkeywords}
 
@@ -73,19 +73,18 @@ evaluation methodology.
 \section{Introduction}
 % ============================================================
 Large language models (LLMs) now pass licensing-style medical examinations~\cite{singhal2023large,nori2023capabilities} and
-are proposed as clinical decision support~\cite{rajpurkar2022ai}. The humanitarian case for such tools is strongest
-where specialists are few: rural clinics, overstretched public hospitals and community health workers, who could use
-a second opinion that no human is available to give. The same settings have the least capacity to catch an AI error.
-Because fluent models still state wrong findings or recommend unsafe management~\cite{hager2024evaluation,pal2023medhalt},
-many systems wrap the model in further agents that verify, critique or approve its output~\cite{hong2023metagpt,wu2023autogen,du2023improving}.
-These governance layers cost tokens and time, which matters most where compute and connectivity are limited, so their
-benefit has to be measured, not assumed~\cite{bedi2025optimization}.
+are proposed as clinical decision support~\cite{rajpurkar2022ai}, including as a possible second opinion where
+specialists are few. Because fluent models still state wrong findings or recommend unsafe
+management~\cite{hager2024evaluation,pal2023medhalt}, many systems add further agents that critique or check its
+output~\cite{hong2023metagpt,wu2023autogen,du2023improving}. These layers cost tokens and time, which could matter
+where compute is limited, so their benefit has to be measured, not assumed~\cite{bedi2025optimization}. We measure
+answer accuracy on exam questions, not deployment feasibility, accessibility or patient outcomes.
 
-We measure it. Our contributions are: (1) GovBench-Clinical, an open harness that runs identical questions through
-five governance levels in open-loop and closed-loop form with per-agent token and latency telemetry; (2) a
-\emph{paired} closed-loop experiment on 300 MedQA questions with an answer key, showing that revising on governance
-feedback does not raise accuracy and, with all checks combined, lowers it; and (3) evidence that two common evaluation
-shortcuts, lenient string scoring and an unpaired design, produce gains that are not real.
+Our contributions are: (1) a \emph{paired} closed-loop experiment on 300 MedQA questions, in which revising on
+governance feedback did not raise accuracy, whereas an unpaired pass showed apparent gains; (2) evidence that the
+governance signals barely separate right from wrong answers, which explains why acting on them does not help; and
+(3) GovBench-Clinical, an open harness with per-agent token, latency and cost reporting, and an audit of how lenient
+string scoring inflated our own earlier results.
 
 % ============================================================
 \section{Related Work}
@@ -103,23 +102,28 @@ governance by whether it changes, and improves, the final answer.
 \section{System}
 % ============================================================
 Fig.~\ref{fig:arch} shows the pipeline. A research agent extracts structured findings from the case text (it does not
-retrieve literature) and a diagnosis agent chooses an answer and a ranked differential. Three checks then read the case
-and the diagnosis in parallel: a grounding verifier flags claims the case does not support, a safety validator lists
-safety concerns with a severity, and a consistency checker compares findings with the diagnosis. A simulated attending
-reviewer, a language model and not a clinician, then approves, rejects or requests revision. All agents share one model.
+retrieve literature) and a diagnosis agent chooses an answer and a ranked differential. Up to three checks then run in
+parallel on this first answer: a grounding verifier flags claims the case does not support, a safety validator lists
+safety concerns with a severity, and a consistency checker compares the extracted findings with the diagnosis. A
+simulated attending reviewer, a language model and not a clinician, then reads the case, the diagnosis and the safety
+findings and approves, rejects or requests revision. Deterministic contraindication rules add flags to every final
+answer without changing it. All agents share one model.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/architecture.pdf}
-\caption{Pipeline. In open loop, check findings are attached to the output. In closed loop, a blocking finding sends
-the diagnosis back for one bounded revision, after which the enabled checks run again.}
+\includegraphics[width=\textwidth]{figures/architecture.pdf}
+\caption{Workflow of G4 (all checks); G1--G3 enable one check each and G0 none. In open loop, findings are attached
+to the output and the answer is never changed. In closed loop, any blocking finding triggers exactly one revision by
+the diagnosis agent; the verifier and safety validator, when enabled, then re-check the revised answer, but their
+findings cannot trigger a second revision. Only the scorer reads the answer key.}
 \label{fig:arch}
 \end{figure*}
 
 The levels are G0 (no checks), G1 (verifier), G2 (attending reviewer), G3 (safety validator) and G4 (all of these plus
 the consistency checker). G1--G3 are alternative single mechanisms, not a strict hierarchy. In closed loop, an
 ungrounded claim, a HIGH or CRITICAL safety concern, a severe contradiction, or a request to revise or reject triggers
-exactly one revision; an unparseable revision keeps the original answer and is recorded as a failure.
+exactly one revision; an unparseable revision would keep the original answer and be recorded as a failure (none
+occurred).
 
 % ============================================================
 \section{Experimental Setup}
@@ -128,18 +132,21 @@ exactly one revision; an unparseable revision keeps the original answer and is r
 (United States Medical Licensing Examination)~\cite{jin2021medqa}, keeping the original options and answer key. Only the scorer reads the key; a test confirms
 that no agent prompt contains it.
 
-\textbf{Model.} Every agent used Llama-3.2-11B-Vision-Instruct on the NVIDIA NIM API at temperature 0.1 or 0.2 and at % numcheck:ignore
-most 1{,}500 output tokens per call. We ran G0, G4 open loop, and closed-loop G1, G2, G3 and G4: 1,800 runs.
+\textbf{Model.} Every agent used Llama-3.2-11B-Vision-Instruct on the NVIDIA NIM API,
+at temperature 0.1 for extraction and checks and 0.2 for diagnosis, revision and review, with at % numcheck:ignore
+most 1{,}500 output tokens per call. We ran G0, G4 open loop, and closed-loop G1, G2, G3 and G4: 1,800 runs, one per
+question and configuration.
 
 \textbf{Pairing.} Every configuration of a question reuses the research and diagnosis outputs of the G0 run, so the
 only difference is governance. We verified this for all 1,200 closed-loop runs.
 
 \textbf{Scoring and statistics.} An answer is correct only if it maps to the key option; an answer that maps to no
 single option counts as wrong (52 of 1,800 runs). We compare configurations with G0 using the exact McNemar
-test~\cite{mcnemar1947note} and paired bootstrap 95\% intervals~\cite{efron1979bootstrap}, correct all paired tests with
-the Holm procedure~\cite{holm1979simple}, test whether revisions fix more answers than they break with an exact sign
-test, and report the area under the receiver operating characteristic curve (AUROC) of each check as a detector of
-a wrong answer.
+test~\cite{mcnemar1947note} and paired bootstrap 95\% intervals~\cite{efron1979bootstrap}. The Holm
+procedure~\cite{holm1979simple} corrects one family of 30 paired tests: the McNemar accuracy tests and the paired
+Wilcoxon tests of the secondary quality metrics, each configuration against G0. For each closed-loop configuration, an
+exact sign test asks whether revisions fix more answers than they break. Each check's alert is also scored as a
+detector of a wrong answer by the area under the receiver operating characteristic curve (AUROC).
 
 % ============================================================
 \section{Results}
@@ -147,89 +154,104 @@ a wrong answer.
 \subsection{Closing the loop lowered accuracy}
 Table~\ref{tab:closed} and Fig.~\ref{fig:closed} give the results. G0 and G4 open loop were identical (43.0\%), because
 open-loop checks never alter the answer. With all checks able to trigger revision (G4 closed), the checks requested
-revision in 79.3\% of questions and accuracy fell to 37.3\%: of 235 scorable revisions, 21 fixed a wrong answer and
-39 broke a right one (sign test $p = 0.027$). The difference from G4 open loop is $-5.7$ points (95\% confidence interval (CI) $-10.7$ to
-$-0.7$; McNemar $p = 0.040$). This comparison was not pre-specified as primary and is not significant after Holm
-correction across all paired tests, so we report it as exploratory evidence of harm.
+revision in 79.3\% of questions and accuracy fell to 37.3\%. Of the revised answers, 235 could be scored before and
+after revision (three had an empty first answer): 21 changed from wrong to right, 39 from right to wrong, and the rest
+kept their correctness (sign test $p = 0.027$, unadjusted; not significant after Holm correction across the four sign
+tests). The difference from G4 open loop, whose answers equal G0's, is $-5.7$ points (95\% confidence interval (CI)
+$-10.7$ to $-0.7$; McNemar $p = 0.040$ unadjusted, $p = 0.55$ after Holm correction across the 30 paired tests). This
+comparison was not pre-specified as primary, so we report it as an exploratory drop in accuracy.
 
-No single check helped significantly. The attending reviewer came closest, 44.7\% (13 fixed, 8 broken; $p = 0.38$);
-verifier feedback (40.0\%) and safety-validator feedback (40.3\%) broke more answers than they fixed.
+No single check helped significantly. The attending reviewer came closest, 44.7\% (13 fixed, 8 broken; sign test
+$p = 0.38$); verifier feedback (40.0\%) and safety-validator feedback (40.3\%) broke more answers than they fixed.
 
 \begin{table}[t]
 \centering
 \caption{Paired Closed-Loop Experiment, 300 MedQA Questions Each}
 \label{tab:closed}
 \footnotesize
-\begin{tabular}{@{}lccccc@{}}
+\setlength{\tabcolsep}{4.5pt}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
-\textbf{Configuration} & \textbf{Acc.} & \textbf{Revised} & \textbf{Fixed/broken} & \textbf{Tokens} & \textbf{Lat. (s)} \\
+\textbf{Configuration} & \textbf{Acc.} & \textbf{Revised} & \textbf{Fix/break} & \textbf{Tokens} & \textbf{Lat.\,(s)} \\
 \midrule
-G0 (no checks) & 0.430 & -- & -- & 2200.9 & 21.2 \\
-G4 open loop & 0.430 & -- & -- & 7570.4 & 60.7 \\
-G1 closed & 0.400 & 36.3\% & 15/24 & 4817.8 & 52.8 \\
-G2 closed & 0.447 & 34.7\% & 13/8 & 4153.2 & 41.8 \\
-G3 closed & 0.403 & 31.3\% & 12/21 & 4479.2 & 43.5 \\
-G4 closed & 0.373 & 79.3\% & 21/39 & 11362.7 & 142.5 \\
+G0 (no checks) & 43.0\% & -- & -- & 2200.9 & 21.2 \\
+G4 open loop & 43.0\% & -- & -- & 7570.4 & 60.7 \\
+G1 closed & 40.0\% & 36.3\% & 15/24 & 4817.8 & 52.8 \\
+G2 closed & 44.7\% & 34.7\% & 13/8 & 4153.2 & 41.8 \\
+G3 closed & 40.3\% & 31.3\% & 12/21 & 4479.2 & 43.5 \\
+G4 closed & 37.3\% & 79.3\% & 21/39 & 11362.7 & 142.5 \\
 \bottomrule
 \end{tabular}
 
 \vspace{1mm}
-\parbox{\columnwidth}{G1 verifier, G2 attending reviewer, G3 safety validator. All closed-loop runs start from G0's
-diagnosis. Lat.: median summed agent-call time (an upper bound on wall clock for parallel checks); closed-loop runs
+\parbox{\columnwidth}{\footnotesize G1 verifier, G2 attending reviewer, G3 safety validator; all closed-loop runs start
+from G0's diagnosis. Acc.: share of the 300 questions answered with the key option. Revised: share of questions whose
+answer was revised. Fix/break: revised answers that went from wrong to right / right to wrong. Tokens: mean per
+question. Lat.: median summed agent-call time (an upper bound on wall clock for parallel checks); closed-loop runs
 were made on other days, so latency also reflects provider load.}
 \end{table}
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/closed_loop.pdf}
-\caption{Left: accuracy per configuration (dashed: G0). Right: answers fixed or broken by revision.}
+\includegraphics[width=\textwidth]{figures/closed_loop.pdf}
+\caption{Left: accuracy per configuration on 300 MedQA questions, with 95\% Wilson intervals (dashed line: G0).
+Right: revised answers that changed from wrong to right (fixed) or right to wrong (broken); revisions that kept their
+correctness are not shown.}
 \label{fig:closed}
 \end{figure*}
 
 \subsection{The checks cannot tell right from wrong}
 Table~\ref{tab:auroc} treats each check as a detector of a wrong answer. Every AUROC lay between 0.497 and 0.57, close
-to chance (0.5). The safety validator raised at least one alert on every run, so an alert carried no information about
-correctness; even HIGH or CRITICAL alerts alone reached only 0.568.
+to chance (0.5); the G4 closed-loop values (0.533 to 0.562) fall in the same range. In every configuration that
+included it (G3 closed, G4 open and G4 closed), the safety validator raised at least one alert on all 300 runs, so an
+alert carried no information about correctness; even HIGH or CRITICAL alerts alone reached only 0.568.
 
 \begin{table}[t]
 \centering
 \caption{Each Governance Signal as a Detector of a Wrong Answer}
 \label{tab:auroc}
 \footnotesize
-\begin{tabular}{@{}llcc@{}}
+\begin{tabular}{@{}llrr@{}}
 \toprule
 \textbf{Signal} & \textbf{Configuration} & \textbf{Fires on} & \textbf{AUROC} \\
 \midrule
-Ungrounded claim (verifier) & G1 closed & 36.3\% & 0.56 \\
+Ungrounded claim (verifier) & G1 closed & 36.3\% & 0.560 \\
  & G4 open & 35.3\% & 0.497 \\
-Any safety alert & G3 closed & 100\% & 0.55 \\
- & G4 open & 100\% & 0.507 \\
+Any safety alert & G3 closed & 100.0\% & 0.550 \\
+ & G4 open & 100.0\% & 0.507 \\
 HIGH/CRITICAL safety alert & G3 closed & 31.3\% & 0.568 \\
  & G4 open & 32.7\% & 0.535 \\
-Reviewer revise/reject & G2 closed & 34.7\% & 0.57 \\
+Reviewer revise/reject & G2 closed & 34.7\% & 0.570 \\
  & G4 open & 74.7\% & 0.523 \\
 \bottomrule
 \end{tabular}
+
+\vspace{1mm}
+\parbox{\columnwidth}{\footnotesize Fires on: share of the 300 runs in which the signal fired. AUROC 0.5 is chance.
+The signal is the first check's alert and the label is whether the final answer is wrong; in closed loop the final
+answer may be the revised one.}
 \end{table} The
 model's own stated confidence was also poorly calibrated (expected calibration error (ECE) 0.2374, Brier score 0.3021). Feeding such signals back
 cannot be expected to help: the model is told to reconsider right and wrong answers alike.
 
 \subsection{Cost}
 Governance multiplied cost. Mean tokens per question rose from 2200.9 (G0) to 7570.4 (G4 open) and 11362.7 (G4
-closed), and median summed latency from 21.2\,s to 142.5\,s. At an assumed price, cost per question rose from % numcheck:ignore
-\$0.000288 to \$0.001408. Fig.~\ref{fig:tradeoff} shows that no configuration buys accuracy with this overhead,
-which matters most in low-resource deployments.
+closed), and median summed latency from 21.2\,s to 142.5\,s. At an illustrative rate of US\$0.10 per million input % numcheck:ignore
+and \$0.20 per million output tokens (an assumption fixed in our code, not a quoted provider price), estimated % numcheck:ignore
+cost per question rose from \$0.000288 to \$0.001408. Fig.~\ref{fig:tradeoff} shows that no configuration buys
+accuracy with this overhead, a cost that could weigh most where compute is limited.
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=0.9\textwidth]{figures/tradeoff.pdf}
-\caption{Accuracy against cost (left) and median summed latency (right), with 95\% Wilson intervals. Dashed: G0.
-Grey: open loop; blue: closed loop (CL); marker shapes identify configurations.}
+\includegraphics[width=\textwidth]{figures/tradeoff.pdf}
+\caption{Accuracy against mean tokens per question (left) and median summed latency (right), with 95\% Wilson
+intervals ($n = 300$ each). Dashed line: G0. Grey: open loop; blue: closed loop; marker shapes identify
+configurations.}
 \label{fig:tradeoff}
 \end{figure*}
 
-\subsection{Evaluation shortcuts create false gains}
-Two shortcuts would have reversed our conclusions. First, in an earlier 150-case evaluation (Table~\ref{tab:audit}),
+\subsection{Evaluation shortcuts produced apparent gains}
+In our own earlier evaluations, two shortcuts would have changed our conclusions. First, in a 150-case evaluation (Table~\ref{tab:audit}),
 substring scoring credited empty and single-letter answers and reported accuracy 0.739; scored correctly it is 0.293.
 
 \begin{table}[t]
@@ -242,7 +264,7 @@ substring scoring credited empty and single-letter answers and reported accuracy
 \textbf{Quantity} & \textbf{Reported} & \textbf{Audited} \\
 \midrule
 Accuracy, all cases & 0.739 & 0.293 \\
-Accuracy, 71 cases with a real label & 0.783 & 0.38 \\
+Accuracy, 71 cases with a real label & 0.783 & 0.380 \\
 Unparsed (empty) diagnoses scored as correct & -- & 216 runs \\
 Bare option letters scored 0.9 without options & -- & 395 runs \\
 Gold labels that were templated titles & -- & 79 of 150 \\
@@ -251,21 +273,24 @@ Gold labels that were templated titles & -- & 79 of 150 \\
 \end{table} Second, an earlier
 \emph{unpaired} closed-loop pass regenerated the first diagnosis for each configuration. The regenerated answer matched
 the baseline's in only 79.5\% and 74.6\% of questions, and in that pass the attending reviewer appeared to reach
-46.3\% and G4 closed loop 43.0\%. With pairing, these become 44.7\% and 37.3\%.
+46.3\% and G4 closed loop 43.0\%. With pairing, these become 44.7\% and 37.3\%. This is one setup and one model, not
+a general property of unpaired designs.
 
 % ============================================================
 \section{Discussion and Limitations}
 % ============================================================
 A governance layer is useful only if its alerts are specific enough to act on and acting on them improves the
 decision. Here the alerts failed the first test, so closing the loop failed the second: revision moved answers in both
-directions and, with every check active, more often in the wrong one. The attending reviewer, the most selective
-check, came closest to helping. Better-calibrated checks, not more loops, are the bottleneck. For under-resourced care
-this cautions against equating ``more safety agents'' with ``safer'': governance should be validated on paired data
-before deployment, and its overhead weighed against limited compute.
+directions and, with every check active, more often in the wrong one. The attending reviewer, the only check whose
+revisions fixed more answers than they broke, came closest to helping, though not significantly. Our data suggest that
+better-calibrated checks, not more loops, are the bottleneck. This cautions against equating ``more safety agents''
+with ``safer'': governance should be validated on paired data before it is relied on.
 
 Limitations: one 11B model from one provider was tested, each question was run once, and no clinician has yet rated
-the outputs; the attending reviewer is simulated. With 300 pairs the smallest detectable accuracy difference is
-0.0579. Results may differ for larger models or checks grounded in drug and guideline databases.
+the outputs; the attending reviewer is simulated. With 300 pairs and the mean discordance of our comparisons
+(12.9\%), the smallest accuracy difference detectable with 80\% power at \mbox{$\alpha = 0.05$} is 5.8 points, so smaller
+effects of single checks cannot be excluded. Cost figures use an assumed token rate. Results may differ for larger
+models or checks grounded in drug and guideline databases.
 
 % ============================================================
 \section{Conclusion}
@@ -277,11 +302,9 @@ Code and data: \url{https://github.com/nikshith-nooka/GovMed-AI}. All data are p
 information; the software is not intended for diagnosis or treatment.
 
 % ============================================================
-% Balance the two columns of the last page (IEEE template guidance): column break before reference 12.
-\IEEEtriggeratref{12}
 \begin{thebibliography}{00}
 \bibitem{singhal2023large}
-K.~Singhal, S.~Azizi, T.~Tu, S.~S. Mahdavi, J.~Wei, H.~W. Chung, N.~Scales, A.~Tanwani, H.~Cole-Lewis, S.~Pfohl, et~al., ``Large language models encode clinical knowledge,'' \emph{Nature}, vol.~620, no.~7972, pp. 172--180, 2023, \href{https://doi.org/10.1038/s41586-023-06291-2}{doi: 10.1038/s41586-023-06291-2}.
+K.~Singhal et~al., ``Large language models encode clinical knowledge,'' \emph{Nature}, vol.~620, no.~7972, pp. 172--180, 2023, \href{https://doi.org/10.1038/s41586-023-06291-2}{doi: 10.1038/s41586-023-06291-2}.
 
 \bibitem{nori2023capabilities}
 H.~Nori, N.~King, S.~M. McKinney, D.~Carignan, and E.~Horvitz, ``Capabilities of GPT-4 on medical challenge problems,'' \emph{arXiv preprint arXiv:2303.13375}, 2023.
@@ -290,19 +313,19 @@ H.~Nori, N.~King, S.~M. McKinney, D.~Carignan, and E.~Horvitz, ``Capabilities of
 P.~Rajpurkar, E.~Chen, O.~Banerjee, and E.~J. Topol, ``AI in health and medicine,'' \emph{Nature Medicine}, vol.~28, no.~1, pp. 31--38, 2022, \href{https://doi.org/10.1038/s41591-021-01614-0}{doi: 10.1038/s41591-021-01614-0}.
 
 \bibitem{hager2024evaluation}
-P.~Hager, F.~Jungmann, R.~Holland, K.~Bhagat, I.~Hubrecht, M.~Knauer, J.~Vielhauer, M.~Makowski, R.~Braren, G.~Kaissis, and D.~Rueckert, ``Evaluation and mitigation of the limitations of large language models in clinical decision-making,'' \emph{Nature Medicine}, vol.~30, no.~9, pp. 2613--2622, 2024, \href{https://doi.org/10.1038/s41591-024-03097-1}{doi: 10.1038/s41591-024-03097-1}.
+P.~Hager et~al., ``Evaluation and mitigation of the limitations of large language models in clinical decision-making,'' \emph{Nature Medicine}, vol.~30, no.~9, pp. 2613--2622, 2024, \href{https://doi.org/10.1038/s41591-024-03097-1}{doi: 10.1038/s41591-024-03097-1}.
 
 \bibitem{pal2023medhalt}
 A.~Pal, L.~K. Umapathi, and M.~Sankarasubbu, ``Med-HALT: Medical domain hallucination test for large language models,'' in \emph{Proc. 27th Conf. Computational Natural Language Learning (CoNLL)}, Singapore, 2023, pp. 314--334, \href{https://doi.org/10.18653/v1/2023.conll-1.21}{doi: 10.18653/v1/2023.conll-1.21}.
 
 \bibitem{hong2023metagpt}
-S.~Hong, M.~Zhuge, J.~Chen, X.~Zheng, Y.~Cheng, C.~Zhang, J.~Wang, Z.~Wang, S.~K.~S. Yau, Z.~Lin, et~al., ``MetaGPT: Meta programming for a multi-agent collaborative framework,'' in \emph{Proc. ICLR}, Vienna, Austria, 2024.
+S.~Hong et~al., ``MetaGPT: Meta programming for a multi-agent collaborative framework,'' in \emph{Proc. ICLR}, Vienna, Austria, 2024.
 
 \bibitem{wu2023autogen}
-Q.~Wu, G.~Bansal, J.~Zhang, Y.~Wu, B.~Li, E.~Zhu, L.~Jiang, X.~Zhang, S.~Zhang, J.~Liu, et~al., ``AutoGen: Enabling next-gen LLM applications via multi-agent conversation,'' \emph{arXiv preprint arXiv:2308.08155}, 2023.
+Q.~Wu et~al., ``AutoGen: Enabling next-gen LLM applications via multi-agent conversations,'' in \emph{Proc. Conf. Language Modeling (COLM)}, 2024.
 
 \bibitem{chen2023agentverse}
-W.~Chen, Y.~Su, J.~Zuo, C.~Yang, C.~Yuan, C.-M. Chan, H.~Yu, Y.~Lu, Y.-H. Hung, C.~Qian, et~al., ``AgentVerse: Facilitating multi-agent collaboration and exploring emergent behaviors,'' in \emph{Proc. ICLR}, Vienna, Austria, 2024.
+W.~Chen et~al., ``AgentVerse: Facilitating multi-agent collaboration and exploring emergent behaviors,'' in \emph{Proc. ICLR}, Vienna, Austria, 2024.
 
 \bibitem{du2023improving}
 Y.~Du, S.~Li, A.~Torralba, J.~B. Tenenbaum, and I.~Mordatch, ``Improving factuality and reasoning in language models through multiagent debate,'' in \emph{Proc. ICML}, PMLR vol.~235, 2024, pp. 11733--11763.
@@ -317,19 +340,19 @@ D.~Jin, E.~Pan, N.~Oufattole, W.-H. Weng, H.~Fang, and P.~Szolovits, ``What dise
 Q.~Jin, B.~Dhingra, Z.~Liu, W.~W. Cohen, and X.~Lu, ``PubMedQA: A dataset for biomedical research question answering,'' in \emph{Proc. EMNLP-IJCNLP}, Hong Kong, China, 2019, pp. 2567--2577, \href{https://doi.org/10.18653/v1/D19-1259}{doi: 10.18653/v1/D19-1259}.
 
 \bibitem{tang2024medagents}
-X.~Tang, A.~Zou, Z.~Zhang, Z.~Li, Y.~Zhao, X.~Zhang, A.~Cohan, and M.~Gerstein, ``MedAgents: Large language models as collaborators for zero-shot medical reasoning,'' in \emph{Findings of ACL}, Bangkok, Thailand, 2024, pp. 599--621, \href{https://doi.org/10.18653/v1/2024.findings-acl.33}{doi: 10.18653/v1/2024.findings-acl.33}.
+X.~Tang et~al., ``MedAgents: Large language models as collaborators for zero-shot medical reasoning,'' in \emph{Findings of ACL}, Bangkok, Thailand, 2024, pp. 599--621, \href{https://doi.org/10.18653/v1/2024.findings-acl.33}{doi: 10.18653/v1/2024.findings-acl.33}.
 
 \bibitem{kim2024mdagents}
-Y.~Kim, C.~Park, H.~Jeong, Y.~S. Chan, X.~Xu, D.~McDuff, H.~Lee, M.~Ghassemi, C.~Breazeal, and H.~W. Park, ``MDAgents: An adaptive collaboration of LLMs for medical decision-making,'' \emph{arXiv preprint arXiv:2404.15155}, 2024.
+Y.~Kim et~al., ``MDAgents: An adaptive collaboration of LLMs for medical decision-making,'' in \emph{Advances in Neural Information Processing Systems}, vol.~37, 2024, pp. 79410--79452.
 
 \bibitem{zhu2025medagentboard}
-Y.~Zhu, Z.~He, H.~Hu, X.~Zheng, X.~Zhang, Z.~Wang, J.~Gao, L.~Ma, and L.~Yu, ``MedAgentBoard: Benchmarking multi-agent collaboration with conventional methods for diverse medical tasks,'' in \emph{Proc. NeurIPS Datasets and Benchmarks Track}, 2025.
+Y.~Zhu et~al., ``MedAgentBoard: Benchmarking multi-agent collaboration with conventional methods for diverse medical tasks,'' in \emph{Proc. NeurIPS Datasets and Benchmarks Track}, 2025.
 
 \bibitem{rebedea2023nemo}
 T.~Rebedea, R.~Dinu, M.~N. Sreedhar, C.~Parisien, and J.~Cohen, ``NeMo Guardrails: A toolkit for controllable and safe LLM applications with programmable rails,'' in \emph{Proc. EMNLP: System Demonstrations}, Singapore, 2023, pp. 431--445, \href{https://doi.org/10.18653/v1/2023.emnlp-demo.40}{doi: 10.18653/v1/2023.emnlp-demo.40}.
 
 \bibitem{zheng2023judging}
-L.~Zheng, W.-L. Chiang, Y.~Sheng, S.~Zhuang, Z.~Wu, Y.~Zhuang, Z.~Lin, Z.~Li, D.~Li, E.~P. Xing, H.~Zhang, J.~E. Gonzalez, and I.~Stoica, ``Judging LLM-as-a-judge with MT-Bench and Chatbot Arena,'' in \emph{NeurIPS Datasets and Benchmarks Track}, vol.~36, 2023.
+L.~Zheng et~al., ``Judging LLM-as-a-judge with MT-Bench and Chatbot Arena,'' in \emph{Advances in Neural Information Processing Systems (Datasets and Benchmarks Track)}, vol.~36, 2023, pp. 46595--46623.
 
 \bibitem{mcnemar1947note}
 Q.~McNemar, ``Note on the sampling error of the difference between correlated proportions or percentages,'' \emph{Psychometrika}, vol.~12, no.~2, pp. 153--157, 1947, \href{https://doi.org/10.1007/BF02295996}{doi: 10.1007/BF02295996}.
