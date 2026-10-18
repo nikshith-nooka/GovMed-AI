@@ -87,7 +87,7 @@ export default function AgentPipeline() {
               <div><span>Safety alerts / hallucination flags</span><strong className="cw-num">{variant.safety_alerts_total} / {variant.hallucination_flags_total}</strong></div>
             </div>
           ) : <p className="cw-muted">{loading ? 'Loading…' : 'Run the analysis to see measured outcomes.'}</p>}
-          <p className="cw-muted" style={{ marginTop: 10 }}>These runs were open loop: checks annotated the output but never changed the diagnosis.</p>
+          <p className="cw-muted" style={{ marginTop: 10 }}>In open-loop configurations the checks annotate the output but never change the diagnosis; closed-loop (-CL) configurations can revise it once.</p>
         </div>
       </div>
     </div>

@@ -182,12 +182,23 @@ def get_benchmark_stats():
                 "total_cost_usd": 0, "contraindications_blocked": 0, "hallucinations_caught": 0,
                 "variant_breakdown": []}
 
-    avg_accuracy = cursor.execute("SELECT AVG(diagnostic_accuracy_score) FROM runs").fetchone()[0] or 0
+    # Accuracy only where a real gold label exists; latency as summed agent-call time (stored total_latency_ms
+    # omits cached shared steps in runs made before 2026-10-10); verification only on variants that run a verifier.
+    # Stored accuracy in older runs came from a substring scorer that over-credited answers; prefer the re-scored
+    # value from the analysis report and say which source was used.
+    report = load_rigor_report()
+    measured = ((report or {}).get("measurement_validity") or {}).get("corrected_accuracy_mean_valid_gold")
+    accuracy_source = "rigor_report (re-scored from raw outputs)" if measured is not None else "stored scores"
+    avg_accuracy = measured if measured is not None else (
+        cursor.execute("SELECT AVG(diagnostic_accuracy_score) FROM runs "
+                       "WHERE COALESCE(gold_label_valid, 1) = 1").fetchone()[0] or 0)
     avg_tokens = cursor.execute("SELECT AVG(total_tokens) FROM runs").fetchone()[0] or 0
-    avg_latency = cursor.execute("SELECT AVG(total_latency_ms) / 1000.0 FROM runs").fetchone()[0] or 0
+    avg_latency = cursor.execute("SELECT AVG(s) / 1000.0 FROM (SELECT SUM(latency_ms) AS s FROM agent_steps "
+                                 "GROUP BY run_id)").fetchone()[0] or 0
     total_cases = cursor.execute("SELECT COUNT(DISTINCT case_id) FROM runs").fetchone()[0] or 0
-    verification_rate = (cursor.execute("SELECT COUNT(*) FROM runs WHERE hallucinations_detected = 0").fetchone()[0]
-                         / total_runs) * 100.0
+    verified = cursor.execute("SELECT COUNT(*), COALESCE(SUM(hallucinations_detected = 0), 0) FROM runs "
+                              "WHERE variant_id LIKE 'V2%' OR variant_id LIKE 'V5%'").fetchone()
+    verification_rate = (verified[1] / verified[0] * 100.0) if verified[0] else 0.0
     total_cost_usd = cursor.execute("SELECT COALESCE(SUM(total_cost_usd), 0) FROM runs").fetchone()[0] or 0.0
     safety_alerts = cursor.execute("SELECT COALESCE(SUM(safety_violations_detected), 0) FROM runs").fetchone()[0] or 0
     hallucinations = cursor.execute("SELECT COALESCE(SUM(hallucinations_detected), 0) FROM runs").fetchone()[0] or 0
@@ -205,6 +216,7 @@ def get_benchmark_stats():
         "total_pool": total_cases,
         "completed_experiments": total_runs,
         "avg_diagnostic_quality": round(avg_accuracy * 100, 1),
+        "accuracy_source": accuracy_source,
         "avg_token_cost": int(avg_tokens),
         "avg_latency": round(avg_latency, 1),
         "verification_rate": round(verification_rate, 1),
@@ -260,13 +272,16 @@ def measured_run(row: Dict[str, Any], case: Dict[str, Any]) -> Dict[str, Any]:
     diffs = [d for d in diagnosis.get("differential_diagnoses", []) or [] if isinstance(d, dict)]
     primary = str(diagnosis.get("primary_diagnosis", "") or "")
     out = {k: v for k, v in row.items() if k not in SYNTHETIC_COLUMNS}
+    scored = _scorer.score_diagnosis(primary, diffs, case)
     out.update({
         "dataset": str(row.get("case_id", "")).split("_")[0],
         "primary_diagnosis": primary,
         "gold_diagnosis": gold,
         "gold_valid": gold_valid,
         # Same routing as benchmark scoring: exact option scoring when the case has an answer key.
-        "measured_accuracy": _scorer.score_diagnosis(primary, diffs, case)["score"] if gold_valid else None,
+        "measured_accuracy": scored["score"] if gold_valid else None,
+        # Scored as wrong by policy, but flagged so the UI can say "no option" rather than show a plain 0.
+        "answer_unmappable": bool(scored["flagged"]),
         "safety_alerts": len((raw.get("safety") or {}).get("safety_flags", []) or []) if "safety" in raw else None,
         "hallucination_flagged": bool((raw.get("verifier") or {}).get("hallucination_detected")) if "verifier" in raw else None,
     })
@@ -619,6 +634,8 @@ def run_experiment_case(inp: ExperimentCaseInput):
         "revision_applied": scored.revision_applied,
         "initial_diagnosis": scored.initial_primary_diagnosis,
         "parse_failures": scored.parse_failures,
+        "scoring_mode": scored.scoring_mode,
+        "answer_unmappable": scored.option_parse_status in ("unparseable", "empty", "ambiguous"),
         "latency_s": round(sum(s.latency_ms for s in scored.agent_steps) / 1000.0, 2),
         "tokens": scored.total_tokens,
         "cost_usd": scored.total_cost_usd,
@@ -634,7 +651,7 @@ def list_experiment_runs(limit: int = 200):
         rows = conn.execute(
             "SELECT id, case_id, variant_id, model, provider, primary_diagnosis, diagnostic_accuracy_score, "
             "gold_label_valid, safety_violations_detected, hallucinations_detected, revision_applied, total_tokens, "
-            "total_cost_usd, timestamp FROM runs ORDER BY id DESC LIMIT ?", (max(1, min(limit, 1000)),)).fetchall()
+            "total_cost_usd, timestamp, scoring_mode, option_parse_status FROM runs ORDER BY id DESC LIMIT ?", (max(1, min(limit, 1000)),)).fetchall()
         total = conn.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
     return {"total": total, "runs": [dict(r) for r in rows]}
 

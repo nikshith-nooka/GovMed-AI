@@ -154,10 +154,43 @@ def closed_loop(r):
     _save(fig, "closed_loop")
 
 
+def _wilson(p, n, z=1.96):
+    """95% Wilson score interval for a proportion (computed from the reported accuracy and n)."""
+    centre = (p + z * z / (2 * n)) / (1 + z * z / n)
+    half = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** 0.5) / (1 + z * z / n)
+    return centre - half, centre + half
+
+
+def tradeoff(r):
+    """Accuracy against mean tokens and median summed latency, one point per configuration."""
+    labels = {"V1": "G0", "V5": "G4 open", "V2-CL": "Verifier CL", "V3-CL": "Attending CL",
+              "V4-CL": "Safety CL", "V5-CL": "G4 CL"}
+    rows = [v for v in r["variants"] if v["variant_id"] in labels]
+    # Close points (the single-check configurations) get separated labels.
+    offsets = {"V3-CL": (4, 6), "V4-CL": (-34, -10), "V2-CL": (5, -10)}
+    fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.0), sharey=True)
+    for ax, key, xlabel in ((axes[0], "tokens_mean", "Mean tokens per question"),
+                            (axes[1], "e2e_latency_p50_s", "Median summed latency (s)")):
+        for v in rows:
+            acc, n = v["accuracy_valid_gold"], v["n_runs"]
+            lo, hi = _wilson(acc, n)
+            colour = GREY if not v["variant_id"].endswith("-CL") else BLUE
+            ax.errorbar(v[key], acc, yerr=[[acc - lo], [hi - acc]], fmt="o", color=colour, ms=3.5, lw=0.8, capsize=2)
+            ax.annotate(labels[v["variant_id"]], (v[key], acc), textcoords="offset points",
+                        xytext=offsets.get(v["variant_id"], (4, 3)), fontsize=6)
+        ax.axhline(next(v["accuracy_valid_gold"] for v in rows if v["variant_id"] == "V1"),
+                   color="#111827", lw=0.6, ls="--")
+        ax.set_xlabel(xlabel)
+    axes[0].set_ylabel("Accuracy (95% CI)")
+    _save(fig, "tradeoff")
+
+
 def main():
     report = json.loads(REPORT.read_text())
     if MEDQA_REPORT.exists():
-        closed_loop(json.loads(MEDQA_REPORT.read_text()))
+        medqa = json.loads(MEDQA_REPORT.read_text())
+        closed_loop(medqa)
+        tradeoff(medqa)
     architecture()
     audit_paradox(report)
     alert_auroc(report)

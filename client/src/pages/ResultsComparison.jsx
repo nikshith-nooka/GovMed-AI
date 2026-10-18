@@ -50,7 +50,7 @@ export default function ResultsComparison() {
       <div className="cw-header">
         <div>
           <h2 className="cw-title">Benchmark Analytics</h2>
-          <p className="cw-sub">{r.n_runs_analyzed} runs, {r.n_cases} cases, {r.models.join(', ')}. Accuracy is computed on the {r.measurement_validity.cases_with_valid_gold} cases with a real diagnosis label.</p>
+          <p className="cw-sub">{r.n_runs_analyzed} runs, {r.n_cases} cases, {(r.models || []).join(', ')}. Accuracy is computed on the {r.measurement_validity.cases_with_valid_gold} cases with a real diagnosis label.</p>
         </div>
       </div>
       <div className="cw-tabs cw-seg" role="tablist" style={{ display: 'inline-flex' }}>
@@ -125,7 +125,7 @@ export default function ResultsComparison() {
           <div className="cw-card">
             <Table rows={signals} cols={[
               ['signal', 'Signal'], ['variant_id', 'Variant'], ['n', 'n', 0],
-              ['fire_rate', 'Fires on', 2, (v) => `${Math.round(v * 100)}%`], ['sensitivity', 'Sensitivity'],
+              ['fire_rate', 'Fires on', 2, (v) => (v == null ? '—' : `${Math.round(v * 100)}%`)], ['sensitivity', 'Sensitivity'],
               ['false_positive_rate', 'False-positive rate'], ['precision', 'Precision'], ['auroc', 'AUROC'],
             ]} />
           </div>

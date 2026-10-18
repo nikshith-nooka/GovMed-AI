@@ -70,17 +70,17 @@ export default function Dashboard({ setCurrentPage, stats, openInWorkspace }) {
 
       {report && (
         <>
-          {report.integrity.notes.length > 0 && (
+          {report.integrity?.notes?.length > 0 && (
             <div className="cw-banner high" style={{ marginTop: 14 }}>
               <AlertTriangle size={18} />
               <div><strong>Some stored metrics are not measurements</strong>They are excluded here. See Research Findings for details.</div>
             </div>
           )}
           <div className="cw-cols-4" style={{ marginTop: 14 }}>
-            <Kpi label="Runs analyzed" value={report.n_runs_analyzed} note={`${report.n_cases} cases × 5 variants · ${stats?.total_runs ?? '—'} rows stored`} />
+            <Kpi label="Runs analyzed" value={report.n_runs_analyzed} note={`${report.n_cases} cases × ${report.variants?.length ?? '—'} configurations · ${stats?.total_runs ?? '—'} rows stored`} />
             <Kpi label="Scorable cases" value={`${m.cases_with_valid_gold}/${m.cases_total}`} note="The rest have templated gold labels" />
             <Kpi label="Baseline accuracy" value={fmt(v1?.accuracy_valid_gold, 3)} note={`Reported ${fmt(m.reported_accuracy_mean, 3)} before scoring fixes`} />
-            <Kpi label="Median latency" value={`${fmt(v1?.e2e_latency_p50_s, 0)}–${fmt(v5?.e2e_latency_p50_s, 0)} s`} note="V1 to V5, end to end, benchmark model" />
+            <Kpi label="Median latency" value={`${fmt(v1?.e2e_latency_p50_s, 0)}–${fmt(v5?.e2e_latency_p50_s, 0)} s`} note="V1 to V5, summed agent-call time, benchmark model" />
           </div>
 
           <div className="cw-cols-32" style={{ marginTop: 14 }}>

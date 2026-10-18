@@ -44,6 +44,7 @@ REVIEW_CATEGORIES = ("correct", "acceptable", "incorrect")
 BACKFILLED_COLUMNS = ("uncertainty_jru", "llm_judge_score", "rubric_quality_score",
                       "risk_adjusted_quality", "governance_efficiency_factor", "hitl_minutes")
 SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "UNSPECIFIED"]
+SHARED_STEP_AGENTS = ("Research Agent", "Diagnosis Agent")
 
 
 def _recover(output: Any) -> Dict[str, Any]:
@@ -253,6 +254,11 @@ class RigorousAnalysis:
         df = df.sort_values("run_id").drop_duplicates(["case_id", "variant_id"], keep="last")
         e2e = self.steps.groupby("run_id")["latency_ms"].sum() / 1000.0
         df["e2e_latency_s"] = df["run_id"].map(e2e).fillna(df["reported_latency_s"])
+        # Model calls per run, and the latency of everything except the shared Research + Diagnosis steps
+        # (checks, attending review, revision, re-check, report): the governance-specific cost.
+        df["model_calls"] = df["run_id"].map(self.steps.groupby("run_id").size()).fillna(0)
+        gov = self.steps[~self.steps["agent_name"].isin(SHARED_STEP_AGENTS)]
+        df["governance_latency_s"] = df["run_id"].map(gov.groupby("run_id")["latency_ms"].sum() / 1000.0).fillna(0.0)
         return df.reset_index(drop=True)
 
     # ------------------------------------------------------------------ sections
@@ -341,6 +347,10 @@ class RigorousAnalysis:
                 "cost_mean_usd": _r(g["cost_usd"].mean(), 6),
                 "safety_alerts_total": int(g["safety_alerts"].fillna(0).sum()),
                 "hallucination_flags_total": int(g["hallucination_flag"].fillna(False).astype(bool).sum()),
+                "model_calls_mean": _r(g["model_calls"].mean(), 2),
+                "governance_latency_p50_s": _r(g["governance_latency_s"].median(), 1),
+                "unmappable_answer_rate": _r(g.loc[g["scoring_mode"] != SCORING_FREE_TEXT, "option_unparsed"].mean())
+                if (g["scoring_mode"] != SCORING_FREE_TEXT).any() else None,
                 "e2e_latency_p50_s": _r(g["e2e_latency_s"].median(), 1),
                 "e2e_latency_p95_s": _r(g["e2e_latency_s"].quantile(0.95), 1),
                 "hallucination_flag_rate": _r(g["hallucination_flag"].dropna().astype(float).mean()) if g["hallucination_flag"].notna().any() else None,

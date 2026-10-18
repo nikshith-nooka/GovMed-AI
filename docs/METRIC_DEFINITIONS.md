@@ -26,6 +26,7 @@ Precision, recall and F1 are not computed for diagnosis. In single-answer multip
 | Revision rate | share of closed-loop runs where `revision_applied` | |
 | Within-run fixed / broken | revised runs whose first answer was wrong→right / right→wrong; exact two-sided sign test | Confound-free revision effect |
 | Resampling stability | agreement of the chosen option, and correctness flips, between V1 and a regenerated first diagnosis | Run-to-run stability (one resample) |
+| No-option answer rate (`unmappable_answer_rate`) | share of answer-key runs whose answer maps to no single option (unparseable, empty or ambiguous); scored wrong | ↓. The project has no abstention mechanism; this is the closest analogue |
 | Diagnosis changed vs V1 | % of cases whose chosen option (answer key) or normalised text (free text) differs from V1 | Fixed in AUD-07 |
 | Parse-failure rate | per agent, failed / present | |
 | ECE / Brier | 10-bin ECE and Brier of the stated top-1 probability vs correctness (V1) | |
@@ -36,10 +37,10 @@ Precision, recall and F1 are not computed for diagnosis. In single-answer multip
 | Metric | Definition | Notes |
 |---|---|---|
 | Tokens per run | Σ (prompt + completion) over every step of the run, including the shared Research + Diagnosis steps once | Provider-reported usage. A chars/4 estimate is used only if the provider omits usage, and that is now logged |
-| Model calls | number of `agent_steps` rows for the run | See EXPERIMENT_PROTOCOL §1 |
+| Model calls (`model_calls_mean`) | number of `agent_steps` rows for the run, averaged per configuration | Paired MedQA: G0 2.0, G4 open 6.0, G4 closed 8.38. Tested by `test_model_calls_and_governance_latency_per_run` |
 | Summed call latency (`e2e_latency_s`) | Σ step `latency_ms` | Parallel checks are summed, so this is an **upper bound** on wall clock. Per-call latency now excludes rate-limit back-off (AUD-03) |
 | Wall-clock latency (`total_latency_ms`) | `run()` wall clock + cached upstream latency (runs after 2026-10-10) | Older rows omit the shared steps (V1 ≈ 0); do not use them |
-| Governance latency | `raw_outputs.timing.governance_ms`: wall clock of checks, attending, revision and re-check | New runs only |
+| Governance latency (`governance_latency_p50_s`) | median Σ latency of every step except Research + Diagnosis (checks, attending, revision, re-check, report) | Available for all stored runs. Paired MedQA: G0 0.0 s, G4 open 37.3 s, G4 closed 119.2 s. New runs also store wall-clock `raw_outputs.timing.governance_ms` |
 | Cost | tokens × an assumed price table (`UnifiedLLMClient.PRICING_TABLE`) | The NIM trial did not bill, so the cost is illustrative |
 | Overhead of X | metric(X) − metric(V1), paired by case | Recomputed from raw data. No negative token overhead exists |
 | HITL minutes | sampled N(2.5, 0.8) clipped to [0.5, 7] | **Simulated**: not evidence of human time |

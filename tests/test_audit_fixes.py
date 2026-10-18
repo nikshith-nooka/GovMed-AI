@@ -170,3 +170,19 @@ def test_every_number_in_both_manuscripts_is_backed_by_a_report():
     for tex in ("paper/main.tex", "paper/main_ncrtht2026.tex"):
         if Path(tex).exists():
             assert check_numbers(["--tex", tex]) == 0, f"{tex} has numbers not found in the reports"
+
+
+def test_model_calls_and_governance_latency_per_run(tmp_path):
+    case = {"id": "medqa_z", "question": "q", "options": {"A": "Gout", "B": "Lupus"}, "answer": "A", "answer_idx": "A"}
+    cases_path = tmp_path / "cases.json"
+    cases_path.write_text(json.dumps([case]))
+    db = BenchmarkDB(str(tmp_path / "d.db"))
+    pipeline = ClinicalGovernancePipeline(StubClient())
+    for variant in ("baseline", "verifier", "full_governance"):
+        db.log_run(ClinicalEvaluationScorer().score_run(pipeline.run(dict(case), variant, include_report=False), case))
+    runs = RigorousAnalysis(str(tmp_path / "d.db"), str(cases_path), reference_db_path=None).runs.set_index("variant_id")
+    # Hand count: G0 = research + diagnosis; G1 adds the verifier; G4 adds consistency, verifier, safety, attending.
+    assert runs.loc["V1", "model_calls"] == 2 and runs.loc["V2", "model_calls"] == 3 and runs.loc["V5", "model_calls"] == 6
+    # Every stub call takes 7 ms, so governance latency = 7 ms x non-shared calls.
+    assert runs.loc["V1", "governance_latency_s"] == 0.0
+    assert abs(runs.loc["V5", "governance_latency_s"] - 4 * 0.007) < 1e-9

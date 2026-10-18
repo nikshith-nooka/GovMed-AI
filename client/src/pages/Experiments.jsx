@@ -9,7 +9,7 @@ const ENGINES = [['groq', 'Groq · GPT-OSS-120B'], ['nvidia', 'NVIDIA · Llama-3
 const PAGE = 25;
 
 function toCsv(rows) {
-  const cols = ['case_id', 'dataset', 'governance', 'model', 'gold_diagnosis', 'gold_valid', 'primary_diagnosis', 'accuracy',
+  const cols = ['case_id', 'dataset', 'governance', 'model', 'gold_diagnosis', 'gold_valid', 'primary_diagnosis', 'accuracy', 'answer_unmappable', 'scoring_mode',
     'alerts', 'high_alerts', 'hallucination_flagged', 'revision_applied', 'initial_diagnosis', 'latency_s', 'tokens', 'cost_usd'];
   const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
   return [cols.join(','), ...rows.map((r) => cols.map((c) => esc(r[c])).join(','))].join('\n');
@@ -18,8 +18,8 @@ function toCsv(rows) {
 function summarize(rows) {
   const by = {};
   rows.forEach((r) => {
-    const s = (by[r.governance] ||= { governance: r.governance, n: 0, scored: 0, acc: 0, latency: 0, cost: 0, alerts: 0, revised: 0 });
-    s.n += 1; s.latency += r.latency_s; s.cost += r.cost_usd; s.alerts += r.alerts; s.revised += r.revision_applied ? 1 : 0;
+    const s = (by[r.governance] ||= { governance: r.governance, n: 0, scored: 0, acc: 0, latency: 0, cost: 0, alerts: 0, revised: 0, unmappable: 0 });
+    s.n += 1; s.unmappable += r.answer_unmappable ? 1 : 0; s.latency += r.latency_s; s.cost += r.cost_usd; s.alerts += r.alerts; s.revised += r.revision_applied ? 1 : 0;
     if (r.accuracy != null) { s.scored += 1; s.acc += r.accuracy; }
   });
   return Object.values(by).map((s) => ({ ...s, acc: s.scored ? s.acc / s.scored : null, latency: s.latency / s.n }));
@@ -167,7 +167,7 @@ export default function Experiments({ cases = [] }) {
                 <table className="cw-table">
                   <thead><tr><th>Level</th><th>Runs</th><th>Accuracy (scored)</th><th>Mean latency (s)</th><th>Alerts</th><th>Revised</th><th>Cost (USD)</th></tr></thead>
                   <tbody>{summarize(results).map((s) => (
-                    <tr key={s.governance}><td>{s.governance}</td><td className="cw-num">{s.n}</td><td className="cw-num">{fmt(s.acc)} ({s.scored})</td><td className="cw-num">{fmt(s.latency, 1)}</td><td className="cw-num">{s.alerts}</td><td className="cw-num">{s.revised}</td><td className="cw-num">{fmt(s.cost, 5)}</td></tr>
+                    <tr key={s.governance}><td>{s.governance}</td><td className="cw-num">{s.n}</td><td className="cw-num">{fmt(s.acc)} ({s.scored}{s.unmappable ? `, ${s.unmappable} no option` : ''})</td><td className="cw-num">{fmt(s.latency, 1)}</td><td className="cw-num">{s.alerts}</td><td className="cw-num">{s.revised}</td><td className="cw-num">{fmt(s.cost, 5)}</td></tr>
                   ))}</tbody>
                 </table>
               </div>
@@ -184,7 +184,7 @@ export default function Experiments({ cases = [] }) {
                       <td>{r.case_id}</td><td>{r.governance.split(' ')[0]}</td>
                       <td>{r.gold_valid ? r.gold_diagnosis : <span className="cw-muted">not scorable</span>}</td>
                       <td>{r.primary_diagnosis || <span className="cw-muted">unreadable</span>}{r.revision_applied && r.initial_diagnosis !== r.primary_diagnosis && <div className="cw-muted">was: {r.initial_diagnosis}</div>}</td>
-                      <td className="cw-num">{fmt(r.accuracy, 2)}</td><td className="cw-num">{r.alerts} ({r.high_alerts} high)</td>
+                      <td className="cw-num">{fmt(r.accuracy, 2)}{r.answer_unmappable && <div className="cw-muted">no option chosen</div>}</td><td className="cw-num">{r.alerts} ({r.high_alerts} high)</td>
                       <td>{r.revision_applied ? 'yes' : 'no'}</td><td className="cw-num">{fmt(r.latency_s, 1)}</td>
                     </tr>
                   ))}</tbody>
@@ -204,7 +204,7 @@ export default function Experiments({ cases = [] }) {
               <thead><tr><th>Case</th><th>Variant</th><th>Model</th><th>AI diagnosis</th><th>Accuracy</th><th>Safety alerts</th><th>Revised</th><th>When</th></tr></thead>
               <tbody>{history.data.runs.map((r) => (
                 <tr key={r.id}><td>{r.case_id}</td><td>{r.variant_id}</td><td>{r.provider} / {r.model}</td><td>{r.primary_diagnosis}</td>
-                  <td className="cw-num">{r.gold_label_valid ? fmt(r.diagnostic_accuracy_score, 2) : '—'}</td><td className="cw-num">{r.safety_violations_detected}</td>
+                  <td className="cw-num">{r.gold_label_valid ? fmt(r.diagnostic_accuracy_score, 2) : '—'}{['unparseable', 'empty', 'ambiguous'].includes(r.option_parse_status) && <div className="cw-muted">no option chosen</div>}</td><td className="cw-num">{r.safety_violations_detected}</td>
                   <td>{r.revision_applied ? 'yes' : 'no'}</td><td className="cw-muted">{new Date(r.timestamp * 1000).toLocaleString()}</td></tr>
               ))}</tbody>
             </table>
@@ -218,7 +218,7 @@ export default function Experiments({ cases = [] }) {
           <div style={{ display: 'flex', gap: 8 }}>
             <input className="cw-input" style={{ width: 200 }} placeholder="Filter this page…" value={search} onChange={(e) => setSearch(e.target.value)} aria-label="Filter stored runs" />
             <select className="cw-select" style={{ width: 120 }} value={variant} onChange={(e) => { setVariant(e.target.value); setOffset(0); }} aria-label="Variant">
-              {['All', 'V1', 'V2', 'V3', 'V4', 'V5'].map((v) => <option key={v}>{v}</option>)}
+              {['All', 'V1', 'V2', 'V3', 'V4', 'V5', 'V2-CL', 'V3-CL', 'V4-CL', 'V5-CL'].map((v) => <option key={v}>{v}</option>)}
             </select>
           </div>
         </div>
@@ -230,7 +230,7 @@ export default function Experiments({ cases = [] }) {
               <tr key={r.id}>
                 <td>{r.case_id}</td><td>{r.dataset}</td><td>{r.variant_id}</td><td>{r.primary_diagnosis || <span className="cw-muted">unreadable</span>}</td>
                 <td>{r.gold_valid ? r.gold_diagnosis : <span className="cw-muted">not scorable</span>}</td>
-                <td className="cw-num">{fmt(r.measured_accuracy, 2)}</td><td className="cw-num">{r.safety_alerts ?? '—'}</td>
+                <td className="cw-num">{fmt(r.measured_accuracy, 2)}{r.answer_unmappable && <div className="cw-muted">no option chosen</div>}</td><td className="cw-num">{r.safety_alerts ?? '—'}</td>
                 <td>{r.hallucination_flagged == null ? '—' : r.hallucination_flagged ? 'yes' : 'no'}</td><td className="cw-num">{r.total_tokens}</td>
               </tr>
             ))}</tbody>

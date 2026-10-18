@@ -53,3 +53,12 @@ before and after the changes. Only derived artefacts were regenerated: the repor
 paired MedQA experiment and framed for under-resourced care. All 86 numbers match the reports. The test
 `test_every_number_in_both_manuscripts_is_backed_by_a_report` checks both manuscripts. Compiled PDF:
 `paper_out/NCRTHT2026_submission.pdf`. `.gitignore` now excludes `paper/*.pdf` build output.
+
+## 2026-10-18 — second master-prompt pass (open items only)
+
+| Item | Change | Verified by |
+|---|---|---|
+| AUD-09 | API returns `answer_unmappable`, `scoring_mode`, `option_parse_status`; Experiments page and CSV mark "no option chosen"; summary counts them. Still scored wrong, per protocol | build, browser, curl |
+| AUD-25 | `/api/stats`: accuracy from the re-scored report (38.0% instead of stored 74.0%) with `accuracy_source`; latency = summed agent steps; verification rate only over verifier variants. Dashboard/Results null guards; stale "end to end" and "5 variants" and "open loop" texts corrected; variant filter lists -CL configurations | curl, browser |
+| Metrics | `rigor.variant_summary` adds `model_calls_mean`, `governance_latency_p50_s`, `unmappable_answer_rate` | `test_model_calls_and_governance_latency_per_run` (hand-counted) |
+| Figures | `paper/figures/tradeoff.pdf`: accuracy vs tokens and vs latency with Wilson 95% intervals, from the paired report; added to both manuscripts | `check_paper_numbers` 169/169 and 87/87 |

@@ -220,7 +220,16 @@ cannot be expected to help: the model is told to reconsider right and wrong answ
 \subsection{Cost}
 Governance multiplied cost. Mean tokens per question rose from 2200.9 (G0) to 7570.4 (G4 open) and 11362.7 (G4
 closed), and median summed latency from 21.2\,s to 142.5\,s. At an assumed price, cost per question rose from % numcheck:ignore
-\$0.000288 to \$0.001408. In low-resource deployments this overhead buys no accuracy.
+\$0.000288 to \$0.001408. Fig.~\ref{fig:tradeoff} shows that no configuration buys accuracy with this overhead,
+which matters most in low-resource deployments.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/tradeoff.pdf}
+\caption{Accuracy against cost (left) and median summed latency (right), with 95\% Wilson intervals. Dashed: G0.
+Grey: open loop; blue: closed loop (CL).}
+\label{fig:tradeoff}
+\end{figure}
 
 \subsection{Evaluation shortcuts create false gains}
 Two shortcuts would have reversed our conclusions. First, in an earlier 150-case evaluation (Table~\ref{tab:audit}),
