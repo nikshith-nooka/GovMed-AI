@@ -2,6 +2,12 @@
 
 Date: 2026-10-18 · Branch `paper/final-refinement`, created from `analysis/holm-scope-wording` (`8f7fb2f`), which
 already contains the Holm-scope wording in the rigor reports. **Nothing is committed or pushed.**
+
+> **Status update (2026-10-18, repository audit):** this work was later committed as `21b353d` on the local
+> `paper/final-refinement` branch and pushed as the patch-identical `6d38bb9` (`nikshith/paper/final-refinement`),
+> which is an ancestor of `main` (`2ff62d6`). The documents moved to `docs/audit/` in `2ff62d6`. A PDF compiled from
+> the `2ff62d6` source has the same 4 pages, US Letter size and extracted text as `paper_out/NCRTHT2026_submission.pdf`.
+> The author questions in §7 are still open, except that a `LICENSE` file (MIT) now exists (Q6, second part).
 Source: `paper/main_ncrtht2026.tex` · PDF: `paper_out/NCRTHT2026_submission.pdf` (a copy of
 `paper/main_ncrtht2026.pdf`) · Previous PDF: `paper_out/NCRTHT2026_submission_prev_2026-10-18.pdf`
 
@@ -123,7 +129,7 @@ these three docs.
   another session).
 - **Untracked user folders left untouched:** `Conference-LaTeX-template_10-17-19/` and `Word-Letter-A4/`.
 - The PDF is git-ignored (`paper_out/`), so "PDF matches committed source" can only be confirmed once the source is
-  committed. The PDF was built from the working-tree source above.
+  committed. The PDF was built from the working-tree source above. (Since confirmed against the committed source; see the status update at the top.)
 
 ## 7. Questions for the author
 

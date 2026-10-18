@@ -13,7 +13,7 @@ function memoryStorage() {
     removeItem: (k) => m.delete(k), clear: () => m.clear() };
 }
 
-describe('Reports & Exports', () => {
+describe('Reports & Reproducibility', () => {
   let calls;
   beforeEach(() => {
     const storage = memoryStorage();

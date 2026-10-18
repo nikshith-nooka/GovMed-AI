@@ -1,5 +1,8 @@
 # Test Report — 2026-10-10
 
+> **Provenance:** results of the 2026-10-10 audit, last revised in `a7c1c04` (branch `audit/2026-10-10`). Counts and page
+> lists describe that commit; the current ones are in `FINAL_TEST_REPORT.md`.
+
 Every result below was observed in this session on macOS (Darwin 25.6), Python 3.11 (`.venv`) and Node via `npx`.
 
 ## 1. Checks run

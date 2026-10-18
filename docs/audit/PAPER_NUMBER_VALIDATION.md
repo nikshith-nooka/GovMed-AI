@@ -1,5 +1,8 @@
 # Paper Number Validation — NCRTHT 2026 version
 
+> **Provenance:** produced on `paper/final-refinement` and committed as `6d38bb9`. Re-run on `main` at `2ff62d6` in the
+> repository audit with the same results (96/96 decimals, 137/138 integers with 1,273 backed by the meta file).
+
 Date: 2026-10-18 · Branch: `paper/final-refinement` (from `analysis/holm-scope-wording` @ `8f7fb2f`)
 Source: `paper/main_ncrtht2026.tex` · Raw data: `results/medqa_paired.db` (paired study), `results/medqa_fast.db`
 (earlier unpaired pass), `results/benchmark_results.db` (earlier 150-case evaluation).

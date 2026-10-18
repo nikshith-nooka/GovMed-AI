@@ -46,17 +46,21 @@ benchmark, not a copy of any Apple product. Capabilities are preserved, and ever
 
 ## App shell
 
-- **Sidebar**, grouped by workflow:
-  - **Research:** Dashboard, Benchmark Results, Research Findings, Governance Pipeline.
-  - **Data:** Case Library, Experiments, Reports & Exports.
+- **Sidebar**, grouped by workflow (eight pages, current since pass 3):
+  - **Research:** Overview, Benchmark Results, Agent Pipeline.
+  - **Data:** Case Library, Experiments, Reports & Reproducibility.
   - **Clinical:** Clinician Workspace, Clinician Review.
-  - The active item uses `aria-current="page"`.
+  - Page titles match the sidebar labels. The active item uses `aria-current="page"`.
+  - Research Findings is no longer a page: it is the **Findings & validity** tab of Benchmark Results, and `/findings`
+    redirects to `/results?tab=findings`.
 - **Top bar:**
   - case search (⌘K) and a labelled **experiment picker**;
   - theme, API token and review-queue buttons;
   - at phone width, secondary controls step back so the picker and theme toggle stay.
 
-## Pages
+## Pages (passes 1–2)
+
+This table records the first two passes. The current eight-page inventory is the route table under Pass 3.
 
 | Route | Page | What changed |
 |---|---|---|
@@ -99,7 +103,7 @@ benchmark, not a copy of any Apple product. Capabilities are preserved, and ever
 | `/pipeline` | Agent Pipeline (was "Governance Pipeline") | Kept, rebuilt | Interactive pipeline diagram replaces the row of agent tiles |
 | `/clinical-cases` | Case Library | Kept | Unchanged |
 | `/experiments` | Experiments | Kept | Unchanged; the only way to run new scored cases |
-| `/reports` | Reports & Reproducibility (was "Reports & Exports") | Kept | Renamed for its content |
+| `/reports` | Reports & Reproducibility (was "Reports & Exports") | Kept | Renamed for its content (the page heading was aligned with the sidebar in the 2026-10-18 repository audit) |
 | `/clinician` | Clinician Workspace | Kept | Live analysis workflow |
 | `/review` | Clinician Review | Kept | Functional blinded-review workflow; the study's missing clinician validation depends on it |
 
@@ -147,3 +151,10 @@ The neutral grey for the open loop deliberately reads as grey. It always comes w
 - **`index.css`:** pruned from 3,347 to 775 lines (366 rules dropped). A rule was dropped only if every class in it appears nowhere in the app source, allowing for the `pill-*` and `sev-*` classes that are built dynamically.
 - **Built CSS:** 29.7 kB.
 - **Code:** Research Findings became `FindingsPanel.jsx`, with its duplicated tables removed.
+
+## Repository audit (2026-10-18)
+
+- The revision-impact chart, its tooltip, table header and note now say that the sign-test p is **unadjusted**, as the
+  paper does. The report holds no Holm value for these four tests.
+- Page headings now match the sidebar labels: "Case Library" and "Reports & Reproducibility". The error fallback
+  button reads "Return to Overview".

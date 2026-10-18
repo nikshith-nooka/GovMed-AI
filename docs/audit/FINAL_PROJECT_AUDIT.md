@@ -1,5 +1,9 @@
 # Final Project Audit — 2026-10-18
 
+> **Provenance:** produced on `ui/apple-design` and committed as `07e31de` (pass 2) and `0d9152b` (pass 3); both are
+> ancestors of `main` (`2ff62d6`). Its "86/86" refers to the 4-page paper before the `6d38bb9` revision, which now
+> checks 96/96. Current results: `FINAL_REPOSITORY_AUDIT.md`.
+
 Branch `ui/apple-design` (based on `audit/2026-10-10` at `54e4ec9`, plus the earlier UI commit `850c933`). Nothing is
 committed, merged or pushed by this pass. Earlier findings (AUD-01…AUD-26) are in `PROJECT_AUDIT.md`. This file records
 what this pass found and changed.

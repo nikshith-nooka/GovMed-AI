@@ -67,7 +67,7 @@ class ErrorBoundary extends React.Component {
         <div className="card" style={{ padding: '30px', margin: '20px', textAlign: 'center' }}>
           <h3 style={{ color: 'var(--error)', marginBottom: '10px' }}>This page hit an error</h3>
           <p style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{this.state.error?.message || 'An unexpected rendering error occurred.'}</p>
-          <button className="btn btn-primary" onClick={() => { window.location.href = '/'; }}>Return to Dashboard</button>
+          <button className="btn btn-primary" onClick={() => { window.location.href = '/'; }}>Return to Overview</button>
         </div>
       );
     }
