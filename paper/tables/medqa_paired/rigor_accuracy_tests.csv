@@ -1,0 +1,6 @@
+comparison,n_pairs,only_v1_correct,only_variant_correct,accuracy_diff,accuracy_diff_ci95_low,accuracy_diff_ci95_high,cohens_h,mcnemar_exact_p,mcnemar_exact_p_holm
+V2-CL - V1,300,24,15,-0.03,-0.07,0.01,-0.061,0.199591,1.0
+V3-CL - V1,300,8,13,0.0167,-0.0133,0.0467,0.034,0.38331,1.0
+V4-CL - V1,300,21,13,-0.0267,-0.0667,0.0133,-0.054,0.229481,1.0
+V5 - V1,300,0,0,0.0,0.0,0.0,0.0,1.0,1.0
+V5-CL - V1,300,39,22,-0.0567,-0.1067,-0.0067,-0.116,0.039617,0.554638

@@ -16,7 +16,8 @@ from matplotlib.patches import FancyBboxPatch  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT = ROOT / "results" / "rigor_report.json"
-MEDQA_REPORT = ROOT / "results" / "rigor_report_medqa.json"
+# Paired rerun: closed-loop runs reuse the open-loop diagnosis (the earlier pass regenerated it).
+MEDQA_REPORT = ROOT / "results" / "rigor_report_medqa_paired.json"
 OUT = ROOT / "paper" / "figures"
 
 plt.rcParams.update({

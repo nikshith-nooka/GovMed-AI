@@ -1,5 +1,5 @@
 {
-  "generated_at": 1791606192.3785212,
+  "generated_at": 1792315396.822078,
   "db_path": "results/medqa_fast.db",
   "n_runs_analyzed": 1800,
   "n_cases": 300,
@@ -583,7 +583,7 @@
       "accuracy_closed": 0.43,
       "only_closed_correct": 42,
       "only_open_correct": 42,
-      "first_diagnosis_differs": 79,
+      "first_diagnosis_differs": 76,
       "revision_rate": 0.78,
       "accuracy_diff": 0.0,
       "accuracy_diff_ci95_low": -0.06,
@@ -633,7 +633,7 @@
     {
       "resample": "V2-CL first diagnosis vs V1",
       "n_pairs": 293,
-      "answer_agreement": 0.7884,
+      "answer_agreement": 0.7952,
       "accuracy_v1": 0.4266,
       "accuracy_resample": 0.4369,
       "correctness_flips": 41,
@@ -642,7 +642,7 @@
     {
       "resample": "V3-CL first diagnosis vs V1",
       "n_pairs": 293,
-      "answer_agreement": 0.7884,
+      "answer_agreement": 0.7952,
       "accuracy_v1": 0.4266,
       "accuracy_resample": 0.4369,
       "correctness_flips": 41,
@@ -651,7 +651,7 @@
     {
       "resample": "V4-CL first diagnosis vs V1",
       "n_pairs": 293,
-      "answer_agreement": 0.7884,
+      "answer_agreement": 0.7952,
       "accuracy_v1": 0.4266,
       "accuracy_resample": 0.4369,
       "correctness_flips": 41,
@@ -660,7 +660,7 @@
     {
       "resample": "V5-CL first diagnosis vs V1",
       "n_pairs": 299,
-      "answer_agreement": 0.7358,
+      "answer_agreement": 0.7458,
       "accuracy_v1": 0.4314,
       "accuracy_resample": 0.4181,
       "correctness_flips": 48,
@@ -1229,8 +1229,8 @@
     "Open-loop governance changed the primary diagnosis in at most 0.0% of cases: the layers annotate but do not alter the decision. Open-loop variants are meant to reuse the baseline's diagnosis, so 0% is expected by design.",
     "No governed variant differs from baseline in diagnostic accuracy (paired Wilcoxon, all p >= 0.05).",
     "Exact McNemar on binary correctness vs V1: 0 of 5 comparisons significant after Holm-Bonferroni over 30 paired tests (smallest raw p 0.211609); accuracy differences range -0.0133 to 0.0333.",
-    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43 (exact McNemar p=1.0, Holm 1.0). Within its own runs, revision fixed 36 and broke 33 answers; the first diagnosis was regenerated and differed from the open-loop answer in 79 cases, so between-pass differences mix revision with resampling.",
-    "Run-to-run stability: regenerating the same diagnosis gave the same answer in 0.7358-0.7884 of cases and flipped correctness in 41-48 of 293; governance effects smaller than this sampling noise cannot be attributed to governance from between-pass comparisons.",
+    "Closed vs open loop (V5-CL - V5, n=300): accuracy 0.43 -> 0.43 (exact McNemar p=1.0, Holm 1.0). Within its own runs, revision fixed 36 and broke 33 answers. The first diagnosis was regenerated and differed from the open-loop answer in 76 cases, so between-pass differences mix revision with resampling.",
+    "Run-to-run stability: regenerating the same diagnosis gave the same answer in 0.7458-0.7952 of cases and flipped correctness in 41-48 of 293; governance effects smaller than this sampling noise cannot be attributed to governance from between-pass comparisons.",
     "88-102% of each governed variant's reported quality drop comes from penalizing its own detectors: the 'Audit Paradox' is a scoring artifact.",
     "No governance signal detects misdiagnosis meaningfully better than chance: AUROCs range 0.497-0.555 (0.5 = chance).",
     "The safety validator raised at least one alert on 100% of runs, so alert presence carries no information about whether the diagnosis is wrong.",

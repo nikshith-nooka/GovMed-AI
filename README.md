@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-172%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-173%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -102,7 +102,7 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 | Why do governed variants score lower on quality? | 94–96% of the drop comes from the rubric penalising each variant's own detectors; the ungoverned baseline has none to be penalised by. |
 | Do the alerts identify wrong diagnoses? | Not yet: the safety validator raises at least one alert on every run, and each governance signal detects misdiagnosis at AUROC 0.40–0.56 (0.5 is chance). |
 | How accurate is the pipeline? | 0.29 overall and 0.38 on the 71 cases with a real diagnosis label, after correcting a substring-matching scorer that reported 0.74. |
-| Does closing the loop help? | Not overall. On 300 MedQA questions with the answer key, accuracy was 43.0% with no checks, with checks as warnings, and with checks feeding back a revision; revisions fixed 36 answers and broke 33. Only attending-simulator feedback showed a small, non-significant gain (46.3%, p = 0.21). |
+| Does closing the loop help? | No. On 300 MedQA questions with the answer key, each closed-loop run starting from the baseline's own diagnosis: 43.0% with no checks, 43.0% with checks as warnings, 37.3% with all checks feeding back a revision (revisions fixed 21, broke 39; sign test p = 0.027, McNemar p = 0.040, not significant after Holm). No single check helped significantly; the attending simulator came closest (44.7%, p = 0.38). |
 | Is the study powered? | No: variants disagree with the baseline on 1–2 of 71 cases (exact McNemar p ≥ 0.5, 1.0 after Holm correction). A 5-point difference needs 312–940 paired cases, which is why a 300-question MedQA benchmark with its answer key is included. |
 | Is the model's stated confidence reliable? | No: expected calibration error is 0.29. The interface presents likelihoods as a ranking, not a probability. |
 | What does governance cost? | Median summed agent-call latency (parallel checks counted serially) rises from 45 s (G0) to 111 s (G4) on the benchmark model; tokens rise from about 3,100 to 8,400 per case. |
@@ -112,8 +112,10 @@ Regenerate with `uv run govbench-rigor`; the full report is available in the app
 > `governance_efficiency_factor`, `hitl_minutes`) were populated by a post-hoc script rather than measured. The analysis
 > detects and excludes them. The original run database is kept as `results/benchmark_results.db.bak`.
 
-The closed-loop results (1,800 runs, `results/rigor_report_medqa.json`) come from Llama-3.2-11B on 300 MedQA-USMLE
-questions scored against the original answer key.
+The closed-loop results (`results/rigor_report_medqa_paired.json`, database `results/medqa_paired.db`) come from
+Llama-3.2-11B on 300 MedQA-USMLE questions scored against the original answer key. Every closed-loop run starts from
+the baseline run's stored diagnosis. An earlier unpaired pass (`results/medqa_fast.db`) regenerated that diagnosis;
+it is kept only to measure the resulting confound (see `docs/EXPERIMENT_PROTOCOL.md`).
 
 These are negative and methodological findings: under open-loop governance and lenient automatic scoring, apparent
 safety and quality effects come largely from the evaluation itself, and feeding the checks back into the diagnosis does
@@ -232,7 +234,7 @@ scripts/           benchmark runner, re-analysis, load test, figures and exports
 benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-item clinician protocol
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
-tests/             172 unit and integration tests, including a prompt-injection set
+tests/             173 unit and integration tests, including a prompt-injection set
 ```
 
 ---

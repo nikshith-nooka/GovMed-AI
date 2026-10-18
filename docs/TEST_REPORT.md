@@ -6,7 +6,7 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 
 | Check | Command | Before audit | After audit |
 |---|---|---|---|
-| Unit + integration tests | `uv run pytest -q` | 164 passed | **172 passed**, 0 failed (3 third-party deprecation warnings) |
+| Unit + integration tests | `uv run pytest -q` | 164 passed | **173 passed**, 0 failed (3 third-party deprecation warnings) |
 | Python lint (defects) | `uv run ruff check src scripts tests --select F,E9` | 11 | 1 (`F841` in the withdrawn `scripts/backfill_metrics.py`) |
 | Python lint (all rules) | `uv run ruff check src scripts tests` | 570 | 563 (the rest are `UP*` annotation style, left alone) |
 | Formatter | `uv run ruff format --check` | 33 files would change | not applied |
@@ -14,7 +14,7 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 | Client lint | `cd client && npm run lint` | hundreds of warnings from `dist/` | 0 errors; warnings only (unused imports, `set-state-in-effect`) |
 | Client build | `cd client && npm run build` | built | **built** |
 | Client type check | — | JavaScript project, no TypeScript | n/a |
-| Paper numbers | `uv run python -m scripts.check_paper_numbers` | 156/156 | **157/157** |
+| Paper numbers | `uv run python -m scripts.check_paper_numbers` | 156/156 | **168/168** (after the paired-rerun paper update) |
 | Analysis pipeline | `govbench-rigor`, MedQA `run_rigor_analysis` | crashed on table export (missing `jinja2`) | **writes JSON + tables** |
 | Server smoke test | `uvicorn src.api.server:app --port 8765` + curl | — | `/api/health` 200, `/` 200, `/api/research/findings` 200, `/api/runs?variant=V1` returns V1 only, `/api/nope` 404 |
 | Raw data integrity | MD5 of `medqa_fast.db`, `benchmark_results.db` before and after | — | **unchanged** |
@@ -34,7 +34,7 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 | 9 | Errors and incomplete runs | `test_hardening.py` (strict mode, no mock fallback); **new** `test_unparseable_verifier_is_missing_not_negative` |
 | 10 | DB persistence | `test_integrity.py`; **new** `test_closed_loop_pass_reuses_stored_open_loop_diagnosis` |
 | 11 | API integration | `test_hardening.py` (auth, PHI, jobs); **new** 404 test; manual smoke test |
-| 12 | Reproducibility | deterministic bootstrap seeds; report regeneration matches the paper (157/157) |
+| 12 | Reproducibility | deterministic bootstrap seeds; report regeneration matches the paper (168/168) |
 | 13 | Frontend rendering | **not covered**: no frontend test framework (AUD-26) |
 | 14 | Report / CSV / JSON export | `test_integrity.py` (report shape); tables regenerated |
 | 15 | E2E, one case per level | `test_ground_truth_never_reaches_any_agent` runs every level end to end with a stub model. **No live-model E2E was run.** |
@@ -42,7 +42,8 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 All tests use deterministic stub models. There are no real-model tests in the suite.
 
 ## 3. Not verified
-- No live model call was made in this session, and no new experiment runs were produced.
+- Live runs: the 1,200-run paired closed-loop rerun (2026-10-11 to 2026-10-18) used the NVIDIA NIM API. No live-model
+  test is part of the automated suite.
 - Frontend behaviour beyond build and lint (no browser test).
 - Type checking (no checker configured).
 

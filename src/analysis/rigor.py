@@ -444,7 +444,8 @@ class RigorousAnalysis:
             o = opened.loc[r["case_id"]]
             free = scored["scoring_mode"] == SCORING_FREE_TEXT
             rows.append({"case_id": r["case_id"],
-                         "open_answer": o["primary_norm"] if free else (o["option_choice"] or ""),
+                         # No mappable option is stored as NaN; NaN is truthy, so `or ""` would not catch it.
+                         "open_answer": o["primary_norm"] if free else ("" if pd.isna(o["option_choice"]) else o["option_choice"]),
                          "first_answer": " ".join(first.lower().split()) if free else (scored["choice"] or ""),
                          "open_correct": bool(o["correct"]), "first_correct": scored["score"] >= CORRECT_THRESHOLD})
         return pd.DataFrame(rows)
@@ -811,10 +812,12 @@ class RigorousAnalysis:
             f.append(f"Closed vs open loop ({t['comparison']}, n={t['n_pairs']}): accuracy {t['accuracy_open']} -> "
                      f"{t['accuracy_closed']} (exact McNemar p={t['mcnemar_exact_p']}, Holm {t['mcnemar_exact_p_holm']}). "
                      f"Within its own runs, revision fixed {t.get('within_run_fixed')} and broke "
-                     f"{t.get('within_run_broken')} answers; the first diagnosis was regenerated and differed from the "
-                     f"open-loop answer in {t['first_diagnosis_differs']} cases, so between-pass differences mix "
-                     "revision with resampling.")
-        rs = rep.get("resampling_stability") or []
+                     f"{t.get('within_run_broken')} answers. "
+                     + ("Both passes started from the same first diagnosis, so the comparison is paired."
+                        if not t["first_diagnosis_differs"] else
+                        f"The first diagnosis was regenerated and differed from the open-loop answer in "
+                        f"{t['first_diagnosis_differs']} cases, so between-pass differences mix revision with resampling."))
+        rs = [r for r in rep.get("resampling_stability") or [] if r["answer_agreement"] < 1.0]
         if rs:
             f.append(f"Run-to-run stability: regenerating the same diagnosis gave the same answer in "
                      f"{min(r['answer_agreement'] for r in rs)}-{max(r['answer_agreement'] for r in rs)} of cases and "

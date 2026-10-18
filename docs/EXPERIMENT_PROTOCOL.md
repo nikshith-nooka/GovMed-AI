@@ -71,20 +71,31 @@ governance. In the stored MedQA experiment the closed-loop pass regenerated them
 | X-CL vs V1, V5-CL vs V5 (McNemar) | Confounded: includes resampling noise |
 
 The size of that noise is measured from the same data (`resampling_stability`). The regenerated first diagnosis
-agreed with V1's option in 78.8% (V2–V4-CL, n = 293) and 73.6% (V5-CL, n = 299) of cases. Correctness flipped in 41 and
+agreed with V1's option in 79.5% (V2–V4-CL, n = 293) and 74.6% (V5-CL, n = 299) of cases. Correctness flipped in 41 and
 48 cases, and accuracy moved by +1.0 and −1.3 points, from resampling alone (McNemar p = 0.76 and 0.67).
 
-Within-run revision outcomes (MedQA, Llama-3.2-11B; exploratory):
+**Paired rerun (2026-10-18).** The closed-loop pass was rerun into a copy of the database with the old `-CL` rows
+removed (`results/medqa_paired.db`). The runner reused each case's stored V1 Research + Diagnosis, so all 1,200
+closed-loop runs started from V1's exact diagnosis (verified: 1,200/1,200, option agreement 100%). 3 runs timed out at
+the provider and were retried successfully, leaving none missing. Results (`results/rigor_report_medqa_paired.json`,
+MedQA, Llama-3.2-11B; exploratory):
 
-| Variant | Revision rate | Fixed | Broken | Sign test p |
-|---|---|---|---|---|
-| V2-CL verifier | 35.7% | 15 | 15 | 1.0 |
-| V3-CL attending | 33.0% | 14 | 6 | 0.115 |
-| V4-CL safety | 31.3% | 11 | 16 | 0.442 |
-| V5-CL all | 78.0% | 36 | 33 | 0.810 |
+| Configuration | Accuracy | vs V1 (McNemar p) | Revision rate | Fixed / broken | Sign test p | Tokens | p50 summed latency (s) |
+|---|---|---|---|---|---|---|---|
+| V1 (G0) | 43.0% | — | — | — | — | 2,201 | 21.2 |
+| V5 (G4 open) | 43.0% | 1.0 | — | — | — | 7,570 | 60.7 |
+| V2-CL verifier | 40.0% | 0.20 | 36.3% | 15 / 24 | 0.20 | 4,818 | 52.8 |
+| V3-CL attending | 44.7% | 0.38 | 34.7% | 13 / 8 | 0.38 | 4,153 | 41.8 |
+| V4-CL safety | 40.3% | 0.23 | 31.3% | 12 / 21 | 0.16 | 4,479 | 43.5 |
+| V5-CL all | 37.3% | 0.040 | 79.3% | 21 / 39 | 0.027 | 11,363 | 142.5 |
 
-The runner now reuses stored upstream outputs (`load_shared_upstream`), so a rerun of the closed-loop pass into the
-same database removes the confound.
+G4 closed vs G4 open: −5.7 points, 95% CI −10.7 to −0.7. None of the accuracy comparisons is significant
+after Holm–Bonferroni over the report's family of 30 paired tests (smallest adjusted p for accuracy: 0.55); the token
+and latency increases are. The closed-loop runs were
+made on different days from V1/V5, so latency differences also reflect provider load.
+
+For reference, the earlier unpaired pass gave V3-CL 46.3% and V5-CL 43.0%. Part of the apparent attending gain came
+from resampling.
 
 ## 6. Statistics
 

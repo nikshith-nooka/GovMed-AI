@@ -107,7 +107,7 @@ def check(tex: str, report: Any, integers: bool = False) -> List[Tuple[int, str,
 def main(argv: Optional[List[str]] = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--tex", default="paper/main.tex")
-    parser.add_argument("--report", default="results/rigor_report.json,results/rigor_report_medqa.json",
+    parser.add_argument("--report", default="results/rigor_report.json,results/rigor_report_medqa.json,results/rigor_report_medqa_paired.json",
                         help="Comma-separated report files; a number may come from any of them")
     parser.add_argument("--integers", action="store_true", help="Also check plain integers >= 10 (not years)")
     args = parser.parse_args(argv)

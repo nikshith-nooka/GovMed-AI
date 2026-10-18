@@ -50,15 +50,19 @@ uv run govbench --benchmark benchmarks/medqa_300.json --provider nvidia --loop-m
 
 - Run `open` before `closed` into the **same** `--db-path`. The closed-loop pass then reuses each case's stored
   Research + Diagnosis (`load_shared_upstream`), which keeps the comparison paired (AUD-01).
-- To remove the confound from the existing experiment without re-running V1/V5, copy `results/medqa_fast.db` and delete
-  the `-CL` rows **in the copy**. Then rerun `--loop-modes closed --variants verifier,hitl,safety,full_governance`
-  against the copy. Never edit the original file.
+- The paired rerun was produced this way: copy `results/medqa_fast.db` to `results/medqa_paired.db`, delete the `-CL`
+  rows (and their `agent_steps`) **in the copy**, then run
+  `uv run govbench --benchmark benchmarks/medqa_300.json --total-cases 300 --provider nvidia --loop-modes closed
+  --variants verifier,hitl,safety,full_governance --seed 42 --no-report --workers 8 --db-path results/medqa_paired.db`.
+  Re-running the same command retries any run that failed at the provider.
+- Analyse it with `run_rigor_analysis --db-path results/medqa_paired.db ... --out results/rigor_report_medqa_paired.json
+  --tables-dir paper/tables/medqa_paired`.
 - Sampling is not bit-reproducible. Temperatures are 0.1/0.2, and the provider treats the `seed` as best effort. Measured
-  run-to-run instability is in `resampling_stability`: 21–26% of answers change on a re-sample.
+  run-to-run instability is in `resampling_stability`: 20–25% of answers change on a re-sample.
 - `--resume` (default) skips stored (case, variant, model) runs. A failed live call skips the run and never stores simulated
   output.
 
 ## Integrity guarantees
 - The runner only appends to raw databases, and the analysis only reads them.
   `results/benchmark_results.db.bak` is the original pre-backfill database.
-- Every number in `paper/main.tex` is checked against the reports (`check_paper_numbers.py`: 157/157 on 2026-10-10).
+- Every number in `paper/main.tex` is checked against the reports (`check_paper_numbers.py`: 168/168 on 2026-10-18).

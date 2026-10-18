@@ -144,3 +144,19 @@ def test_unknown_api_path_is_404_not_the_spa():
     if not FRONTEND_DIR.exists():  # the catch-all route only exists when the client is built
         return
     assert TestClient(app).get("/api/does-not-exist").status_code == 404
+
+
+def test_unmappable_answers_agree_when_both_runs_share_them(tmp_path):
+    case = {"id": "medqa_y", "question": "q", "options": {"A": "Gout", "B": "Lupus"}, "answer": "A", "answer_idx": "A"}
+    cases_path = tmp_path / "cases.json"
+    cases_path.write_text(json.dumps([case]))
+    db = BenchmarkDB(str(tmp_path / "c.db"))
+    pipeline = ClinicalGovernancePipeline(StubClient(garbage={"Fact Verifier"}))
+    shared = ({"chief_complaint": "x"}, AgentStepLog("Research Agent", "r"))
+    unmappable = ({"primary_diagnosis": "COPD"}, AgentStepLog("Diagnosis Agent", "d"))  # matches no option
+    for variant, closed in (("baseline", False), ("verifier", True)):
+        result = pipeline.run(dict(case), variant, cached_research=shared, cached_diagnosis=unmappable, closed_loop=closed)
+        db.log_run(ClinicalEvaluationScorer().score_run(result, case))
+    analysis = RigorousAnalysis(str(tmp_path / "c.db"), str(cases_path), reference_db_path=None)
+    (row,) = analysis.resampling_stability()
+    assert row["answer_agreement"] == 1.0
