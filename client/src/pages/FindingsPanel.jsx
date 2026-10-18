@@ -1,7 +1,6 @@
 import React from 'react';
-import { AlertTriangle, FlaskConical, Loader2 } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import './clinical.css';
-import { findingsPath, useApi, useExperiment } from '../lib/api';
 
 const fmt = (v, d = 3) => (v == null ? '—' : typeof v === 'number' ? v.toFixed(d) : String(v));
 
@@ -21,41 +20,17 @@ function Table({ rows, cols }) {
   );
 }
 
-function AurocBar({ value }) {
-  if (value == null) return '—';
-  const left = Math.min(value, 0.5) * 100;
-  const width = Math.abs(value - 0.5) * 100;
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ position: 'relative', width: 120, height: 8, background: 'var(--border-color)', borderRadius: 9999 }}>
-        <div style={{ position: 'absolute', left: '50%', top: -3, width: 1, height: 14, background: 'var(--text-muted)' }} />
-        <div style={{ position: 'absolute', left: `${value >= 0.5 ? 50 : left}%`, width: `${width}%`, height: 8, borderRadius: 9999, background: value >= 0.6 ? 'var(--accent)' : 'var(--text-muted)' }} />
-      </div>
-      <span className="cw-num">{value.toFixed(3)}</span>
-    </div>
-  );
-}
-
-export default function ResearchFindings() {
-  const experiment = useExperiment();
-  const { data: report, error } = useApi(findingsPath(experiment));
-
-  if (error) {
-    return <div className="cw-page"><div className="cw-banner info"><FlaskConical size={18} /><div><strong>No analysis yet</strong>{error}</div></div></div>;
-  }
-  if (!report) return <div className="cw-page cw-empty"><Loader2 className="spin" /> Loading analysis…</div>;
-
+/**
+ * Findings & validity: the parts of the analysis report no other view shows (headline findings, integrity audit,
+ * measurement validity, clinician validation, limitations, calibration, per-agent latency, strata). Formerly the
+ * standalone Research Findings page; variant, paired-test and signal tables now live only in Benchmark Results.
+ */
+export default function FindingsPanel({ report }) {
   const m = report.measurement_validity;
-  const paired = report.paired_tests.filter((t) => ['accuracy', 'detector_neutral_quality', 'e2e_latency_s'].includes(t.metric));
 
   return (
-    <div className="cw-page">
-      <div className="cw-header">
-        <div>
-          <h2 className="cw-title">Research Findings</h2>
-          <p className="cw-sub">Re-analysis of {report.n_runs_analyzed} stored runs over {report.n_cases} cases ({report.models.join(', ')}) using only measured quantities. Generated {new Date(report.generated_at * 1000).toLocaleString()}.</p>
-        </div>
-      </div>
+    <div>
+      <p className="cw-muted" style={{ marginTop: 0 }}>Re-analysis of {report.n_runs_analyzed} stored runs over {report.n_cases} cases ({(report.models || []).join(', ')}) using only measured quantities. Generated {new Date(report.generated_at * 1000).toLocaleString()}.</p>
 
       {report.integrity.notes.length > 0 && (
         <div className="cw-banner high" style={{ marginBottom: 14 }}>
@@ -97,39 +72,6 @@ export default function ResearchFindings() {
           ) : <p className="cw-muted">{report.clinician_validation.status}</p>}
           <h3 style={{ marginTop: 16 }}>Limitations</h3>
           <ul className="cw-list">{report.limitations.map((l) => <li key={l}>{l}</li>)}</ul>
-        </div>
-      </div>
-
-      <div className="cw-card">
-        <h3>Variants (measured)</h3>
-        <Table rows={report.variants} cols={[
-          ['variant_id', 'Variant'], ['accuracy_valid_gold', 'Accuracy*'], ['detector_neutral_quality', 'Detector-neutral quality'],
-          ['reported_quality', 'Reported quality'], ['tokens_mean', 'Tokens', 0], ['e2e_latency_p50_s', 'p50 s', 1],
-          ['e2e_latency_p95_s', 'p95 s', 1], ['diagnosis_changed_vs_v1_pct', 'Dx changed vs V1 %', 1]]} />
-        <p className="cw-muted" style={{ marginTop: 8 }}>*On scorable cases only. Reported quality penalizes each variant for its own detectors' flags; detector-neutral quality does not.</p>
-      </div>
-
-      <div className="cw-card">
-        <h3>Paired comparisons vs. V1 (same cases)</h3>
-        <Table rows={paired} cols={[['metric', 'Metric'], ['comparison', 'Comparison'], ['n_pairs', 'n', 0], ['mean_diff', 'Mean diff'],
-          ['ci95_low', 'CI low'], ['ci95_high', 'CI high'], ['wilcoxon_p', 'Wilcoxon p', 4]]} />
-      </div>
-
-      <div className="cw-card">
-        <h3>Do governance signals detect wrong diagnoses?</h3>
-        <div className="cw-table-wrap">
-          <table className="cw-table">
-            <thead><tr><th>Signal</th><th>Variant</th><th>Fires on</th><th>Sensitivity</th><th>False-positive rate</th><th>Precision</th><th>AUROC (0.5 = chance)</th></tr></thead>
-            <tbody>
-              {report.alert_discrimination.map((a, i) => (
-                <tr key={i}>
-                  <td>{a.signal}</td><td>{a.variant_id}</td><td className="cw-num">{Math.round(a.fire_rate * 100)}%</td>
-                  <td className="cw-num">{fmt(a.sensitivity)}</td><td className="cw-num">{fmt(a.false_positive_rate)}</td>
-                  <td className="cw-num">{fmt(a.precision)}</td><td><AurocBar value={a.auroc} /></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
 

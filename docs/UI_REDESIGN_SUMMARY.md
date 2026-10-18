@@ -86,3 +86,64 @@ benchmark, not a copy of any Apple product. Capabilities are preserved, and ever
 | `client/package.json`, `package-lock.json` | Dev dependencies `vitest`, `@testing-library/react`, `@testing-library/dom`, `jsdom`; `npm test` script |
 | `src/api/server.py` | Experiment registry; `?experiment=` on findings, LaTeX, stats and CSV; stats over the analysed population with stored and superseded counts |
 | `client/src/App.jsx` | Removed an unused `/api/stats` request |
+
+## Pass 3 (2026-10-18): product refinement, charts and cleanup
+
+### Route inventory
+
+| Route | Page | Status | Reason |
+|---|---|---|---|
+| `/` | Overview | Kept, rebuilt | Experiment identity, one summary card, two primary charts, headline findings. The navigation tiles (duplicated the sidebar) and example-patient cards (already in the Clinician Workspace) were removed |
+| `/results` | Benchmark Results | Kept, extended | New SVG charts in each tab. Tab is in the URL (`?tab=`) |
+| `/findings` | Research Findings | **Merged, redirects** to `/results?tab=findings` | Repeated the variant, paired-test and signal tables of Benchmark Results. Its unique sections (headline findings, integrity, measurement validity, clinician validation, limitations, calibration, per-agent latency, strata) are now the "Findings & validity" tab |
+| `/pipeline` | Agent Pipeline (was "Governance Pipeline") | Kept, rebuilt | Interactive pipeline diagram replaces the row of agent tiles |
+| `/clinical-cases` | Case Library | Kept | Unchanged |
+| `/experiments` | Experiments | Kept | Unchanged; the only way to run new scored cases |
+| `/reports` | Reports & Reproducibility (was "Reports & Exports") | Kept | Renamed for its content |
+| `/clinician` | Clinician Workspace | Kept | Live analysis workflow |
+| `/review` | Clinician Review | Kept | Functional blinded-review workflow; the study's missing clinician validation depends on it |
+
+Older aliases (`/dashboard`, `/run-case`, `/cases`, `/governance-levels`, `/ablation`, `/cost-performance`, `/run-experiment`) still resolve. A Settings page was not added: the only settings (theme, API token, experiment) already live in the top bar.
+
+### Charts and their data sources
+
+All new charts are SVG (`client/src/components/charts.jsx`). They are drawn at the container's real width, so text stays readable on phones. Data comes from the selected experiment's `/api/research/findings` through `client/src/lib/research.js`.
+
+| Chart | Where | Source fields | Notes |
+|---|---|---|---|
+| Diagnostic accuracy by configuration (dot plot, 95% Wilson interval, G0 reference line) | Overview; Results › Variant comparison | `variants[].accuracy_valid_gold`, n = `measurement_validity.cases_with_valid_gold` | Axis fitted to the data (no zero baseline needed for a dot plot) and labelled as such |
+| Quality against cost (scatter with intervals, direct labels) | Overview; Results › Cost & latency | `accuracy_valid_gold`, `tokens_mean` | |
+| Quality against latency | Results › Cost & latency | `accuracy_valid_gold`, `e2e_latency_p50_s` | Labelled as summed agent-call time (upper bound on wall clock) |
+| Governance overhead (small multiples) | Results › Cost & latency | `model_calls_mean`, `tokens_mean`, `governance_latency_p50_s` | Missing values say "not measured" |
+| Revision impact (diverging bars) | Results › Closed-loop revision | `revision_by_variant[].within_run_fixed / within_run_broken / sign_test_p` | Shown only when the experiment has closed-loop runs |
+| Paired accuracy differences (forest plot) | Results › Paired statistics | `accuracy_tests[].accuracy_diff`, CI, `mcnemar_exact_p`, `mcnemar_exact_p_holm` | Blue marks an uncorrected interval excluding zero; the subtitle states that this is not significance after correction |
+
+**Kept, restyled:** the Chart.js quality, latency and AUROC charts.
+
+**Not built:** an experiment-history chart (there are three analysed experiments, not a run history), and reliability charts for abstention and contradiction (the pipeline has no abstention, and contradictions are not summarised in the report). Inventing data for them was not an option.
+
+**Chart colour:** validated with the dataviz palette checker.
+
+| Theme | Fixed bars | Broken bars | Contrast with surface |
+|---|---|---|---|
+| Light | `#0071E3` | `#C2571A` | ΔE 28.9 under colour blindness, 33.5 for normal vision, ≥3:1 |
+| Dark | `#2997FF` | `#D86B33` | passes on `#1C1C1E` |
+
+The neutral grey for the open loop deliberately reads as grey. It always comes with a different marker shape (square vs circle) and a legend, so colour is never the only cue.
+
+**Accessibility of every chart:**
+- Each mark is focusable, with a spoken label and a tooltip on hover and focus.
+- Each chart has a text summary and a table of the same numbers on the page.
+- The tooltip and grid respond to reduced transparency and increased contrast.
+
+### Images and illustrations
+
+- **Added:** one original, theme-aware SVG diagram of the agent pipeline (`PipelineDiagram`), drawn in code. It has no licence encumbrance, and agents not run at the selected level are dimmed. No photographs or stock images were added.
+- **Removed:** 13 image files (about 4.7 MB, including a 1.6 MB stock JPEG of lungs) left over from an earlier design and referenced nowhere (checked with `git grep` across the repository). Their source and licence were undocumented, so removing them also removes a licensing risk.
+- **Kept:** `favicon.svg`.
+
+### Cleanup
+
+- **`index.css`:** pruned from 3,347 to 775 lines (366 rules dropped). A rule was dropped only if every class in it appears nowhere in the app source, allowing for the `pill-*` and `sev-*` classes that are built dynamically.
+- **Built CSS:** 29.7 kB.
+- **Code:** Research Findings became `FindingsPanel.jsx`, with its duplicated tables removed.

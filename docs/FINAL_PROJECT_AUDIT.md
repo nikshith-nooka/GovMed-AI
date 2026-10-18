@@ -59,3 +59,24 @@ keeps its definition. The CSV default keeps its old filename and every stored ro
 - **Not browser-tested:** the Experiments and Clinician Workspace forms. Submitting them makes live, billable model calls.
 - **Lint:** 3 pre-existing `set-state-in-effect` lint warnings remain (no errors).
 - **Carried over from earlier audits:** one model, no clinician ratings, no per-claim verifier labels, single-worker job recovery.
+
+## Pass 3 (2026-10-18): product refinement
+
+| ID | Sev | Finding | Fix |
+|---|---|---|---|
+| FIN-14 | Medium | Research Findings repeated three tables of Benchmark Results, so the same numbers appeared in two places. | Merged into the "Findings & validity" tab; `/findings` redirects. Unique content preserved. |
+| FIN-15 | Medium | The Overview had a full-scale 0–1 bar chart that hid differences, navigation tiles duplicating the sidebar, and example-patient cards unrelated to the selected experiment. | Rebuilt around one summary card and two research charts with 95% intervals. |
+| FIN-16 | Medium | No chart showed uncertainty, the quality–cost trade-off, revision impact or paired differences, although the report contains all of them. | Six SVG charts built from the report (see UI_REDESIGN_SUMMARY, pass 3). |
+| FIN-17 | Low | 13 unreferenced images (≈4.7 MB) of unknown licence were shipped in `client/public` and copied into every build. | Removed after a repository-wide reference check. |
+| FIN-18 | Low | 366 dead CSS rules (77% of `index.css`). | Pruned; every page re-checked in the browser in both themes. |
+| FIN-19 | Low | Reviewing the forest plot: a blue "interval excludes zero" highlight could be read as significance. | Subtitle states that the highlight is uncorrected and points to Holm p. |
+
+**Working-tree safety.** During this pass another session began work on branch `paper/final-refinement` in the main
+`MED` folder. This pass therefore ran in a separate git worktree for `ui/apple-design`. The few uncommitted UI files
+briefly created in the shared folder were removed before any commit, and that session was notified. No file of the
+paper branch was changed.
+
+**Research data, paper and conclusions are unchanged by this pass:**
+- `paper/`, `benchmarks/`, the raw databases and the analysis code and reports are identical to `audit/2026-10-10`.
+- `check_paper_numbers` gives 169/169 and 86/86.
+- The charts show only report fields, with the paper's statistical wording (exploratory; Holm-corrected p is not significant).

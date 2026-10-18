@@ -7,7 +7,7 @@
 ![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-backend-009688?logo=fastapi&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-183%20Python%20%2B%209%20UI%20passing-2D6A4F)
+![Tests](https://img.shields.io/badge/tests-183%20Python%20%2B%2017%20UI%20passing-2D6A4F)
 ![License](https://img.shields.io/badge/license-MIT-lightgrey)
 
 </div>
@@ -94,7 +94,7 @@ safety flag, a severe inconsistency or a revision request triggers one bounded r
 ## Results
 
 Measured on 750 stored runs: 150 cases × 5 variants, Llama-3.2-11B served by NVIDIA NIM, open-loop governance.
-Regenerate with `uv run govbench-rigor`; the full report is available in the application's **Research Findings** page.
+Regenerate with `uv run govbench-rigor`; the full report is available under **Benchmark Results › Findings & validity** in the application.
 
 | Question | Measured answer |
 |---|---|
@@ -127,14 +127,14 @@ not help while those checks cannot tell right answers from wrong ones.
 
 | Page | Purpose |
 |---|---|
-| **Clinician Workspace** | Enter a patient and choose a check level. The physician view shows the differential, alerts by severity, what was and was not checked and what the checks changed; the assistant view shows an escalation list, an SBAR handoff and a task checklist. Progress is shown agent by agent. |
-| **Clinician Review** | Blinded rating of stored outputs: diagnosis verdict, quality on a 1–5 scale and whether each alert is a real concern. |
-| **Research Findings** | The measured analysis, the data-integrity audit and the limitations. |
-| **Benchmark Results** | Variant comparison, cost and latency, governance-signal AUROC, closed-loop revision outcomes and paired statistics with Holm-adjusted p-values. |
-| **Experiments** | Run benchmark cases at selected check levels through the real pipeline, scored against their gold labels, with CSV export. |
+| **Overview** | The selected experiment at a glance: baseline accuracy with its 95% interval, ranges of accuracy, tokens and latency, accuracy by configuration and quality against cost, and the headline findings. |
+| **Benchmark Results** | Tabs: variant comparison, cost & latency (quality–cost and quality–latency frontiers, governance overhead), governance signals (AUROC), closed-loop revision impact, paired statistics (forest plot with Holm-adjusted p), and findings & validity (integrity audit, measurement validity, calibration, limitations). |
+| **Agent Pipeline** | An interactive diagram of the agents each governance level runs, with each agent's measured latency and tokens and the level's measured outcome. |
 | **Case Library** | Browse and filter the 150 mixed cases and open any of them in the workspace. |
-| **Governance Pipeline** | The agents at each level, with measured latency, governance-only latency, model calls and token use. |
-| **Reports & Exports** | Both manuscripts, and the LaTeX table and CSV of stored runs for the selected experiment (superseded re-runs marked). |
+| **Experiments** | Run benchmark cases at selected check levels through the real pipeline, scored against their gold labels, with CSV export. |
+| **Reports & Reproducibility** | Both manuscripts, and the LaTeX table and CSV of stored runs for the selected experiment (superseded re-runs marked). |
+| **Clinician Workspace** | Enter a patient and choose a check level. The physician view shows the differential, alerts by severity, what was and was not checked and what the checks changed; the assistant view shows an escalation list, an SBAR handoff and a task checklist. |
+| **Clinician Review** | Blinded rating of stored outputs: diagnosis verdict, quality on a 1–5 scale and whether each alert is a real concern. |
 
 An **experiment picker** in the top bar chooses which analysed experiment the results pages show: the 150-case
 open-loop study, the paired 300-question MedQA study reported in the paper, or the superseded unpaired MedQA pass.
@@ -240,7 +240,7 @@ benchmarks/        150-case audited benchmark, 300-question MedQA benchmark, 50-
 results/           benchmark database and analysis report
 paper/             manuscript draft and generated tables
 tests/             183 unit and integration tests, including a prompt-injection set
-client/src/__tests__/  9 UI tests (Vitest + Testing Library)
+client/src/__tests__/  17 UI tests (Vitest + Testing Library)
 ```
 
 ---

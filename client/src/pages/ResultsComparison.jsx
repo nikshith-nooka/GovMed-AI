@@ -1,8 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
 import { FlaskConical, Loader2 } from 'lucide-react';
 import { CHART, VARIANT_LABELS, findingsPath, fmt, useApi, useExperiment, variantTicks } from '../lib/api';
+import { DivergingBars, ForestPlot, Frontier, SmallMultiples, DotPlotCI } from '../components/charts';
+import { accuracyRows, forestRows, frontierPoints, overheadMetrics, revisionRows } from '../lib/research';
+import { CONFIG_LEGEND } from './Dashboard';
+import FindingsPanel from './FindingsPanel';
 import './clinical.css';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
@@ -13,7 +17,13 @@ const TABS = [
   ['signals', 'Governance signals'],
   ['closed', 'Closed-loop revision'],
   ['stats', 'Paired statistics'],
+  ['findings', 'Findings & validity'],
 ];
+const TAB_IDS = TABS.map(([id]) => id);
+const tabFromUrl = () => {
+  const t = new URLSearchParams(window.location.search).get('tab');
+  return TAB_IDS.includes(t) ? t : 'variants';
+};
 const pval = (v) => (v == null ? '—' : v < 0.001 ? '<0.001' : v.toFixed(3));
 const pctOf = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`);
 
@@ -39,7 +49,18 @@ const barOptions = (yTitle, max, xTicks = variantTicks) => ({
 });
 
 export default function ResultsComparison() {
-  const [tab, setTab] = useState('variants');
+  // The tab lives in the URL (?tab=) so the Overview can link to it and reloads keep it.
+  const [tab, setTabState] = useState(tabFromUrl);
+  useEffect(() => {
+    const sync = () => setTabState(tabFromUrl());
+    window.addEventListener('popstate', sync);
+    window.addEventListener('govbench:navigate', sync);
+    return () => { window.removeEventListener('popstate', sync); window.removeEventListener('govbench:navigate', sync); };
+  }, []);
+  const setTab = (id) => {
+    setTabState(id);
+    window.history.replaceState(window.history.state, '', `${window.location.pathname}?tab=${id}`);
+  };
   const experiment = useExperiment();
   const { data: r, error, loading } = useApi(findingsPath(experiment));
 
@@ -58,13 +79,19 @@ export default function ResultsComparison() {
         </div>
       </div>
       <div className="cw-tabs cw-seg" role="tablist" style={{ display: 'inline-flex' }}>
-        {TABS.filter(([id]) => id !== 'closed' || r.revision_by_variant?.length).map(([id, label]) => <button key={id} role="tab" aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
+        {TABS.filter(([id]) => id !== 'closed' || r.revision_by_variant?.length).map(([id, label]) => <button key={id} role="tab" aria-selected={tab === id} aria-pressed={tab === id} onClick={() => setTab(id)}>{label}</button>)}
       </div>
 
       {tab === 'variants' && (
         <>
           <div className="cw-card">
-            <h3>Quality by variant</h3>
+            <DotPlotCI rows={accuracyRows(r)} reference={r.variants.find((v) => v.variant_id === 'V1')?.accuracy_valid_gold}
+              xLabel="Accuracy (axis fitted to data)" title="Diagnostic accuracy by configuration"
+              subtitle={`95% Wilson intervals over ${r.measurement_validity.cases_with_valid_gold} scorable cases; dashed line = G0`}
+              legend={CONFIG_LEGEND} summary={r.variants.map((v) => `${v.variant_id} ${fmt(v.accuracy_valid_gold)}`).join(', ')} />
+          </div>
+          <div className="cw-card">
+            <h3>Accuracy and two quality scores</h3>
             <div style={{ height: 300 }}>
               <Bar options={barOptions('Score (0-1)', 1)} data={{ labels, datasets: [
                 { label: 'Accuracy (scorable cases)', data: r.variants.map((v) => v.accuracy_valid_gold), backgroundColor: CHART.primary },
@@ -87,9 +114,26 @@ export default function ResultsComparison() {
 
       {tab === 'cost' && (
         <>
+          <div className="cw-two">
+            <div className="cw-card">
+              <Frontier points={frontierPoints(r, 'tokens_mean')} xLabel="Mean tokens per case" yLabel="Accuracy"
+                title="Quality against tokens" subtitle="95% Wilson intervals on accuracy" legend={CONFIG_LEGEND}
+                summary={r.variants.map((v) => `${v.variant_id}: ${fmt(v.accuracy_valid_gold)} at ${Math.round(v.tokens_mean)} tokens`).join('; ')} />
+            </div>
+            <div className="cw-card">
+              <Frontier points={frontierPoints(r, 'e2e_latency_p50_s')} xLabel="Median summed agent-call time (s)" yLabel="Accuracy"
+                xFmt={(v) => `${Math.round(v)}`} title="Quality against latency" subtitle="Parallel checks counted serially (an upper bound on wall clock)" legend={CONFIG_LEGEND}
+                summary={r.variants.map((v) => `${v.variant_id}: ${fmt(v.accuracy_valid_gold)} at ${fmt(v.e2e_latency_p50_s, 0)} s`).join('; ')} />
+            </div>
+          </div>
+          <div className="cw-card">
+            <SmallMultiples metrics={overheadMetrics(r)} title="Governance overhead per case"
+              subtitle="Model calls, tokens and governance-only latency (everything except the shared research and diagnosis steps)"
+              summary="Overhead per configuration" />
+          </div>
           <div className="cw-cols-32">
             <div className="cw-card">
-              <h3>End-to-end latency (seconds)</h3>
+              <h3>Summed agent-call time per case (s)</h3>
               <div style={{ height: 280 }}>
                 <Bar options={barOptions('Summed agent-call time (s)')} data={{ labels, datasets: [
                   { label: 'Median', data: r.variants.map((v) => v.e2e_latency_p50_s), backgroundColor: CHART.primary },
@@ -139,6 +183,11 @@ export default function ResultsComparison() {
       {tab === 'closed' && r.revision_by_variant?.length > 0 && (
         <>
           <div className="cw-card">
+            <DivergingBars rows={revisionRows(r)} title="Revision impact"
+              subtitle="Within each closed-loop run: answers the revision made right versus answers it made wrong (exact sign test)"
+              summary={revisionRows(r).map((x) => `${x.id}: fixed ${x.fixed}, broken ${x.broken}`).join('; ')} />
+          </div>
+          <div className="cw-card">
             <h3>What revision did, within each run <span className="cw-muted">· first answer vs. revised answer, same question</span></h3>
             <Table rows={r.revision_by_variant} cols={[
               ['variant_id', 'Configuration', 0, (v) => VARIANT_LABELS[v] || v], ['revision_rate', 'Revised', 0, pctOf],
@@ -172,6 +221,11 @@ export default function ResultsComparison() {
 
       {tab === 'stats' && (
         <>
+          <div className="cw-card">
+            <ForestPlot rows={forestRows(r)} xLabel="Accuracy difference vs G0 (percentage points)" title="Paired accuracy differences"
+              subtitle="Same cases, bootstrap 95% interval. Blue: the uncorrected interval excludes zero, which is not significance after correction (see Holm p). p: exact McNemar; Holm p: corrected over all paired tests in the report"
+              summary={forestRows(r).map((x) => `${x.id} ${(x.diff * 100).toFixed(1)} points`).join('; ')} />
+          </div>
           {r.accuracy_tests?.length > 0 && (
             <div className="cw-card">
               <h3>Accuracy vs. V1 on the same cases <span className="cw-muted">· exact McNemar, bootstrap 95% CI, Holm-adjusted p</span></h3>
@@ -197,6 +251,7 @@ export default function ResultsComparison() {
           </div>
         </>
       )}
+      {tab === 'findings' && <FindingsPanel report={r} />}
     </div>
   );
 }

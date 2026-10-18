@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+import { PipelineDiagram } from '../components/charts';
 import { findingsPath, fmt, useApi, useExperiment } from '../lib/api';
 import './clinical.css';
 
@@ -37,7 +38,7 @@ export default function AgentPipeline() {
     <div className="cw-page">
       <div className="cw-header">
         <div>
-          <h2 className="cw-title">Governance Pipeline</h2>
+          <h2 className="cw-title">Agent Pipeline</h2>
           <p className="cw-sub">Which agents run at each governance level, in order, with latency and tokens measured in the selected experiment. Research and Diagnosis always run; G1–G3 each add one check, G4 adds all of them plus the consistency checker.</p>
         </div>
       </div>
@@ -47,18 +48,8 @@ export default function AgentPipeline() {
       </div>
 
       <div className="cw-card">
-        <h3>{level.code} pipeline ({level.variant} in the benchmark)</h3>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          {level.layers.map((name, i) => (
-            <React.Fragment key={name}>
-              <button className="cw-card cw-tile" aria-pressed={agent === name} style={{ marginTop: 0, padding: '10px 14px', width: 'auto', borderColor: agent === name ? 'var(--accent)' : undefined, background: agent === name ? 'var(--accent-tint)' : undefined }} onClick={() => setAgent(name)}>
-                <strong style={{ fontSize: '0.84rem' }}>{name}</strong>
-                <div className="cw-muted">{agentStats[name] ? `${fmt(agentStats[name].mean_s, 1)} s mean` : 'not run in this experiment'}</div>
-              </button>
-              {i < level.layers.length - 1 && <ArrowRight size={16} className="cw-muted" />}
-            </React.Fragment>
-          ))}
-        </div>
+        <PipelineDiagram active={level.layers} selected={agent} onSelect={setAgent}
+          title={`${level.code} · ${level.name}`} subtitle="Highlighted agents run at this level; select an agent for its measured cost." />
         <p className="cw-muted" style={{ marginTop: 10 }}>
           With closed loop on, a serious concern from any check sends the diagnosis back to the Diagnosis Agent for one revision before the report is written.
         </p>

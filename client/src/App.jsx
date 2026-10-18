@@ -9,14 +9,12 @@ import Experiments from './pages/Experiments';
 import Reports from './pages/Reports';
 import ClinicianWorkspace from './pages/ClinicianWorkspace';
 import ClinicianReview from './pages/ClinicianReview';
-import ResearchFindings from './pages/ResearchFindings';
 import { apiFetch, useTokenVersion } from './lib/api';
 
 const PAGE_TO_PATH = {
   dashboard: '/',
   clinician: '/clinician',
   review: '/review',
-  findings: '/findings',
   cases: '/clinical-cases',
   pipeline: '/pipeline',
   results: '/results',
@@ -29,7 +27,8 @@ const PATH_TO_PAGE = {
   '/dashboard': 'dashboard',
   '/clinician': 'clinician',
   '/review': 'review',
-  '/findings': 'findings',
+  // Retired pages redirect to where their content now lives (see docs/UI_REDESIGN_SUMMARY.md).
+  '/findings': 'results',
   '/run-case': 'clinician',
   '/clinical-cases': 'cases',
   '/cases': 'cases',
@@ -46,6 +45,8 @@ const PATH_TO_PAGE = {
 function pageFromLocation() {
   if (typeof window === 'undefined') return 'dashboard';
   const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+  // The old Research Findings page is now the "findings" tab of Benchmark Results.
+  if (path === '/findings') window.history.replaceState({ page: 'results' }, '', '/results?tab=findings');
   return PATH_TO_PAGE[path] || 'dashboard';
 }
 
@@ -83,12 +84,14 @@ export default function App() {
   const [caseQuery, setCaseQuery] = useState('');
   const tokenVersion = useTokenVersion();
 
-  const setCurrentPage = (pageKey) => {
+  // Optional tab lands in the URL (?tab=), so links to a specific tab can be shared and reloaded.
+  const setCurrentPage = (pageKey, tab) => {
     setCurrentPageState(pageKey);
-    const targetPath = PAGE_TO_PATH[pageKey] || '/';
-    if (window.location.pathname !== targetPath) {
+    const targetPath = (PAGE_TO_PATH[pageKey] || '/') + (tab ? `?tab=${encodeURIComponent(tab)}` : '');
+    if (window.location.pathname + window.location.search !== targetPath) {
       window.history.pushState({ page: pageKey }, '', targetPath);
     }
+    window.dispatchEvent(new Event('govbench:navigate'));
   };
 
   const openInWorkspace = (fields) => {
@@ -123,8 +126,6 @@ export default function App() {
         return <ClinicianWorkspace cases={cases} prefill={prefill} />;
       case 'review':
         return <ClinicianReview />;
-      case 'findings':
-        return <ResearchFindings />;
       case 'cases':
         return <ClinicalCases cases={cases} error={casesError} initialQuery={caseQuery} openInWorkspace={openInWorkspace} />;
       case 'pipeline':
@@ -136,7 +137,7 @@ export default function App() {
       case 'reports':
         return <Reports />;
       default:
-        return <Dashboard setCurrentPage={setCurrentPage} openInWorkspace={openInWorkspace} />;
+        return <Dashboard setCurrentPage={setCurrentPage} />;
     }
   };
 

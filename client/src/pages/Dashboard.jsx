@@ -1,123 +1,114 @@
 import React from 'react';
-import { Bar } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip, Legend } from 'chart.js';
-import { AlertTriangle, ArrowRight, ClipboardCheck, FlaskConical, HeartPulse, Loader2 } from 'lucide-react';
-import { CHART, EXAMPLE_CASES, VARIANT_LABELS, findingsPath, fmt, useApi, useExperiment, variantTicks } from '../lib/api';
+import { AlertTriangle, ArrowRight, FlaskConical, Loader2 } from 'lucide-react';
+import { findingsPath, fmt, useApi, useExperiment } from '../lib/api';
+import { DotPlotCI, Frontier, LegendItem } from '../components/charts';
+import { accuracyRows, frontierPoints, scorableCases } from '../lib/research';
 import './clinical.css';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, Legend);
-
-function Kpi({ label, value, note }) {
+function Stat({ label, value, note }) {
   return (
-    <div className="cw-card">
+    <div className="cw-stat">
       <div className="cw-section-label" style={{ margin: 0 }}>{label}</div>
-      <div className="cw-num" style={{ fontSize: '2rem', fontWeight: 700, letterSpacing: '-0.025em', lineHeight: 1.1, margin: '6px 0 4px' }}>{value}</div>
+      <div className="cw-stat-value cw-num">{value}</div>
       <div className="cw-muted">{note}</div>
     </div>
   );
 }
 
-export default function Dashboard({ setCurrentPage, openInWorkspace }) {
+const range = (vals, f) => {
+  const v = vals.filter((x) => x != null);
+  return v.length ? `${f(Math.min(...v))}–${f(Math.max(...v))}` : '—';
+};
+
+export const CONFIG_LEGEND = (
+  <>
+    <LegendItem shape="square" color="var(--chart-neutral)">Open loop / no checks</LegendItem>
+    <LegendItem shape="circle" color="var(--chart-primary)">Closed loop (revision)</LegendItem>
+  </>
+);
+
+export default function Dashboard({ setCurrentPage }) {
   const experiment = useExperiment();
   const { data: report, error, loading } = useApi(findingsPath(experiment));
-  const reviews = useApi('/api/reviews/summary');
+  const { data: listing } = useApi('/api/research/experiments');
+  const meta = listing?.experiments?.find((e) => e.key === experiment);
 
   const variants = report?.variants || [];
   const v1 = variants.find((v) => v.variant_id === 'V1');
-  const v5 = variants.find((v) => v.variant_id === 'V5');
   const m = report?.measurement_validity;
-
-  const chart = {
-    // "V2 · Grounding verifier" -> two lines, so labels stay horizontal and are never clipped.
-    labels: variants.map((v) => (VARIANT_LABELS[v.variant_id] || v.variant_id).split(' · ')),
-    datasets: [
-      { label: 'Reported quality (penalizes own detectors)', data: variants.map((v) => v.reported_quality), backgroundColor: CHART.muted },
-      { label: 'Detector-neutral quality', data: variants.map((v) => v.detector_neutral_quality), backgroundColor: CHART.secondary },
-      { label: 'Accuracy (scorable cases)', data: variants.map((v) => v.accuracy_valid_gold), backgroundColor: CHART.primary },
-    ],
-  };
+  const n = scorableCases(report);
+  const rows = report ? accuracyRows(report) : [];
+  const g0 = rows.find((r) => r.id === 'V1');
+  const exact = m && m.cases_with_answer_key === m.cases_total;
 
   return (
     <div className="cw-page">
-      <div className="cw-header">
+      <header className="cw-header">
         <div>
-          <h2 className="cw-title">GovBench-Clinical</h2>
+          <div className="cw-eyebrow">
+            <FlaskConical size={14} aria-hidden="true" /> {meta ? meta.label : 'Selected experiment'}
+            {meta && <span className={`cw-pill ${meta.status.startsWith('superseded') ? 'pill-warning' : 'pill-accent'}`}>{meta.status}</span>}
+          </div>
+          <h2 className="cw-title">Overview</h2>
           <p className="cw-sub">
-            A benchmark and decision-support workbench for multi-agent clinical AI. It measures what governance layers
-            (grounding verifier, safety validator, simulated attending review) actually change, and gives clinicians an
-            interface that shows what was and was not checked.
+            {report
+              ? `${report.n_runs_analyzed.toLocaleString()} analysed runs over ${report.n_cases} cases and ${variants.length} governance configurations, ${(report.models || []).join(', ')}. ${exact ? 'Answers are scored exactly against the answer key.' : `Accuracy uses the ${m.cases_with_valid_gold} cases with a real diagnosis label.`}`
+              : 'How much each governance layer changes diagnostic quality, and what it costs in tokens and time.'}
           </p>
         </div>
-      </div>
+      </header>
 
-      <div className="cw-cols-3">
-        <button className="cw-card cw-tile" onClick={() => setCurrentPage('clinician')}>
-          <HeartPulse size={20} /> <strong>Clinician Workspace</strong>
-          <p className="cw-muted" style={{ margin: '6px 0 0' }}>Analyze a patient with a live model, for physicians and clinical assistants.</p>
-        </button>
-        <button className="cw-card cw-tile" onClick={() => setCurrentPage('review')}>
-          <ClipboardCheck size={20} /> <strong>Clinician Review</strong>
-          <p className="cw-muted" style={{ margin: '6px 0 0' }}>
-            Blinded rating of AI outputs.{reviews.data ? ` ${reviews.data.n_reviews} reviews from ${reviews.data.n_reviewers} reviewer(s) so far.` : ''}
-          </p>
-        </button>
-        <button className="cw-card cw-tile" onClick={() => setCurrentPage('findings')}>
-          <FlaskConical size={20} /> <strong>Research Findings</strong>
-          <p className="cw-muted" style={{ margin: '6px 0 0' }}>Measured results, integrity audit and limitations.</p>
-        </button>
-      </div>
-
-      {loading && <div className="cw-card cw-empty" style={{ marginTop: 14 }}><Loader2 className="spin" /> Loading measured results…</div>}
-      {error && <div className="cw-banner info" style={{ marginTop: 14 }}><FlaskConical size={18} /><div><strong>No analysis yet</strong>{error}</div></div>}
+      {loading && <div className="cw-card cw-empty"><Loader2 className="spin" aria-hidden="true" /> Loading measured results…</div>}
+      {error && <div className="cw-banner info" role="alert"><FlaskConical size={18} aria-hidden="true" /><div><strong>No analysis for this experiment</strong>{error}</div></div>}
 
       {report && (
         <>
           {report.integrity?.notes?.length > 0 && (
-            <div className="cw-banner high" style={{ marginTop: 14 }}>
-              <AlertTriangle size={18} />
-              <div><strong>Some stored metrics are not measurements</strong>They are excluded here. See Research Findings for details.</div>
+            <div className="cw-banner high" style={{ marginBottom: 16 }}>
+              <AlertTriangle size={18} aria-hidden="true" />
+              <div><strong>Some stored metrics are not measurements</strong>They are excluded from every figure here. Details are under Benchmark Results › Findings &amp; validity.</div>
             </div>
           )}
-          <div className="cw-cols-4" style={{ marginTop: 14 }}>
-            <Kpi label="Runs analyzed" value={report.n_runs_analyzed} note={`${report.n_cases} cases × ${report.variants?.length ?? '—'} configurations`} />
-            <Kpi label="Scorable cases" value={`${m.cases_with_valid_gold}/${m.cases_total}`} note={m.cases_with_valid_gold < m.cases_total ? 'The rest have templated gold labels' : 'Every case has an answer key'} />
-            <Kpi label="Baseline accuracy" value={fmt(v1?.accuracy_valid_gold, 3)} note={m.cases_with_answer_key < m.cases_total
-              ? `All runs: ${fmt(m.reported_accuracy_mean, 3)} as first reported, ${fmt(m.corrected_accuracy_mean_all_cases, 3)} re-scored`
-              : 'Scored exactly against the answer key'} />
-            <Kpi label="Median latency" value={`${fmt(v1?.e2e_latency_p50_s, 0)}–${fmt(v5?.e2e_latency_p50_s, 0)} s`} note="V1 to V5 · summed agent-call time" />
+
+          <section className="cw-card cw-stats" aria-label="Summary">
+            <Stat label="Baseline accuracy (G0)" value={fmt(v1?.accuracy_valid_gold, 3)}
+              note={g0?.lo != null ? `95% CI ${fmt(g0.lo, 3)}–${fmt(g0.hi, 3)} · n = ${n}` : `n = ${n ?? '—'}`} />
+            <Stat label="Accuracy across configurations" value={range(variants.map((v) => v.accuracy_valid_gold), (v) => v.toFixed(3))}
+              note="See the paired tests before reading differences as effects" />
+            <Stat label="Tokens per case" value={range(variants.map((v) => v.tokens_mean), (v) => Math.round(v).toLocaleString())}
+              note="Mean over all model calls of a run" />
+            <Stat label="Summed agent-call time" value={`${range(variants.map((v) => v.e2e_latency_p50_s), (v) => Math.round(v))} s`}
+              note="Median per case; parallel checks counted serially" />
+          </section>
+
+          <div className="cw-two" style={{ marginTop: 16 }}>
+            <div className="cw-card">
+              <DotPlotCI rows={rows} reference={g0?.value} xLabel="Accuracy (axis fitted to data)"
+                title="Diagnostic accuracy by configuration"
+                subtitle="Point estimate with 95% Wilson interval; dashed line = G0 baseline"
+                legend={CONFIG_LEGEND}
+                summary={rows.map((r) => `${r.id} ${fmt(r.value, 3)}`).join(', ')} />
+            </div>
+            <div className="cw-card">
+              <Frontier points={frontierPoints(report, 'tokens_mean')} xLabel="Mean tokens per case" yLabel="Accuracy"
+                title="Quality against cost" subtitle="Up and to the left is better"
+                legend={CONFIG_LEGEND}
+                summary={variants.map((v) => `${v.variant_id}: accuracy ${fmt(v.accuracy_valid_gold, 3)} at ${Math.round(v.tokens_mean)} tokens`).join('; ')} />
+            </div>
           </div>
 
-          <div className="cw-cols-32" style={{ marginTop: 14 }}>
-            <div className="cw-card">
-              <h3>Quality by variant</h3>
-              <div style={{ height: 280 }}>
-                <Bar data={chart} options={{ maintainAspectRatio: false, scales: { x: { ticks: variantTicks }, y: { min: 0, max: 1 } }, plugins: { legend: { position: 'bottom' } } }} />
-              </div>
-              <button className="cw-btn ghost small" style={{ marginTop: 10 }} onClick={() => setCurrentPage('results')}>Open Benchmark Results <ArrowRight size={14} /></button>
+          <section className="cw-card" style={{ marginTop: 16 }} aria-labelledby="findings-head">
+            <h3 id="findings-head">What the analysis found</h3>
+            {report.headline_findings.slice(0, 4).map((f, i) => (
+              <div key={i} className="cw-finding"><span className="cw-num cw-muted">{i + 1}.</span><span>{f}</span></div>
+            ))}
+            <div className="cw-toolbar" style={{ marginTop: 12 }}>
+              <button className="cw-btn ghost small" onClick={() => setCurrentPage('results')}>Benchmark Results <ArrowRight size={14} aria-hidden="true" /></button>
+              <button className="cw-btn ghost small" onClick={() => setCurrentPage('results', 'findings')}>All findings &amp; limitations <ArrowRight size={14} aria-hidden="true" /></button>
             </div>
-            <div className="cw-card">
-              <h3>Key findings</h3>
-              {report.headline_findings.slice(0, 5).map((f, i) => (
-                <div key={i} className="cw-finding"><span className="cw-num cw-muted">{i + 1}.</span><span>{f}</span></div>
-              ))}
-              <button className="cw-btn ghost small" style={{ marginTop: 10 }} onClick={() => setCurrentPage('findings')}>All findings <ArrowRight size={14} /></button>
-            </div>
-          </div>
+          </section>
         </>
       )}
-
-      <div className="cw-card" style={{ marginTop: 14 }}>
-        <h3>Try an example patient in the Clinician Workspace</h3>
-        <div className="cw-cols-4">
-          {EXAMPLE_CASES.map((ex) => (
-            <button key={ex.id} className="cw-card cw-tile" onClick={() => openInWorkspace(ex)}>
-              <strong>{ex.label}</strong>
-              <div className="cw-muted" style={{ margin: '4px 0' }}>{ex.tag}</div>
-              <div style={{ fontSize: '0.78rem' }}>{ex.chief_complaint}</div>
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

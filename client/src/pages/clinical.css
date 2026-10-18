@@ -192,3 +192,61 @@
 @media (prefers-contrast: more) {
   .cw-card, .cw-row-item, .cw-input, .cw-select, .cw-textarea { border-color: var(--text-muted); }
 }
+
+/* ---------------------------------------------------------------- charts (components/charts.jsx) */
+.cw-chart + .cw-chart { margin-top: 24px; }
+.cw-chart-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.cw-chart-plot { position: relative; width: 100%; }
+.cw-svg { display: block; overflow: visible; font-family: var(--font-main); }
+.cw-svg text { fill: var(--text-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.cw-svg .cw-row-label { fill: var(--text-primary); font-size: 12px; }
+.cw-svg .cw-axis-title { fill: var(--text-muted); font-size: 11px; font-weight: 600; }
+.cw-svg .cw-value-label { fill: var(--text-secondary); font-size: 11px; font-weight: 600; }
+.cw-svg .cw-point-label { fill: var(--text-secondary); font-size: 11px; font-weight: 600; }
+.cw-svg .cw-muted-label { fill: var(--text-muted); font-size: 11px; font-style: italic; }
+.cw-grid { stroke: var(--separator); stroke-width: 1; }
+.cw-ref-line { stroke: var(--text-muted); stroke-width: 1; stroke-dasharray: 3 3; }
+.cw-zero-line { stroke: var(--text-muted); stroke-width: 1; }
+.cw-ring { stroke: var(--bg-card); stroke-width: 2; }
+.cw-mark { outline: none; cursor: default; }
+.cw-mark:focus-visible .cw-ring { stroke: var(--accent); stroke-width: 3; }
+.cw-mark:focus-visible .cw-row-label { fill: var(--accent); font-weight: 600; }
+.cw-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; margin: 0; padding: 0; font-size: 0.78rem; color: var(--text-secondary); }
+.cw-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.cw-tooltip { position: absolute; pointer-events: none; z-index: 5; min-width: 150px; max-width: 260px; padding: 8px 10px; border-radius: 10px;
+  background: color-mix(in srgb, var(--bg-card) 92%, transparent); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border: 1px solid var(--separator); box-shadow: var(--card-hover-shadow); font-size: 0.78rem; color: var(--text-secondary); line-height: 1.45; }
+.cw-tooltip-title { color: var(--text-primary); font-weight: 600; margin-bottom: 2px; }
+.cw-chart-empty { display: flex; align-items: center; justify-content: center; text-align: center; min-height: 120px; padding: 20px;
+  border: 1px dashed var(--border-color); border-radius: 12px; color: var(--text-muted); font-size: 0.86rem; background: var(--fill-subtle); }
+@media (prefers-reduced-transparency: reduce) { .cw-tooltip { background: var(--bg-card); -webkit-backdrop-filter: none; backdrop-filter: none; } }
+@media (prefers-contrast: more) { .cw-grid { stroke: var(--text-muted); } }
+@media (forced-colors: active) { .cw-svg rect, .cw-svg circle { forced-color-adjust: auto; } }
+
+/* Overview summary: one quiet card of figures instead of four separate tiles. */
+.cw-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; padding: 0; }
+.cw-stat { padding: 18px 20px; border-left: 1px solid var(--separator); }
+.cw-stat:first-child { border-left: 0; }
+.cw-stat-value { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.025em; line-height: 1.15; margin: 6px 0 4px; }
+@media (max-width: 1100px) { .cw-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } .cw-stat:nth-child(3) { border-left: 0; } .cw-stat:nth-child(n+3) { border-top: 1px solid var(--separator); } }
+@media (max-width: 560px) { .cw-stats { grid-template-columns: 1fr; } .cw-stat { border-left: 0; } .cw-stat + .cw-stat { border-top: 1px solid var(--separator); } }
+
+/* Pipeline diagram */
+.cw-diagram .cw-node rect { fill: var(--bg-card); stroke: var(--border-color); stroke-width: 1; }
+.cw-diagram .cw-node:not(.dim) rect { fill: var(--accent-tint); stroke: var(--accent); }
+.cw-diagram .cw-node.dim { opacity: 0.45; }
+.cw-diagram .cw-node.selected rect { stroke-width: 2.5; }
+.cw-diagram .cw-node.interactive { cursor: pointer; outline: none; }
+.cw-diagram .cw-node.interactive:focus-visible rect { stroke: var(--accent); stroke-width: 3; }
+.cw-diagram .cw-node-title { fill: var(--text-primary); font-size: 12px; font-weight: 600; }
+.cw-diagram .cw-node-sub { fill: var(--text-muted); font-size: 10.5px; }
+.cw-edge { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0.7; }
+.cw-edge.dim { stroke: var(--border-color); opacity: 1; }
+.cw-edge.loop { stroke: var(--text-muted); stroke-dasharray: 4 4; opacity: 1; }
+/* Grid children must be allowed to shrink below their content, or a chart's initial width props the column open. */
+.cw-two > *, .cw-cols-3 > *, .cw-cols-4 > *, .cw-cols-32 > * { min-width: 0; }
+.cw-chart-plot { overflow: hidden; }
+/* Cards in a grid row align at the top; stacked rows and cards keep one consistent 16px rhythm. */
+.cw-two > .cw-card, .cw-cols-3 > .cw-card, .cw-cols-4 > .cw-card, .cw-cols-32 > .cw-card { margin-top: 0; }
+.cw-two + .cw-card, .cw-cols-32 + .cw-card, .cw-cols-3 + .cw-card, .cw-cols-4 + .cw-card,
+.cw-card + .cw-two, .cw-card + .cw-cols-32, .cw-two + .cw-two, .cw-two + .cw-cols-32 { margin-top: 16px; }

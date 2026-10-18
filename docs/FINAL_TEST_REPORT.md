@@ -73,3 +73,17 @@ uv run pytest -q
 (cd client && npm test && npm run lint)
 uv run python -m scripts.check_paper_numbers --tex paper/main_ncrtht2026.tex
 ```
+
+## Pass 3 (2026-10-18)
+
+| Check | Result |
+|---|---|
+| `uv run pytest -q` (worktree) | **183 passed** |
+| `npm test` | **17 passed**: 9 earlier and 8 new. The new tests cover the Wilson interval against a hand calculation, report adapters (missing values stay missing), focusable marks with tooltips, unavailable states on all five chart types, forest-plot p and Holm labels, diverging-bar counts, "not measured" overhead, and pipeline-diagram dimming and keyboard selection |
+| Lint | 0 errors, 3 pre-existing warnings |
+| Build | built; CSS 30.0 kB, JS 477 kB |
+| Paper numbers | 169/169, 86/86 |
+| Research files vs `audit/2026-10-10` | identical (`paper/`, `benchmarks/`, raw databases) |
+| Browser (Chrome) | All 8 pages in light and dark mode with 0 console errors. `/findings` → `/results?tab=findings`. Charts checked against the report: dot plot 0.430/0.400/0.447/0.403/0.430/0.373; revision 15/24, 13/8, 12/21, 21/39; forest V5-CL −5.7 (−10.7 to −0.7), p 0.040, Holm 0.555. Keyboard focus on a mark gives its spoken label and tooltip; 12 focusable marks on the Overview |
+| Phone (390 px) and reduced motion | All 12 views (8 pages, results tabs) fit with no horizontal scroll; charts switch to compact IDs and stay inside their cards |
+| Not verified | Safari/Firefox, a screen reader, and submitting the live-model forms (paid calls) |
