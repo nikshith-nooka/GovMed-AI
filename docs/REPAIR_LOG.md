@@ -46,3 +46,10 @@ before and after the changes. Only derived artefacts were regenerated: the repor
 | Headline wording | The closed-loop headline says "paired" when no first diagnosis differs; the stability headline is omitted when agreement is 100%. |
 | Paper | The closed-loop results (abstract, contributions, methods, results, Table, Fig., discussion, threats, conclusion) now come from the paired rerun. The unpaired pass is reported only in Threats to Validity. `check_paper_numbers` also reads `rigor_report_medqa_paired.json`: 168/168. |
 | Figures | `make_paper_figures.py` builds the closed-loop figure from the paired report. |
+
+## 2026-10-18 — 4-page NCRTHT 2026 version
+
+`paper/main_ncrtht2026.tex`: a 3-page condensation of `paper/main.tex` (limit 4) for NCRTHT 2026, centred on the
+paired MedQA experiment and framed for under-resourced care. All 86 numbers match the reports. The test
+`test_every_number_in_both_manuscripts_is_backed_by_a_report` checks both manuscripts. Compiled PDF:
+`paper_out/NCRTHT2026_submission.pdf`. `.gitignore` now excludes `paper/*.pdf` build output.

@@ -160,3 +160,13 @@ def test_unmappable_answers_agree_when_both_runs_share_them(tmp_path):
     analysis = RigorousAnalysis(str(tmp_path / "c.db"), str(cases_path), reference_db_path=None)
     (row,) = analysis.resampling_stability()
     assert row["answer_agreement"] == 1.0
+
+
+def test_every_number_in_both_manuscripts_is_backed_by_a_report():
+    from pathlib import Path
+
+    from scripts.check_paper_numbers import main as check_numbers
+
+    for tex in ("paper/main.tex", "paper/main_ncrtht2026.tex"):
+        if Path(tex).exists():
+            assert check_numbers(["--tex", tex]) == 0, f"{tex} has numbers not found in the reports"

@@ -34,6 +34,9 @@ uv run govbench-rigor
 uv run govbench-figures
 uv run python -m scripts.check_paper_numbers
 uv run python scripts/build_paper.py
+# 4-page NCRTHT 2026 version (paper/main_ncrtht2026.tex): check numbers, then compile
+uv run python -m scripts.check_paper_numbers --tex paper/main_ncrtht2026.tex
+(cd paper && ../tectonic main_ncrtht2026.tex)    # writes paper/main_ncrtht2026.pdf
 ```
 
 Bootstrap CIs use fixed seeds, so these commands give identical numbers on every run.

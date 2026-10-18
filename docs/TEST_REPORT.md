@@ -6,7 +6,7 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 
 | Check | Command | Before audit | After audit |
 |---|---|---|---|
-| Unit + integration tests | `uv run pytest -q` | 164 passed | **173 passed**, 0 failed (3 third-party deprecation warnings) |
+| Unit + integration tests | `uv run pytest -q` | 164 passed | **174 passed**, 0 failed (3 third-party deprecation warnings) |
 | Python lint (defects) | `uv run ruff check src scripts tests --select F,E9` | 11 | 1 (`F841` in the withdrawn `scripts/backfill_metrics.py`) |
 | Python lint (all rules) | `uv run ruff check src scripts tests` | 570 | 563 (the rest are `UP*` annotation style, left alone) |
 | Formatter | `uv run ruff format --check` | 33 files would change | not applied |
@@ -14,7 +14,7 @@ Every result below was observed in this session on macOS (Darwin 25.6), Python 3
 | Client lint | `cd client && npm run lint` | hundreds of warnings from `dist/` | 0 errors; warnings only (unused imports, `set-state-in-effect`) |
 | Client build | `cd client && npm run build` | built | **built** |
 | Client type check | — | JavaScript project, no TypeScript | n/a |
-| Paper numbers | `uv run python -m scripts.check_paper_numbers` | 156/156 | **168/168** (after the paired-rerun paper update) |
+| Paper numbers | `uv run python -m scripts.check_paper_numbers` | 156/156 | **168/168** (6-page paper) and **86/86** (4-page NCRTHT version); both enforced by a test |
 | Analysis pipeline | `govbench-rigor`, MedQA `run_rigor_analysis` | crashed on table export (missing `jinja2`) | **writes JSON + tables** |
 | Server smoke test | `uvicorn src.api.server:app --port 8765` + curl | — | `/api/health` 200, `/` 200, `/api/research/findings` 200, `/api/runs?variant=V1` returns V1 only, `/api/nope` 404 |
 | Raw data integrity | MD5 of `medqa_fast.db`, `benchmark_results.db` before and after | — | **unchanged** |

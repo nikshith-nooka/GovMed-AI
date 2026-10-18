@@ -68,3 +68,6 @@ paper/*.out
 
 # Unrelated documents
 62_Deep_Learning-Based_Detection_of_Plastic_Waste_in_Ocean_Images_for_Environmental_Monitoring.pdf
+
+# Compiled manuscripts (rebuild with tectonic; submission copies go in paper_out/)
+paper/*.pdf
