@@ -13,7 +13,7 @@ const CASES = [
   { id: 'pubmedqa_001', specialty: 'Cardiology', gold_diagnosis: 'Clinical diagnostic note for chest pain', question: 'Chest pain study abstract.' },
 ];
 
-describe('Clinical Case Library', () => {
+describe('Case Library', () => {
   it('counts scorable labels and lists every case', () => {
     render(<ClinicalCases cases={CASES} />);
     expect(screen.getByText(/3 cases · 2 with a real diagnosis label/)).toBeTruthy();

@@ -1,7 +1,48 @@
 # Final Test Report — 2026-10-18
 
-Every result below was observed in this session (macOS, Python 3.11, Node 26.8, Chrome via DevTools). No live or paid
-model call was made. All tests use mocked or synthetic data.
+## Current results (repository audit)
+
+Commit under test: `main` at `2ff62d6` plus the audit's uncommitted UI-label and documentation changes (listed in
+`FINAL_REPOSITORY_AUDIT.md`). macOS 26 (Darwin 25.6), Node 26.8.1, Vitest 3.2.7, oxlint 1.81.0, Tectonic 0.17.0,
+Chrome via DevTools. Every result was observed locally. **GitHub runs no CI for this repository** (no workflow files;
+the API reports 0 check runs and 0 Actions runs), so nothing here is a CI result. No live or paid model call was made.
+
+| Check | Command | Exit | Result |
+|---|---|---|---|
+| Python tests (3.14.0, worktree env) | `uv run pytest -q` | 0 | **183 passed**, 3 third-party warnings |
+| Python tests (3.11.15, the Docker version) | `python -m pytest -q` | 0 | **183 passed** |
+| UI tests | `cd client && npm test` | 0 | **17 passed** (4 files) |
+| UI lint | `npm run lint` | 0 | 0 errors, 3 `set-state-in-effect` warnings (`ClinicalCases.jsx`, `Experiments.jsx`, `ClinicianWorkspace.jsx`; pre-existing) |
+| UI build | `npm run build` | 0 | CSS 30.0 kB, JS 477 kB |
+| Python defects | `uv run ruff check src scripts tests --select F,E9` | 1 | 1 finding, the known `F841` in the withdrawn `scripts/backfill_metrics.py` |
+| Paper numbers, full paper | `uv run python -m scripts.check_paper_numbers` | 0 | 169/169 |
+| Paper numbers, 4-page paper | `... --tex paper/main_ncrtht2026.tex` | 0 | 96/96 |
+| Same, integers | `... --integers` (three reports) | 1 | 137/138; the unmatched 1,273 is `split_size` in `benchmarks/medqa_300.meta.json` |
+| Re-analysis from raw DBs | `run_rigor_analysis` ×3, written to a scratch directory | 0 | all three reports identical except `generated_at`; all 30 paper tables and the clinician protocol byte-identical |
+| Paper figures | `make_paper_figures.main()` with output redirected to scratch | 0 | all 6 PNGs pixel-identical to `paper/figures` |
+| 4-page PDF | `tectonic -X compile paper/main_ncrtht2026.tex` | 0 | 4 pages, 612 × 792 pt, 0 overfull boxes, 0 undefined references; text identical to `paper_out/NCRTHT2026_submission.pdf` |
+| Whitespace | `git diff --check` | 0 | clean |
+
+**Browser (Chrome, audit server with no provider keys):**
+- 14 routes, covering the 8 pages, 6 results tabs and `/findings`, in light and dark, at 1280, 820 and 390 px, for `open150` and `medqa_paired`: 168 views.
+  - No horizontal overflow, no card or chart wider than the viewport, no crash or error banner.
+  - The theme attribute matched in every view.
+  - 0 console errors or warnings.
+- `/findings` → `/results?tab=findings`.
+- Server log: 755 GET 200 and 12 GET 304; the only 400s were the deliberate unknown-key probes. **No POST was sent, so no model call was possible.**
+- Paired MedQA values on screen match the report:
+  - accuracy 0.430/0.400/0.447/0.403/0.430/0.373 with Wilson intervals;
+  - revision 15/24, 13/8, 12/21, 21/39;
+  - forest V5-CL −5.7 points (−10.7 to −0.7), p 0.040, Holm 0.555.
+- Keyboard focus on a chart mark shows its tooltip.
+- Under emulated `prefers-reduced-motion: reduce`, no SVG element animates.
+- Chrome's "form field without label" notices refer to inputs named by `aria-label` (search, run filter, variant select). Every field has an accessible name.
+
+**Not tested:** Safari, Firefox, a screen reader, submitting the Experiments or Clinician Workspace forms (live, paid calls), and any live provider.
+
+## Pass 2 (`07e31de`)
+
+The sections below describe the tree of commit `07e31de` (UI tests then numbered 9, the 4-page paper then 86/86).
 
 ## 1. Automated checks
 
@@ -74,7 +115,7 @@ uv run pytest -q
 uv run python -m scripts.check_paper_numbers --tex paper/main_ncrtht2026.tex
 ```
 
-## Pass 3 (2026-10-18)
+## Pass 3 (`0d9152b`, 2026-10-18)
 
 | Check | Result |
 |---|---|

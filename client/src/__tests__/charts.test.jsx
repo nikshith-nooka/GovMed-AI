@@ -70,7 +70,7 @@ describe('chart components', () => {
 
   it('diverging bars report fixed and broken counts exactly', () => {
     render(<DivergingBars rows={revisionRows(REPORT)} title="r" summary="" />);
-    expect(screen.getByRole('img', { name: /fixed 7 answers and broke 12, sign test p 0.360/ })).toBeTruthy();
+    expect(screen.getByRole('img', { name: /fixed 7 answers and broke 12, sign test p 0.360 \(unadjusted\)/ })).toBeTruthy();
   });
 
   it('small multiples say "not measured" for a missing value', () => {

@@ -184,7 +184,7 @@ export default function ResultsComparison() {
         <>
           <div className="cw-card">
             <DivergingBars rows={revisionRows(r)} title="Revision impact"
-              subtitle="Within each closed-loop run: answers the revision made right versus answers it made wrong (exact sign test)"
+              subtitle="Within each closed-loop run: answers the revision made right versus answers it made wrong (exact sign test, unadjusted)"
               summary={revisionRows(r).map((x) => `${x.id}: fixed ${x.fixed}, broken ${x.broken}`).join('; ')} />
           </div>
           <div className="cw-card">
@@ -192,9 +192,9 @@ export default function ResultsComparison() {
             <Table rows={r.revision_by_variant} cols={[
               ['variant_id', 'Configuration', 0, (v) => VARIANT_LABELS[v] || v], ['revision_rate', 'Revised', 0, pctOf],
               ['revised_runs_scored', 'Scored revisions', 0], ['within_run_fixed', 'Fixed', 0], ['within_run_broken', 'Broken', 0],
-              ['sign_test_p', 'Sign test p', 0, pval],
+              ['sign_test_p', 'Sign test p (unadjusted)', 0, pval],
             ]} />
-            <p className="cw-muted" style={{ marginBottom: 0 }}>Fixed: the first answer was wrong and the revision made it right. Broken: the reverse. Exact two-sided sign test on fixed vs. broken.</p>
+            <p className="cw-muted" style={{ marginBottom: 0 }}>Fixed: the first answer was wrong and the revision made it right. Broken: the reverse. Exact two-sided sign test on fixed vs. broken, not corrected for multiple comparisons.</p>
           </div>
           {r.closed_loop_effect?.length > 0 && (
             <div className="cw-card">

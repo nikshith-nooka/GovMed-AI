@@ -285,8 +285,8 @@ export function DivergingBars({ rows, ...frame }) {
               const net = r.fixed - r.broken;
               return (
                 <Mark key={r.id} showTip={showTip} hideTip={hideTip} x={mid} y={cy}
-                  label={`${r.label}: revision fixed ${r.fixed} answers and broke ${r.broken}${r.p != null ? `, sign test p ${r.p.toFixed(3)}` : ''}`}
-                  tip={[r.label, `Fixed ${r.fixed} · broken ${r.broken} · net ${net > 0 ? '+' : ''}${net}`, ...(r.p != null ? [`Sign test p ${r.p.toFixed(3)}`] : [])]}>
+                  label={`${r.label}: revision fixed ${r.fixed} answers and broke ${r.broken}${r.p != null ? `, sign test p ${r.p.toFixed(3)} (unadjusted)` : ''}`}
+                  tip={[r.label, `Fixed ${r.fixed} · broken ${r.broken} · net ${net > 0 ? '+' : ''}${net}`, ...(r.p != null ? [`Sign test p ${r.p.toFixed(3)} (unadjusted)`] : [])]}>
                   <text x={left - 10} y={cy + 4} textAnchor="end" className="cw-row-label">{narrow ? r.id : r.label}</text>
                   <rect x={left} y={cy - rowH / 2} width={width - left - right} height={rowH} fill="transparent" />
                   <rect x={mid - w(r.broken) - 1} y={cy - 8} width={Math.max(0, w(r.broken))} height="16" rx="4" fill="var(--chart-warm)" />

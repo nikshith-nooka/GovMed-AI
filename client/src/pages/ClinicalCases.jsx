@@ -28,7 +28,7 @@ export default function ClinicalCases({ cases = [], error = null, initialQuery =
       <div className="cw-header">
         <div>
           <div className="cw-eyebrow"><Database size={14} aria-hidden="true" /> Benchmark dataset · {pool.length} cases · {pool.filter(isScorable).length} with a real diagnosis label</div>
-          <h2 className="cw-title">Clinical Case Library</h2>
+          <h2 className="cw-title">Case Library</h2>
           <p className="cw-sub">
             The {pool.length} cases of the mixed benchmark (MedQA, PubMedQA, MedDialog). Cases marked "not scorable" have a
             templated gold label rather than a diagnosis and are excluded from accuracy.

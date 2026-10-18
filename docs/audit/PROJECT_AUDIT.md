@@ -1,5 +1,8 @@
 # Project Audit — GovBench-Clinical
 
+> **Provenance:** findings AUD-01…AUD-26 of the 2026-10-10 audit, last revised in `a7c1c04`. Later audits:
+> `FINAL_PROJECT_AUDIT.md`, `FINAL_REPOSITORY_AUDIT.md`.
+
 Audit date: 2026-10-10. Baseline: `main` at `76c3b92`, clean working tree. The raw run databases were not modified:
 their MD5 hashes were checked before and after the audit.
 
